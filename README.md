@@ -26,8 +26,8 @@ Este tutorial te enseñará los fundamentos de **Next.js** construyendo una apli
 Primero, vamos a crear nuestro proyecto Next.js:
 
 ```bash
-npx create-next-app@latest pokédex-nextjs
-cd pokédex-nextjs
+npx create-next-app@latest pokedex-nextjs
+cd pokedex-nextjs
 ```
 
 **Configuración recomendada:**
@@ -51,7 +51,7 @@ Visita `http://localhost:3000` para ver tu aplicación funcionando.
 Next.js 13+ usa el **App Router** con esta estructura:
 
 ```
-pokédex-nextjs/
+pokedex-nextjs/
 ├── app/                     # 🎯 Corazón de la aplicación
 │   ├── page.tsx            # 🏠 Página principal (/)
 │   ├── layout.tsx          # 📋 Layout global
