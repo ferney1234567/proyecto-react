@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { Button } from '../components/ui/button'
-import { SearchPokemon } from '../components/SearchPokemon'
 
 export default function HomePage() {
   return (
@@ -35,9 +34,6 @@ export default function HomePage() {
             <p>Backend y frontend en un solo proyecto con API Routes</p>
           </div>
         </div>
-      </div>
-      <div className="mt-16">
-        <SearchPokemon />
       </div>
     </div>
   )

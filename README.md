@@ -216,27 +216,36 @@ Antes de crear las páginas, vamos a crear nuestras **propias API Routes** para 
 
 ### 📄 API para lista de pokémons
 
-Crea `src/app/api/pokemons/route.ts`:
+Crea `src/app/api/pokemons/route.tsx`:
 
 ```tsx
-// src/app/api/pokemons/route.ts
-import { NextResponse } from 'next/server'
+// src/app/api/pokemons/route.tsx
+import { NextRequest, NextResponse } from 'next/server'
 
 // 🔍 Tipos para nuestras respuestas
 interface PokemonListItem {
   name: string
   url: string
+  id: number
+  image: string
+  types: string[]
 }
 
 interface ApiResponse {
   pokemons: PokemonListItem[]
   total: number
+  search?: string
 }
 
-// 📦 GET - Obtener lista de pokémons
-export async function GET() {
+// 📦 GET - Obtener lista de pokémons (con búsqueda)
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const limit = searchParams.get('limit') || '20'
+  const search = searchParams.get('search') || ''
+  
   try {
-    const res = await fetch('https://pokeapi.co/api/v2/pokemon?limit=20', {
+    // Obtener lista básica
+    const res = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=${limit}`, {
       cache: 'force-cache'
     })
     
@@ -246,10 +255,33 @@ export async function GET() {
     
     const data = await res.json()
     
-    // Transformar la respuesta para nuestra API
+    // Enriquecer con detalles para búsqueda
+    const enrichedPokemons = await Promise.all(
+      data.results.map(async (pokemon: any) => {
+        const detailRes = await fetch(pokemon.url, { cache: 'force-cache' })
+        const detail = await detailRes.json()
+        
+        return {
+          name: detail.name,
+          url: pokemon.url,
+          id: detail.id,
+          image: detail.sprites.front_default,
+          types: detail.types.map((t: any) => t.type.name)
+        }
+      })
+    )
+    
+    // Filtrar por búsqueda si existe
+    const filteredPokemons = search
+      ? enrichedPokemons.filter(p => 
+          p.name.toLowerCase().includes(search.toLowerCase())
+        )
+      : enrichedPokemons
+    
     const response: ApiResponse = {
-      pokemons: data.results,
-      total: data.count
+      pokemons: filteredPokemons,
+      total: data.count,
+      search
     }
     
     return NextResponse.json(response)
@@ -345,6 +377,7 @@ Crea la página de lista en `src/app/pokemons/page.tsx`:
 // src/app/pokemons/page.tsx
 import { Badge } from '../../components/ui/badge'
 import { PokemonCard } from '../../components/PokemonCard'
+import { SearchPokemon } from '../../components/SearchPokemon'
 
 // 🔍 Tipos para TypeScript
 interface Pokemon {
@@ -382,6 +415,11 @@ export default async function PokemonsPage() {
           {data.total} Pokémons total
         </Badge>
       </div>
+
+      {/* Componente de búsqueda */}
+      <div className="mb-8">
+        <SearchPokemon />
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {data.pokemons.map((pokemon) => (
@@ -403,6 +441,7 @@ export default async function PokemonsPage() {
 - **API propia**: Llamamos a `/api/pokemons` en lugar de PokeAPI directamente
 - **BASE_URL**: Variable de entorno para diferentes ambientes
 - **Separación de responsabilidades**: La página solo se preocupa por mostrar datos
+- **Búsqueda integrada**: Incluimos SearchPokemon para mejor UX
 
 ---
 
@@ -571,91 +610,11 @@ export default async function PokemonDetailPage({ params }: PageProps) {
 
 
 
-## 🎮 Paso 9: Client Component interactivo
+## 🎮 Paso 9: Client Component interactivo (SearchPokemon)
 
-Ahora vamos a crear un componente que permita buscar pokémons usando **nuestra API** con funcionalidad de búsqueda.
+En el Paso 7 ya integramos el componente `SearchPokemon` en la página de pokémons. Ahora vamos a ver cómo está implementado este componente que permite buscar pokémons usando **nuestra API**.
 
-Primero, vamos a mejorar nuestra API para soportar búsqueda. Actualiza `src/app/api/pokemons/route.ts`:
-
-```tsx
-// src/app/api/pokemons/route.ts - VERSIÓN MEJORADA
-import { NextRequest, NextResponse } from 'next/server'
-
-// 🔍 Tipos para nuestras respuestas
-interface PokemonListItem {
-  name: string
-  url: string
-  id: number
-  image: string
-  types: string[]
-}
-
-interface ApiResponse {
-  pokemons: PokemonListItem[]
-  total: number
-  search?: string
-}
-
-// 📦 GET - Obtener lista de pokémons (con búsqueda)
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const limit = searchParams.get('limit') || '20'
-  const search = searchParams.get('search') || ''
-  
-  try {
-    // Obtener lista básica
-    const res = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=${limit}`, {
-      cache: 'force-cache'
-    })
-    
-    if (!res.ok) {
-      throw new Error('Error al obtener pokémons')
-    }
-    
-    const data = await res.json()
-    
-    // Enriquecer con detalles para búsqueda
-    const enrichedPokemons = await Promise.all(
-      data.results.map(async (pokemon: any) => {
-        const detailRes = await fetch(pokemon.url, { cache: 'force-cache' })
-        const detail = await detailRes.json()
-        
-        return {
-          name: detail.name,
-          url: pokemon.url,
-          id: detail.id,
-          image: detail.sprites.front_default,
-          types: detail.types.map((t: any) => t.type.name)
-        }
-      })
-    )
-    
-    // Filtrar por búsqueda si existe
-    const filteredPokemons = search
-      ? enrichedPokemons.filter(p => 
-          p.name.toLowerCase().includes(search.toLowerCase())
-        )
-      : enrichedPokemons
-    
-    const response: ApiResponse = {
-      pokemons: filteredPokemons,
-      total: data.count,
-      search
-    }
-    
-    return NextResponse.json(response)
-    
-  } catch (error) {
-    console.error('Error:', error)
-    return NextResponse.json(
-      { error: 'Error al cargar pokémons' },
-      { status: 500 }
-    )
-  }
-}
-```
-
-Ahora crea el componente de búsqueda en `src/components/SearchPokemon.tsx`:
+El componente `src/components/SearchPokemon.tsx` ya está creado con este código:
 
 ```tsx
 // src/components/SearchPokemon.tsx
@@ -683,7 +642,6 @@ export function SearchPokemon() {
     
     setLoading(true)
     try {
-      // Llamar a NUESTRA API
       const res = await fetch(`/api/pokemons?search=${search}&limit=10`)
       const data = await res.json()
       setResults(data.pokemons)
@@ -731,18 +689,6 @@ export function SearchPokemon() {
     </Card>
   )
 }
-```
-
-Finalmente, añade este componente a tu página principal:
-
-```tsx
-// src/app/page.tsx - añadir después del contenido existente
-import { SearchPokemon } from '../components/SearchPokemon'
-
-// En el return, añadir antes del cierre del div principal:
-<div className="mt-16">
-  <SearchPokemon />
-</div>
 ```
 
 ### 🔍 Diferencias clave:
@@ -907,8 +853,8 @@ export default async function Page({ params }: PageProps) {
 - `http://localhost:3000/api/pokemons?search=pika` - Búsqueda
 
 **Páginas funcionales:**
-- `http://localhost:3000/` - Landing page con búsqueda
-- `http://localhost:3000/pokemons` - Lista de pokémons
+- `http://localhost:3000/` - Landing page
+- `http://localhost:3000/pokemons` - Lista de pokémons con búsqueda integrada
 - `http://localhost:3000/pokemons/pikachu` - Detalle de pokémon
 
 ### 🔧 Troubleshooting (Errores comunes):

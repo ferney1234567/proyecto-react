@@ -1,5 +1,6 @@
 import { Badge } from '../../components/ui/badge'
 import { PokemonCard } from '../../components/PokemonCard'
+import { SearchPokemon } from '../../components/SearchPokemon'
 
 // 🔍 Tipos para TypeScript
 interface Pokemon {
@@ -36,6 +37,11 @@ export default async function PokemonsPage() {
         <Badge variant="secondary" className="text-lg px-4 py-2">
           {data.total} Pokémons total
         </Badge>
+      </div>
+
+      {/* Componente de búsqueda */}
+      <div className="mb-8">
+        <SearchPokemon />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
