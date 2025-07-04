@@ -34,8 +34,10 @@ cd pokedex-nextjs
 - ✅ TypeScript: **Yes**
 - ✅ ESLint: **Yes** 
 - ✅ Tailwind CSS: **Yes**
-- ✅ App Router: **Yes**
-- ✅ Import alias: **Yes** (@/*)
+- ✅ `src/` directory: **Yes**
+- ✅ App Router: **Yes** (recommended)
+- ❌ Turbopack: **No**
+- ❌ Import alias: **No**
 
 Inicia el servidor de desarrollo:
 ```bash
@@ -52,25 +54,27 @@ Next.js 13+ usa el **App Router** con esta estructura:
 
 ```
 pokedex-nextjs/
-├── app/                     # 🎯 Corazón de la aplicación
-│   ├── page.tsx            # 🏠 Página principal (/)
-│   ├── layout.tsx          # 📋 Layout global
-│   ├── globals.css         # 🎨 Estilos globales
-│   ├── pokemons/           # 📂 Rutas de pokémons
-│   │   ├── page.tsx        # 📄 Lista (/pokemons)
-│   │   └── [name]/         # 🔗 Ruta dinámica
-│   │       └── page.tsx    # 📄 Detalle (/pokemons/pikachu)
-│   └── api/                # 🔌 API Routes
-│       └── pokemons/       
-│           └── route.ts    # 🛠 Endpoint propio
-├── components/             # 🧩 Componentes reutilizables
-├── lib/                    # 🔧 Utilidades y funciones
+├── src/                    # 📁 Código fuente
+│   ├── app/                # 🎯 Corazón de la aplicación
+│   │   ├── page.tsx        # 🏠 Página principal (/)
+│   │   ├── layout.tsx      # 📋 Layout global
+│   │   ├── globals.css     # 🎨 Estilos globales
+│   │   ├── pokemons/       # 📂 Rutas de pokémons
+│   │   │   ├── page.tsx    # 📄 Lista (/pokemons)
+│   │   │   └── [name]/     # 🔗 Ruta dinámica
+│   │   │       └── page.tsx # 📄 Detalle (/pokemons/pikachu)
+│   │   └── api/            # 🔌 API Routes
+│   │       └── pokemons/   
+│   │           └── route.ts # 🛠 Endpoint propio
+│   ├── components/         # 🧩 Componentes reutilizables
+│   └── lib/                # 🔧 Utilidades y funciones
 ├── public/                 # 📁 Archivos estáticos
 └── ...
 ```
 
 ### 🔍 Conceptos clave:
 
+- **`src/`**: Directorio fuente que contiene todo el código
 - **`app/`**: Cada carpeta representa una ruta
 - **`page.tsx`**: Define una página accesible por URL
 - **`layout.tsx`**: Envuelve páginas con elementos comunes
@@ -83,30 +87,28 @@ pokedex-nextjs/
 ShadCN/UI nos dará componentes bonitos y funcionales:
 
 ```bash
-npx shadcn-ui@latest init
+npx shadcn@latest init
 ```
 
 **Configuración recomendada:**
-- Style: **Default**
-- Base color: **Slate**
-- CSS variables: **Yes**
+- Style: **Neutral**
 
 Instala algunos componentes que usaremos:
 
 ```bash
-npx shadcn-ui@latest add card button badge loading-spinner
+npx shadcn@latest add card button badge input
 ```
 
 ---
 
 ## 🏠 Paso 4: Crear la página principal (Landing)
 
-Actualiza `app/page.tsx` para crear una landing atractiva:
+Actualiza `src/app/page.tsx` para crear una landing atractiva:
 
 ```tsx
-// app/page.tsx
+// src/app/page.tsx
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+import { Button } from '../components/ui/button'
 
 export default function HomePage() {
   return (
@@ -151,13 +153,13 @@ export default function HomePage() {
 
 ## 📄 Paso 5: Lista de Pokémons (Server Component)
 
-Crea la página de lista en `app/pokemons/page.tsx`:
+Crea la página de lista en `src/app/pokemons/page.tsx`:
 
 ```tsx
-// app/pokemons/page.tsx
+// src/app/pokemons/page.tsx
 import Link from 'next/link'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
+import { Badge } from '../../components/ui/badge'
 
 // 🔍 Tipos para TypeScript
 interface Pokemon {
@@ -230,15 +232,15 @@ export default async function PokemonsPage() {
 
 ## 📱 Paso 6: Página de detalle (Rutas dinámicas)
 
-Crea `app/pokemons/[name]/page.tsx`:
+Crea `src/app/pokemons/[name]/page.tsx`:
 
 ```tsx
-// app/pokemons/[name]/page.tsx
+// src/app/pokemons/[name]/page.tsx
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '../../../components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
+import { Badge } from '../../../components/ui/badge'
 
 // 🔍 Tipos para el Pokémon detallado
 interface PokemonDetail {
@@ -385,12 +387,12 @@ export default async function PokemonDetailPage({ params }: PageProps) {
 
 ## 🔧 Paso 7: Crear un componente reutilizable
 
-Crea `components/PokemonCard.tsx`:
+Crea `src/components/PokemonCard.tsx`:
 
 ```tsx
-// components/PokemonCard.tsx
+// src/components/PokemonCard.tsx
 import Link from 'next/link'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 
 interface PokemonCardProps {
   name: string
@@ -425,11 +427,11 @@ export function PokemonCard({ name, url }: PokemonCardProps) {
 }
 ```
 
-Ahora actualiza `app/pokemons/page.tsx` para usar el componente:
+Ahora actualiza `src/app/pokemons/page.tsx` para usar el componente:
 
 ```tsx
 // Importar el componente
-import { PokemonCard } from '@/components/PokemonCard'
+import { PokemonCard } from '../../components/PokemonCard'
 
 // En el return, reemplazar el Card manual por:
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -447,10 +449,10 @@ import { PokemonCard } from '@/components/PokemonCard'
 
 ## 🛠 Paso 8: API Routes (Backend en Next.js)
 
-Crea tu propia API en `app/api/pokemons/route.ts`:
+Crea tu propia API en `src/app/api/pokemons/route.ts`:
 
 ```tsx
-// app/api/pokemons/route.ts
+// src/app/api/pokemons/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 
 // 🔍 Interfaz para el caché local
@@ -542,16 +544,16 @@ Visita: `http://localhost:3000/api/pokemons?limit=5&search=pika`
 
 ## 🎮 Paso 9: Client Component interactivo
 
-Crea un componente con interactividad en `components/SearchPokemon.tsx`:
+Crea un componente con interactividad en `src/components/SearchPokemon.tsx`:
 
 ```tsx
-// components/SearchPokemon.tsx
+// src/components/SearchPokemon.tsx
 'use client' // 🎯 Marca como Client Component
 
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from './ui/button'
+import { Input } from './ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 
 interface SearchResult {
   name: string
@@ -622,8 +624,8 @@ export function SearchPokemon() {
 Añade este componente a tu página principal:
 
 ```tsx
-// app/page.tsx - añadir después del contenido existente
-import { SearchPokemon } from '@/components/SearchPokemon'
+// src/app/page.tsx - añadir después del contenido existente
+import { SearchPokemon } from '../components/SearchPokemon'
 
 // En el return, añadir antes del cierre del div principal:
 <div className="mt-16">
@@ -641,10 +643,10 @@ import { SearchPokemon } from '@/components/SearchPokemon'
 
 ## 🚀 Paso 10: Optimizaciones y mejores prácticas
 
-### 📁 Crear utilidades en `lib/utils.ts`:
+### 📁 Crear utilidades en `src/lib/pokemon.ts`:
 
 ```tsx
-// lib/pokemon.ts
+// src/lib/pokemon.ts
 export interface Pokemon {
   name: string
   url: string
@@ -679,10 +681,10 @@ export async function fetchPokemonList(limit = 20): Promise<{ results: Pokemon[]
 }
 ```
 
-### 🎨 Actualizar layout global en `app/layout.tsx`:
+### 🎨 Actualizar layout global en `src/app/layout.tsx`:
 
 ```tsx
-// app/layout.tsx
+// src/app/layout.tsx
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
