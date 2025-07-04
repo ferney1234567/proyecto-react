@@ -1,5 +1,3 @@
-import Link from 'next/link'
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Badge } from '../../components/ui/badge'
 import { PokemonCard } from '../../components/PokemonCard'
 
@@ -9,21 +7,21 @@ interface Pokemon {
   url: string
 }
 
-interface PokemonListResponse {
-  results: Pokemon[]
-  count: number
+interface ApiResponse {
+  pokemons: Pokemon[]
+  total: number
 }
 
-// 🌐 Función para obtener datos (Server Side)
-async function getPokemons(): Promise<PokemonListResponse> {
-  const res = await fetch('https://pokeapi.co/api/v2/pokemon?limit=20', {
-    cache: 'force-cache' // Cache para mejor rendimiento
+// 🌐 Función para obtener datos desde NUESTRA API
+async function getPokemons(): Promise<ApiResponse> {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/pokemons`, {
+    cache: 'force-cache'
   })
-
+  
   if (!res.ok) {
     throw new Error('Error al cargar pokémons')
   }
-
+  
   return res.json()
 }
 
@@ -36,12 +34,12 @@ export default async function PokemonsPage() {
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-4xl font-bold">Pokédex</h1>
         <Badge variant="secondary" className="text-lg px-4 py-2">
-          {data.count} Pokémons total
+          {data.total} Pokémons total
         </Badge>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {data.results.map((pokemon) => (
+        {data.pokemons.map((pokemon) => (
           <PokemonCard
             key={pokemon.name}
             name={pokemon.name}

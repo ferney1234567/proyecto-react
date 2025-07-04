@@ -151,15 +151,200 @@ export default function HomePage() {
 
 ---
 
-## 📄 Paso 5: Lista de Pokémons (Server Component)
+## 📄 Paso 5: Crear componente PokemonCard reutilizable
+
+Antes de crear la página de pokémons, vamos a crear un componente reutilizable que nos ayudará a mostrar cada pokémon de manera elegante.
+
+Crea `src/components/PokemonCard.tsx`:
+
+```tsx
+// src/components/PokemonCard.tsx
+import Link from 'next/link'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+
+interface PokemonCardProps {
+  name: string
+  url: string
+}
+
+export function PokemonCard({ name, url }: PokemonCardProps) {
+  // Extraer ID del URL para mostrar imagen
+  const pokemonId = url.split('/').filter(Boolean).pop()
+  const imageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`
+  
+  return (
+    <Link href={`/pokemons/${name}`}>
+      <Card className="hover:shadow-lg transition-all duration-200 hover:scale-105 cursor-pointer">
+        <CardHeader className="pb-2">
+          <CardTitle className="capitalize text-center text-lg">
+            {name}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-center">
+          <img 
+            src={imageUrl}
+            alt={name}
+            className="w-20 h-20 mx-auto mb-2"
+            loading="lazy"
+          />
+          <p className="text-sm text-gray-500">#{pokemonId}</p>
+        </CardContent>
+      </Card>
+    </Link>
+  )
+}
+```
+
+### 🔍 Conceptos del componente:
+
+- **Props con TypeScript**: Interfaz clara para las propiedades
+- **Extracción de ID**: Manipulación de strings para obtener el ID del pokémon
+- **Imagen dinámica**: URL construida dinámicamente usando el ID
+- **Hover effects**: Efectos visuales con Tailwind CSS
+- **lazy loading**: Optimización para imágenes
+
+---
+
+## 🛠 Paso 6: API Routes (Backend en Next.js)
+
+Antes de crear las páginas, vamos a crear nuestras **propias API Routes** para manejar los datos. Esto es una mejor práctica porque:
+
+- ✅ Separamos la lógica de backend del frontend
+- ✅ Podemos agregar validación, cache y transformaciones
+- ✅ Mejor control de errores
+- ✅ Más escalable para aplicaciones reales
+
+### 📄 API para lista de pokémons
+
+Crea `src/app/api/pokemons/route.ts`:
+
+```tsx
+// src/app/api/pokemons/route.ts
+import { NextResponse } from 'next/server'
+
+// 🔍 Tipos para nuestras respuestas
+interface PokemonListItem {
+  name: string
+  url: string
+}
+
+interface ApiResponse {
+  pokemons: PokemonListItem[]
+  total: number
+}
+
+// 📦 GET - Obtener lista de pokémons
+export async function GET() {
+  try {
+    const res = await fetch('https://pokeapi.co/api/v2/pokemon?limit=20', {
+      cache: 'force-cache'
+    })
+    
+    if (!res.ok) {
+      throw new Error('Error al obtener pokémons')
+    }
+    
+    const data = await res.json()
+    
+    // Transformar la respuesta para nuestra API
+    const response: ApiResponse = {
+      pokemons: data.results,
+      total: data.count
+    }
+    
+    return NextResponse.json(response)
+    
+  } catch (error) {
+    console.error('Error:', error)
+    return NextResponse.json(
+      { error: 'Error al cargar pokémons' },
+      { status: 500 }
+    )
+  }
+}
+```
+
+### 📄 API para detalle de pokémon
+
+Crea `src/app/api/pokemons/[name]/route.ts`:
+
+```tsx
+// src/app/api/pokemons/[name]/route.ts
+import { NextRequest, NextResponse } from 'next/server'
+
+// 🔍 Tipos para el pokémon detallado
+interface PokemonDetail {
+  id: number
+  name: string
+  height: number
+  weight: number
+  sprites: {
+    front_default: string
+    back_default: string
+  }
+  types: Array<{
+    type: { name: string }
+  }>
+  stats: Array<{
+    base_stat: number
+    stat: { name: string }
+  }>
+}
+
+interface RouteParams {
+  params: Promise<{ name: string }>
+}
+
+// 📦 GET - Obtener un pokémon específico
+export async function GET(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { name } = await params
+    
+    const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${name.toLowerCase()}`, {
+      cache: 'force-cache'
+    })
+    
+    if (!res.ok) {
+      return NextResponse.json(
+        { error: 'Pokémon no encontrado' },
+        { status: 404 }
+      )
+    }
+    
+    const pokemon: PokemonDetail = await res.json()
+    
+    return NextResponse.json(pokemon)
+    
+  } catch (error) {
+    console.error('Error:', error)
+    return NextResponse.json(
+      { error: 'Error al cargar pokémon' },
+      { status: 500 }
+    )
+  }
+}
+```
+
+### 🔍 Conceptos importantes:
+
+- **API Routes**: Backend integrado en Next.js
+- **NextResponse**: Para crear respuestas HTTP
+- **Manejo de errores**: Try/catch con respuestas HTTP apropiadas
+- **Cache**: Optimización en el servidor
+- **Transformación de datos**: Adaptamos la respuesta externa a nuestra API
+
+---
+
+## 📄 Paso 7: Lista de Pokémons (Server Component)
+
+Ahora que tenemos nuestras APIs, vamos a crear la página que **consume nuestras propias APIs** (no directamente PokeAPI).
 
 Crea la página de lista en `src/app/pokemons/page.tsx`:
 
 ```tsx
 // src/app/pokemons/page.tsx
-import Link from 'next/link'
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Badge } from '../../components/ui/badge'
+import { PokemonCard } from '../../components/PokemonCard'
 
 // 🔍 Tipos para TypeScript
 interface Pokemon {
@@ -167,15 +352,15 @@ interface Pokemon {
   url: string
 }
 
-interface PokemonListResponse {
-  results: Pokemon[]
-  count: number
+interface ApiResponse {
+  pokemons: Pokemon[]
+  total: number
 }
 
-// 🌐 Función para obtener datos (Server Side)
-async function getPokemons(): Promise<PokemonListResponse> {
-  const res = await fetch('https://pokeapi.co/api/v2/pokemon?limit=20', {
-    cache: 'force-cache' // Cache para mejor rendimiento
+// 🌐 Función para obtener datos desde NUESTRA API
+async function getPokemons(): Promise<ApiResponse> {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/pokemons`, {
+    cache: 'force-cache'
   })
   
   if (!res.ok) {
@@ -194,26 +379,17 @@ export default async function PokemonsPage() {
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-4xl font-bold">Pokédex</h1>
         <Badge variant="secondary" className="text-lg px-4 py-2">
-          {data.count} Pokémons total
+          {data.total} Pokémons total
         </Badge>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {data.results.map((pokemon) => (
-          <Link key={pokemon.name} href={`/pokemons/${pokemon.name}`}>
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardHeader>
-                <CardTitle className="capitalize text-center">
-                  {pokemon.name}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-center">
-                <div className="w-24 h-24 mx-auto bg-gray-100 rounded-full flex items-center justify-center text-4xl">
-                  🔴
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
+        {data.pokemons.map((pokemon) => (
+          <PokemonCard 
+            key={pokemon.name} 
+            name={pokemon.name} 
+            url={pokemon.url} 
+          />
         ))}
       </div>
     </div>
@@ -224,13 +400,15 @@ export default async function PokemonsPage() {
 ### 🔍 Conceptos importantes:
 
 - **Server Component**: Se ejecuta en el servidor, perfecto para fetch de datos
-- **async/await**: Los Server Components pueden ser asíncronos
-- **cache: 'force-cache'**: Optimización de rendimiento
-- **TypeScript**: Tipos para mejor desarrollo
+- **API propia**: Llamamos a `/api/pokemons` en lugar de PokeAPI directamente
+- **BASE_URL**: Variable de entorno para diferentes ambientes
+- **Separación de responsabilidades**: La página solo se preocupa por mostrar datos
 
 ---
 
-## 📱 Paso 6: Página de detalle (Rutas dinámicas)
+## 📱 Paso 8: Página de detalle (Rutas dinámicas)
+
+Ahora vamos a crear la página de detalle que consume **nuestra API** `/api/pokemons/[name]`.
 
 Crea `src/app/pokemons/[name]/page.tsx`:
 
@@ -261,10 +439,10 @@ interface PokemonDetail {
   }>
 }
 
-// 🌐 Función para obtener un Pokémon específico
+// 🌐 Función para obtener un Pokémon desde NUESTRA API
 async function getPokemon(name: string): Promise<PokemonDetail | null> {
   try {
-    const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${name.toLowerCase()}`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/pokemons/${name}`, {
       cache: 'force-cache'
     })
     
@@ -280,11 +458,13 @@ async function getPokemon(name: string): Promise<PokemonDetail | null> {
 
 // 🎯 Props que recibe la página (incluye parámetros de ruta)
 interface PageProps {
-  params: { name: string }
+  params: Promise<{ name: string }>
 }
 
 export default async function PokemonDetailPage({ params }: PageProps) {
-  const pokemon = await getPokemon(params.name)
+  // 🔥 IMPORTANTE: En Next.js 15, params es asíncrono y debe ser awaited
+  const { name } = await params
+  const pokemon = await getPokemon(name)
   
   // Si no existe el Pokémon, mostrar 404
   if (!pokemon) {
@@ -379,91 +559,44 @@ export default async function PokemonDetailPage({ params }: PageProps) {
 ### 🔍 Conceptos importantes:
 
 - **[name]**: Carpeta con corchetes = ruta dinámica
-- **params**: Acceso a parámetros de la URL
+- **params**: Acceso a parámetros de la URL (Promise en Next.js 15)
+- **await params**: ⚠️ **CRUCIAL**: En Next.js 15, params es una Promise que debe ser awaited
+- **Promise<{ name: string }>**: Tipado correcto para params en Next.js 15
 - **notFound()**: Función de Next.js para mostrar página 404
 - **Manejo de errores**: Try/catch para APIs externas
 
 ---
 
-## 🔧 Paso 7: Crear un componente reutilizable
 
-Crea `src/components/PokemonCard.tsx`:
 
-```tsx
-// src/components/PokemonCard.tsx
-import Link from 'next/link'
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 
-interface PokemonCardProps {
-  name: string
-  url: string
-}
 
-export function PokemonCard({ name, url }: PokemonCardProps) {
-  // Extraer ID del URL para mostrar imagen
-  const pokemonId = url.split('/').filter(Boolean).pop()
-  const imageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`
-  
-  return (
-    <Link href={`/pokemons/${name}`}>
-      <Card className="hover:shadow-lg transition-all duration-200 hover:scale-105 cursor-pointer">
-        <CardHeader className="pb-2">
-          <CardTitle className="capitalize text-center text-lg">
-            {name}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="text-center">
-          <img 
-            src={imageUrl}
-            alt={name}
-            className="w-20 h-20 mx-auto mb-2"
-            loading="lazy"
-          />
-          <p className="text-sm text-gray-500">#{pokemonId}</p>
-        </CardContent>
-      </Card>
-    </Link>
-  )
-}
-```
+## 🎮 Paso 9: Client Component interactivo
 
-Ahora actualiza `src/app/pokemons/page.tsx` para usar el componente:
+Ahora vamos a crear un componente que permita buscar pokémons usando **nuestra API** con funcionalidad de búsqueda.
+
+Primero, vamos a mejorar nuestra API para soportar búsqueda. Actualiza `src/app/api/pokemons/route.ts`:
 
 ```tsx
-// Importar el componente
-import { PokemonCard } from '../../components/PokemonCard'
-
-// En el return, reemplazar el Card manual por:
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-  {data.results.map((pokemon) => (
-    <PokemonCard 
-      key={pokemon.name} 
-      name={pokemon.name} 
-      url={pokemon.url} 
-    />
-  ))}
-</div>
-```
-
----
-
-## 🛠 Paso 8: API Routes (Backend en Next.js)
-
-Crea tu propia API en `src/app/api/pokemons/route.ts`:
-
-```tsx
-// src/app/api/pokemons/route.ts
+// src/app/api/pokemons/route.ts - VERSIÓN MEJORADA
 import { NextRequest, NextResponse } from 'next/server'
 
-// 🔍 Interfaz para el caché local
-interface CachedPokemon {
+// 🔍 Tipos para nuestras respuestas
+interface PokemonListItem {
   name: string
+  url: string
   id: number
   image: string
   types: string[]
 }
 
-// 📦 GET - Obtener lista de pokémons (con caché y filtros)
+interface ApiResponse {
+  pokemons: PokemonListItem[]
+  total: number
+  search?: string
+}
+
+// 📦 GET - Obtener lista de pokémons (con búsqueda)
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const limit = searchParams.get('limit') || '20'
@@ -471,13 +604,17 @@ export async function GET(request: NextRequest) {
   
   try {
     // Obtener lista básica
-    const res = await fetch(
-      `https://pokeapi.co/api/v2/pokemon?limit=${limit}`,
-      { cache: 'force-cache' }
-    )
+    const res = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=${limit}`, {
+      cache: 'force-cache'
+    })
+    
+    if (!res.ok) {
+      throw new Error('Error al obtener pokémons')
+    }
+    
     const data = await res.json()
     
-    // Enriquecer con detalles (para filtros y mejor UX)
+    // Enriquecer con detalles para búsqueda
     const enrichedPokemons = await Promise.all(
       data.results.map(async (pokemon: any) => {
         const detailRes = await fetch(pokemon.url, { cache: 'force-cache' })
@@ -485,6 +622,7 @@ export async function GET(request: NextRequest) {
         
         return {
           name: detail.name,
+          url: pokemon.url,
           id: detail.id,
           image: detail.sprites.front_default,
           types: detail.types.map((t: any) => t.type.name)
@@ -499,52 +637,25 @@ export async function GET(request: NextRequest) {
         )
       : enrichedPokemons
     
-    return NextResponse.json({
+    const response: ApiResponse = {
       pokemons: filteredPokemons,
       total: data.count,
       search
-    })
+    }
+    
+    return NextResponse.json(response)
     
   } catch (error) {
+    console.error('Error:', error)
     return NextResponse.json(
-      { error: 'Error al obtener pokémons' },
+      { error: 'Error al cargar pokémons' },
       { status: 500 }
-    )
-  }
-}
-
-// 📝 POST - Favoritos (ejemplo de endpoint personalizado)
-export async function POST(request: NextRequest) {
-  try {
-    const { pokemonName } = await request.json()
-    
-    // Aquí podrías guardar en base de datos
-    // Por ahora solo simulamos
-    console.log(`Pokémon ${pokemonName} añadido a favoritos`)
-    
-    return NextResponse.json({
-      message: `${pokemonName} añadido a favoritos`,
-      success: true
-    })
-    
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Error al procesar solicitud' },
-      { status: 400 }
     )
   }
 }
 ```
 
-### 🔍 Probar la API:
-
-Visita: `http://localhost:3000/api/pokemons?limit=5&search=pika`
-
----
-
-## 🎮 Paso 9: Client Component interactivo
-
-Crea un componente con interactividad en `src/components/SearchPokemon.tsx`:
+Ahora crea el componente de búsqueda en `src/components/SearchPokemon.tsx`:
 
 ```tsx
 // src/components/SearchPokemon.tsx
@@ -572,6 +683,7 @@ export function SearchPokemon() {
     
     setLoading(true)
     try {
+      // Llamar a NUESTRA API
       const res = await fetch(`/api/pokemons?search=${search}&limit=10`)
       const data = await res.json()
       setResults(data.pokemons)
@@ -621,7 +733,7 @@ export function SearchPokemon() {
 }
 ```
 
-Añade este componente a tu página principal:
+Finalmente, añade este componente a tu página principal:
 
 ```tsx
 // src/app/page.tsx - añadir después del contenido existente
@@ -638,6 +750,8 @@ import { SearchPokemon } from '../components/SearchPokemon'
 - **'use client'**: Necesario para hooks como useState
 - **Client Component**: Se ejecuta en el navegador
 - **Server Component**: Se ejecuta en el servidor (por defecto)
+- **API propia**: Usa `/api/pokemons` con parámetros de búsqueda
+- **Arquitectura separada**: Frontend consume backend propio
 
 ---
 
@@ -735,6 +849,45 @@ export default function RootLayout({
 5. **✅ Optimizaciones**: Cache, revalidación, lazy loading
 6. **✅ Componentes**: Reutilización y props con TypeScript
 7. **✅ UI moderna**: ShadCN/UI + Tailwind CSS
+8. **✅ Arquitectura limpia**: Separación entre frontend y backend
+
+### 🏗️ Mejores prácticas implementadas:
+
+- **API propia**: Las páginas consumen nuestras APIs, no directamente APIs externas
+- **Separación de responsabilidades**: Frontend para UI, API Routes para lógica de negocio
+- **Componentización**: Componentes reutilizables desde el principio
+- **Tipado fuerte**: TypeScript en todo el proyecto
+- **Manejo de errores**: Control de errores tanto en cliente como servidor
+- **Cache estratégico**: Optimización de rendimiento
+- **Código limpio**: Sin duplicación ni refactorización innecesaria
+
+### ⚠️ Cambios importantes en Next.js 15:
+
+En Next.js 15, varios APIs que antes eran síncronos ahora son asíncronos:
+
+- **`params`** en páginas y layouts
+- **`searchParams`** en páginas  
+- **`cookies()`**, **`headers()`**, **`draftMode()`**
+
+**Antes (Next.js 14):**
+```tsx
+interface PageProps {
+  params: { slug: string }
+}
+export default function Page({ params }: PageProps) {
+  const { slug } = params  // ❌ Error en Next.js 15
+}
+```
+
+**Ahora (Next.js 15):**
+```tsx
+interface PageProps {
+  params: Promise<{ slug: string }>
+}
+export default async function Page({ params }: PageProps) {
+  const { slug } = await params  // ✅ Correcto
+}
+```
 
 ### 🚀 Próximos pasos sugeridos:
 
@@ -745,6 +898,61 @@ export default function RootLayout({
 - 📊 Implementar filtros avanzados
 - 🌙 Modo oscuro
 - 📈 Analytics y métricas
+
+### 🧪 Probar tu aplicación:
+
+**APIs creadas:**
+- `http://localhost:3000/api/pokemons` - Lista de pokémons
+- `http://localhost:3000/api/pokemons/pikachu` - Detalle de un pokémon
+- `http://localhost:3000/api/pokemons?search=pika` - Búsqueda
+
+**Páginas funcionales:**
+- `http://localhost:3000/` - Landing page con búsqueda
+- `http://localhost:3000/pokemons` - Lista de pokémons
+- `http://localhost:3000/pokemons/pikachu` - Detalle de pokémon
+
+### 🔧 Troubleshooting (Errores comunes):
+
+**Error: `params should be awaited before using its properties`**
+```bash
+Error: Route "/pokemons/[name]" used `params.name`. `params` should be awaited before using its properties.
+```
+
+**Solución:** Await el objeto params antes de acceder a sus propiedades:
+```tsx
+// ❌ Incorrecto
+interface PageProps {
+  params: { name: string }
+}
+export default async function Page({ params }: PageProps) {
+  const name = params.name
+}
+
+// ✅ Correcto  
+interface PageProps {
+  params: Promise<{ name: string }>
+}
+export default async function Page({ params }: PageProps) {
+  const { name } = await params
+}
+```
+
+**Comando automático para corregir:**
+```bash
+npx @next/codemod@canary next-async-request-api .
+```
+
+**Nota:** Si usas `generateMetadata`, también necesita await:
+```tsx
+// ✅ Correcto
+interface PageProps {
+  params: Promise<{ name: string }>
+}
+export async function generateMetadata({ params }: PageProps) {
+  const { name } = await params
+  return { title: `Pokémon ${name}` }
+}
+```
 
 ### 🔗 Recursos útiles:
 

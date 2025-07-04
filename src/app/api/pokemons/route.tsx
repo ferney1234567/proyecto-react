@@ -1,14 +1,21 @@
-mport { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-// 🔍 Interfaz para el caché local
-interface CachedPokemon {
+// 🔍 Tipos para nuestras respuestas
+interface PokemonListItem {
   name: string
+  url: string
   id: number
   image: string
   types: string[]
 }
 
-// 📦 GET - Obtener lista de pokémons (con caché y filtros)
+interface ApiResponse {
+  pokemons: PokemonListItem[]
+  total: number
+  search?: string
+}
+
+// 📦 GET - Obtener lista de pokémons (con búsqueda)
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const limit = searchParams.get('limit') || '20'
@@ -16,13 +23,17 @@ export async function GET(request: NextRequest) {
   
   try {
     // Obtener lista básica
-    const res = await fetch(
-      `https://pokeapi.co/api/v2/pokemon?limit=${limit}`,
-      { cache: 'force-cache' }
-    )
+    const res = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=${limit}`, {
+      cache: 'force-cache'
+    })
+    
+    if (!res.ok) {
+      throw new Error('Error al obtener pokémons')
+    }
+    
     const data = await res.json()
     
-    // Enriquecer con detalles (para filtros y mejor UX)
+    // Enriquecer con detalles para búsqueda
     const enrichedPokemons = await Promise.all(
       data.results.map(async (pokemon: any) => {
         const detailRes = await fetch(pokemon.url, { cache: 'force-cache' })
@@ -30,6 +41,7 @@ export async function GET(request: NextRequest) {
         
         return {
           name: detail.name,
+          url: pokemon.url,
           id: detail.id,
           image: detail.sprites.front_default,
           types: detail.types.map((t: any) => t.type.name)
@@ -44,38 +56,19 @@ export async function GET(request: NextRequest) {
         )
       : enrichedPokemons
     
-    return NextResponse.json({
+    const response: ApiResponse = {
       pokemons: filteredPokemons,
       total: data.count,
       search
-    })
+    }
+    
+    return NextResponse.json(response)
     
   } catch (error) {
+    console.error('Error:', error)
     return NextResponse.json(
-      { error: 'Error al obtener pokémons' },
+      { error: 'Error al cargar pokémons' },
       { status: 500 }
-    )
-  }
-}
-
-// 📝 POST - Favoritos (ejemplo de endpoint personalizado)
-export async function POST(request: NextRequest) {
-  try {
-    const { pokemonName } = await request.json()
-    
-    // Aquí podrías guardar en base de datos
-    // Por ahora solo simulamos
-    console.log(`Pokémon ${pokemonName} añadido a favoritos`)
-    
-    return NextResponse.json({
-      message: `${pokemonName} añadido a favoritos`,
-      success: true
-    })
-    
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Error al procesar solicitud' },
-      { status: 400 }
     )
   }
 }

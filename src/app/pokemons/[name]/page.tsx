@@ -23,10 +23,10 @@ interface PokemonDetail {
   }>
 }
 
-// 🌐 Función para obtener un Pokémon específico
+// 🌐 Función para obtener un Pokémon desde NUESTRA API
 async function getPokemon(name: string): Promise<PokemonDetail | null> {
   try {
-    const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${name.toLowerCase()}`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/pokemons/${name}`, {
       cache: 'force-cache'
     })
     
@@ -42,11 +42,13 @@ async function getPokemon(name: string): Promise<PokemonDetail | null> {
 
 // 🎯 Props que recibe la página (incluye parámetros de ruta)
 interface PageProps {
-  params: { name: string }
+  params: Promise<{ name: string }>
 }
 
 export default async function PokemonDetailPage({ params }: PageProps) {
-  const pokemon = await getPokemon(params.name)
+  // 🔥 IMPORTANTE: En Next.js 15, params es asíncrono y debe ser awaited
+  const { name } = await params
+  const pokemon = await getPokemon(name)
   
   // Si no existe el Pokémon, mostrar 404
   if (!pokemon) {
