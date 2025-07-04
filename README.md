@@ -1,4 +1,4 @@
-image.png# 🚀 Aprende Next.js: Construyendo una Pokédex
+# 🚀 Aprende Next.js: Construyendo una Pokédex
 
 Este tutorial te enseñará los fundamentos de **Next.js** construyendo una aplicación práctica: una Pokédex que consume la PokeAPI. Al final tendrás una aplicación funcional y comprenderás los conceptos clave de Next.js.
 
