@@ -120,3 +120,38 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer base {
+  body {
+    @apply bg-gray-50; /* O el color de fondo que prefieras */
+  }
+}
+
+@layer utilities {
+  @keyframes fade-in-up {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.6s ease-out forwards;
+    opacity: 0; /* Inicia invisible para que la animación se vea */
+  }
+
+  .animate-shimmer {
+    animation: shimmer 0.8s forwards;
+  }
+}
+
