@@ -139,26 +139,33 @@ const showWarning = (mensaje: string) => {
 
 
   return (
-    <div className={`rounded-3xl shadow-2xl p-10 max-w-6xl mx-auto my-12 border transition-colors duration-500 ${bgColor} ${textColor} ${borderColor}`}>
-      {/* Efectos de fondo decorativos */}
-      {!modoOscuro && (
-        <>
-          <div className="absolute -top-20 -left-20 w-64 h-64 bg-green-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-          <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-        </>
-      )}
 
-      {/* Cabecera */}
-      <div className="text-center mb-10 relative z-10">
-        <h2 className={`text-4xl font-extrabold mb-2 ${modoOscuro ? 'text-white' : ''}`}>
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600">
-            Gestión de Líneas
-          </span>
-        </h2>
-        <p className={`text-lg ${modoOscuro ? 'text-gray-300' : 'text-gray-600'} max-w-2xl mx-auto`}>
-          Administra las líneas estratégicas de trabajo
-        </p>
-      </div>
+  <div
+    className={`rounded-3xl shadow-2xl p-10 max-w-9xl mx-auto my-12 transition-colors duration-500 
+      ${modoOscuro 
+        ? 'bg-[#1a0526] text-white' 
+        : 'bg-white/100 text-gray-900'
+      }`}
+  >
+    {/* Efectos de fondo decorativos */}
+    {!modoOscuro && (
+      <>
+        <div className="absolute -top-20 -left-20 w-64 h-64 bg-green-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+      </>
+    )}
+
+    {/* Cabecera */}
+    <div className="text-center mb-10 relative z-10">
+      <h2 className={`text-4xl font-extrabold mb-2 ${modoOscuro ? 'text-white' : ''}`}>
+        <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600">
+          Gestión de Líneas
+        </span>
+      </h2>
+      <p className={`text-lg ${modoOscuro ? 'text-gray-300' : 'text-gray-600'} max-w-2xl mx-auto`}>
+        Administra las líneas estratégicas de trabajo
+      </p>
+    </div>
 
       {/* Buscador y botón */}
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10 relative z-10">

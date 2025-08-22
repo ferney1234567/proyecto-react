@@ -206,7 +206,7 @@ export default function ConvocatoriasHistorial({ modoOscuro }: ConvocatoriasHist
   const linkColor = modoOscuro ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800';
   return (
     <>
-      <div className={`rounded-3xl shadow-2xl p-10 max-w-7xl mx-auto my-12 border transition-colors duration-500 ${bgColor} ${textColor} ${borderColor}`}>
+      <div className={`rounded-3xl shadow-2xl p-10 max-w-7xl mx-auto my-12  ${bgColor} ${textColor} ${borderColor}`}>
         {/* Cabecera */}
         <div className="text-center mb-10">
           <h2 className={`text-4xl font-extrabold mb-2 ${titleColor}`}>

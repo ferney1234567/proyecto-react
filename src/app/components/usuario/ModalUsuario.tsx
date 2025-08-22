@@ -1,4 +1,5 @@
 'use client';
+
 import { FaUserPlus, FaTimes, FaUser, FaEnvelope, FaLock, FaPhone, FaUserCheck, FaSave } from 'react-icons/fa';
 import { Usuario } from './Usuario';
 
@@ -8,6 +9,7 @@ interface ModalUsuarioProps {
   manejarCambio: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   cerrarModal: () => void;
   guardarUsuario: () => void;
+  modoOscuro?: boolean;
 }
 
 export default function ModalUsuario({
@@ -15,12 +17,24 @@ export default function ModalUsuario({
   editandoId,
   manejarCambio,
   cerrarModal,
-  guardarUsuario
+  guardarUsuario,
+  modoOscuro = false
 }: ModalUsuarioProps) {
+  // 🔹 estilos condicionales
+  const modalBg = modoOscuro ? 'bg-[#1a0526] text-white' : 'bg-white text-gray-900';
+  const inputBg = modoOscuro
+    ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400'
+    : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500';
+  const footerBg = modoOscuro ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-100';
+  const cancelBtn = modoOscuro
+    ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
+    : 'border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400';
+  const labelColor = modoOscuro ? 'text-gray-300' : 'text-gray-700';
+
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all duration-300 animate-pulse-once">
-        {/* Header con diseño mejorado */}
+      <div className={`${modalBg} rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all duration-300 animate-pulse-once`}>
+        {/* Header */}
         <div className="bg-gradient-to-r from-[#39A900] via-[#45b800] to-[#2d8500] p-6 relative overflow-hidden">
           <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
           <div className="relative flex justify-between items-center">
@@ -46,12 +60,12 @@ export default function ModalUsuario({
           </div>
         </div>
 
-        {/* Body con inputs mejorados */}
-        <div className="p-8 space-y-6 bg-gradient-to-b from-gray-50 to-white">
+        {/* Body */}
+        <div className="p-8 space-y-6">
           <div className="grid grid-cols-1 gap-6">
-            {/* Nombre con icono interno */}
+            {/* Nombre */}
             <div className="space-y-2">
-              <label htmlFor="nombre" className="block text-sm font-semibold text-gray-700">
+              <label htmlFor="nombre" className={`block text-sm font-semibold ${labelColor}`}>
                 Nombre completo
               </label>
               <div className="relative">
@@ -62,7 +76,7 @@ export default function ModalUsuario({
                   type="text"
                   id="nombre"
                   name="nombre"
-                  className="w-full border-2 border-gray-200 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900]/30 focus:border-[#39A900] text-base transition-all duration-200 hover:border-[#39A900]/50  text-gray-800"
+                  className={`w-full border border-gray-300 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900]/30 focus:border-[#39A900] text-base transition-all duration-200 ${inputBg}`}
                   placeholder="Ingrese el nombre completo"
                   value={nuevoUsuario.nombre}
                   onChange={manejarCambio}
@@ -70,9 +84,9 @@ export default function ModalUsuario({
               </div>
             </div>
 
-            {/* Correo con icono interno */}
+            {/* Correo */}
             <div className="space-y-2">
-              <label htmlFor="correo" className="block text-sm font-semibold text-gray-700">
+              <label htmlFor="correo" className={`block text-sm font-semibold ${labelColor}`}>
                 Correo electrónico
               </label>
               <div className="relative">
@@ -83,7 +97,7 @@ export default function ModalUsuario({
                   type="email"
                   id="correo"
                   name="correo"
-                  className="w-full border-2 border-gray-200 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900]/30 focus:border-[#39A900] text-base transition-all duration-200 hover:border-[#39A900]/50  text-gray-800"
+                  className={`w-full border border-gray-300 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900]/30 focus:border-[#39A900] text-base transition-all duration-200 ${inputBg}`}
                   placeholder="usuario@ejemplo.com"
                   value={nuevoUsuario.correo}
                   onChange={manejarCambio}
@@ -91,9 +105,9 @@ export default function ModalUsuario({
               </div>
             </div>
 
-            {/* Contraseña con icono interno */}
+            {/* Contraseña */}
             <div className="space-y-2">
-              <label htmlFor="contraseña" className="block text-sm font-semibold text-gray-700">
+              <label htmlFor="contraseña" className={`block text-sm font-semibold ${labelColor}`}>
                 {editandoId ? 'Nueva contraseña' : 'Contraseña'}
               </label>
               <div className="relative">
@@ -104,7 +118,7 @@ export default function ModalUsuario({
                   type="password"
                   id="contraseña"
                   name="contraseña"
-                  className="w-full border-2 border-gray-200 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900]/30 focus:border-[#39A900] text-base transition-all duration-200 hover:border-[#39A900]/50  text-gray-800"
+                  className={`w-full border border-gray-300 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900]/30 focus:border-[#39A900] text-base transition-all duration-200 ${inputBg}`}
                   placeholder={editandoId ? 'Dejar vacío para mantener la actual' : 'Mínimo 8 caracteres'}
                   value={nuevoUsuario.contraseña}
                   onChange={manejarCambio}
@@ -112,9 +126,9 @@ export default function ModalUsuario({
               </div>
             </div>
 
-            {/* Teléfono con icono interno */}
+            {/* Teléfono */}
             <div className="space-y-2">
-              <label htmlFor="telefono" className="block text-sm font-semibold text-gray-700">
+              <label htmlFor="telefono" className={`block text-sm font-semibold ${labelColor}`}>
                 Teléfono
               </label>
               <div className="relative">
@@ -125,7 +139,7 @@ export default function ModalUsuario({
                   type="tel"
                   id="telefono"
                   name="telefono"
-                  className="w-full border-2 border-gray-200 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900]/30 focus:border-[#39A900] text-base transition-all duration-200 hover:border-[#39A900]/50  text-gray-800"
+                  className={`w-full border border-gray-300 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900]/30 focus:border-[#39A900] text-base transition-all duration-200 ${inputBg}`}
                   placeholder="Ej: 3001234567"
                   value={nuevoUsuario.telefono}
                   onChange={manejarCambio}
@@ -133,9 +147,9 @@ export default function ModalUsuario({
               </div>
             </div>
 
-            {/* Estado con icono interno */}
+            {/* Estado */}
             <div className="space-y-2">
-              <label htmlFor="estado" className="block text-sm font-semibold text-gray-700">
+              <label htmlFor="estado" className={`block text-sm font-semibold ${labelColor}`}>
                 Estado del usuario
               </label>
               <div className="relative">
@@ -145,7 +159,7 @@ export default function ModalUsuario({
                 <select
                   id="estado"
                   name="estado"
-                  className="w-full border-2 border-gray-200 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900]/30 focus:border-[#39A900] text-base appearance-none transition-all duration-200 hover:border-[#39A900]/50 cursor-pointer text-gray-800"
+                  className={`w-full border border-gray-300 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900]/30 focus:border-[#39A900] text-base appearance-none transition-all duration-200 cursor-pointer ${inputBg}`}
                   value={nuevoUsuario.estado}
                   onChange={manejarCambio}
                 >
@@ -162,10 +176,10 @@ export default function ModalUsuario({
           </div>
         </div>
 
-        {/* Footer mejorado */}
-        <div className="bg-white px-8 py-6 flex justify-between items-center border-t border-gray-100 shadow-inner">
+        {/* Footer */}
+        <div className={`${footerBg} px-8 py-6 flex justify-between items-center border-t`}>
           <button
-            className="flex items-center gap-3 px-6 py-3 border-2 border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-medium"
+            className={`flex items-center gap-3 px-6 py-3 rounded-xl transition-all duration-200 font-medium ${cancelBtn}`}
             onClick={cerrarModal}
           >
             <FaTimes size={16} />

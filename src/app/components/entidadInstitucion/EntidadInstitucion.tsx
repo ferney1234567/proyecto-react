@@ -132,7 +132,7 @@ export default function EntidadInstitucion({ modoOscuro }: EntidadInstitucionPro
   return (
     <>
       <div
-        className={`rounded-3xl shadow-2xl p-10 max-w-6xl mx-auto my-12 border transition-colors duration-500 ${bgColor} ${textColor} ${borderColor}`}
+        className={`rounded-3xl shadow-2xl p-10 max-w-9xl mx-auto my-12  ${bgColor} ${textColor} ${borderColor}`}
       >
         {/* Cabecera */}
         <div className="text-center mb-10">

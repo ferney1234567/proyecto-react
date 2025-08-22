@@ -129,7 +129,7 @@ export default function Rol({ modoOscuro }: RolProps) {
   return (
     <>
       {/* Contenedor principal */}
-      <div className={`rounded-3xl shadow-2xl p-10 max-w-6xl mx-auto my-12 border transition-colors duration-500 ${bgColor} ${textColor} ${borderColor}`}>
+      <div className={`rounded-3xl shadow-2xl p-10 max-w-6xl mx-auto my-12  ${bgColor} ${textColor} ${borderColor}`}>
         
         {/* Header */}
         <div className="text-center mb-10">

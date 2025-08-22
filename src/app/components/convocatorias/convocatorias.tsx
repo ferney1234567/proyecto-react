@@ -222,7 +222,7 @@ export default function Convocatorias({ modoOscuro }: ConvocatoriasProps) {
   const linkColor = modoOscuro ? 'text-[#39A900] hover:text-[#2d8500]' : 'text-[#39A900] hover:text-[#2d8500]';
 
   return (
-    <div className={`rounded-3xl shadow-2xl p-10 max-w-6xl mx-auto my-12 border transition-colors duration-500 ${bgColor} ${textColor} ${borderColor}`}>
+    <div className={`rounded-3xl shadow-2xl p-10 max-w-6xl mx-auto my-12 ${bgColor} ${textColor} ${borderColor}`}>
       {/* Background decoration - solo en modo claro */}
       {!modoOscuro && (
         <>
