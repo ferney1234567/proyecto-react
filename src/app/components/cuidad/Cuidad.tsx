@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Edit, Trash2, Plus } from 'lucide-react';
 import { FaCity } from 'react-icons/fa';
-import CiudadModal from './CiudadModal';
+import CiudadModal from './crearCiudad';
 import Swal from 'sweetalert2'; // 1. Importar SweetAlert2
 
 interface CiudadProps {
@@ -135,7 +135,7 @@ export default function Ciudad({ modoOscuro }: CiudadProps) {
 
   return (
     <>
-      <div className={`rounded-3xl shadow-2xl p-10 max-w-6xl mx-auto my-12  ${bgColor} ${textColor} ${borderColor}`}>
+      <div className={`rounded-3xl  p-10 max-w-9xl mx-auto my-12  ${bgColor} ${textColor} ${borderColor}`}>
         {/* ... (resto del JSX, no necesita cambios) ... */}
         <div className="text-center mb-10">
           <h2 className={`text-4xl font-extrabold mb-2 ${titleColor}`}>

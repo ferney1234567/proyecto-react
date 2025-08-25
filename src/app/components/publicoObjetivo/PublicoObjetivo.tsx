@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Edit, Trash2, Plus } from 'lucide-react';
 import { FaUsers } from 'react-icons/fa';
-import ModalPublico from './modalpublico';
+import ModalPublico from './crearPublico';
 import Swal from 'sweetalert2';
 
 interface PublicoObjetivoProps {
@@ -122,16 +122,22 @@ export default function PublicoObjetivo({ modoOscuro }: PublicoObjetivoProps) {
   const secondaryText = modoOscuro ? 'text-gray-300' : 'text-gray-600';
   const titleColor = modoOscuro ? 'text-white' : 'text-gray-800';
 
-  return (
-    <>
-      <div className={`rounded-3xl shadow-2xl p-10 max-w-9xl mx-auto my-12  ${bgColor} ${textColor} ${borderColor}`}>
-        {/* Fondo decorativo - solo en modo claro */}
-        {!modoOscuro && (
-          <>
-            <div className="absolute top-0 left-0 w-40 h-40 bg-[#39A900]/10 rounded-full -z-10"></div>
-            <div className="absolute bottom-0 right-0 w-40 h-40 bg-[#39A900]/10 rounded-full -z-10"></div>
-          </>
-        )}
+ return (
+  <>
+    <div
+      className={`rounded-3xl p-10 max-w-9xl mx-auto my-12  
+        ${modoOscuro 
+          ? 'bg-[#1a0526] text-white' 
+          : 'bg-white-50 text-gray-900' // Fondo suave sin bordes ni sombras
+        }`}
+    >
+      {/* Fondo decorativo - solo en modo claro */}
+      {!modoOscuro && (
+        <>
+          <div className="absolute top-0 left-0 w-40 h-40 bg-[#39A900]/10 rounded-full -z-10"></div>
+          <div className="absolute bottom-0 right-0 w-40 h-40 bg-[#39A900]/10 rounded-full -z-10"></div>
+        </>
+      )}
 
         {/* Cabecera */}
         <div className="text-center mb-10">

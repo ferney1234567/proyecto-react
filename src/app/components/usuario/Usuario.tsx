@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Edit, Trash2, Plus } from 'lucide-react';
 import { FaUserTag } from 'react-icons/fa';
-import ModalUsuario from './ModalUsuario';
+import ModalUsuario from './crearUsuario';
 import Swal from 'sweetalert2'; // 1. Importar SweetAlert2
 
 interface UsuarioProps {
@@ -147,7 +147,7 @@ export default function Usuario({ modoOscuro }: UsuarioProps) {
 
   return (
     <>
-      <div className={`rounded-3xl shadow-2xl p-10 max-w-6xl mx-auto my-12  ${bgColor} ${textColor} ${borderColor}`}>
+      <div className={`rounded-3xl  p-10 max-w-9xl mx-auto my-12  ${bgColor} ${textColor} ${borderColor}`}>
         {/* ... (resto del JSX que ya tenías, no necesita cambios) ... */}
          {/* Cabecera con efecto gradiente */}
          <div className="text-center mb-10 relative z-10">

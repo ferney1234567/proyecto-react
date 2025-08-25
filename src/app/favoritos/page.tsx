@@ -99,10 +99,9 @@ const imagenesEje =
 
  
 <section className="bg-white/80 backdrop-blur-sm border border-gray-200/80 shadow-sm rounded-2xl p-4 mb-6">
-  {/* El contenedor principal no necesita cambios */}
   <div className="flex flex-col md:flex-row flex-wrap gap-4 items-center justify-between">
     
-    {/* --- Grupo de Filtros y Controles de Vista (Todo junto ahora) --- */}
+    {/* --- Grupo de Filtros y Controles de Vista --- */}
     <div className="flex flex-wrap items-end gap-x-4 gap-y-3 flex-1 w-full">
       
       {/* --- Filtro: Categoría --- */}
@@ -114,7 +113,7 @@ const imagenesEje =
         <div className="relative">
           <select 
             id="categoria" 
-            className="w-full appearance-none bg-gray-50/70 border border-gray-200/90 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 cursor-pointer"
+            className="w-full appearance-none bg-white border-2 border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-400 cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md hover:border-gray-200"
           >
             <option>Todas las categorías</option>
             <option>Empleo</option>
@@ -125,7 +124,9 @@ const imagenesEje =
             <option>Internacional</option>
           </select>
           <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/></svg>
+            <svg className="w-5 h-5 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
+            </svg>
           </div>
         </div>
       </div>
@@ -139,7 +140,7 @@ const imagenesEje =
         <div className="relative">
           <select 
             id="ubicacion"
-            className="w-full appearance-none bg-gray-50/70 border border-gray-200/90 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 cursor-pointer"
+            className="w-full appearance-none bg-white border-2 border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-400 cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md hover:border-gray-200"
           >
             <option>Todo el país</option>
             <option>Bogotá</option>
@@ -148,7 +149,9 @@ const imagenesEje =
             <option>Barranquilla</option>
           </select>
           <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/></svg>
+            <svg className="w-5 h-5 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
+            </svg>
           </div>
         </div>
       </div>
@@ -162,7 +165,7 @@ const imagenesEje =
         <div className="relative">
           <select 
             id="fecha"
-            className="w-full appearance-none bg-gray-50/70 border border-gray-200/90 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 cursor-pointer"
+            className="w-full appearance-none bg-white border-2 border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-400 cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md hover:border-gray-200"
           >
             <option>Cualquier fecha</option>
             <option>Julio 2025</option>
@@ -170,19 +173,21 @@ const imagenesEje =
             <option>Septiembre 2025</option>
           </select>
           <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/></svg>
+            <svg className="w-5 h-5 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
+            </svg>
           </div>
         </div>
       </div>
       
-      {/* --- Grupo de Controles de Vista (Movido aquí) --- */}
-      <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-full mb-px"> {/* Añadido mb-px para ajuste fino */}
+      {/* --- Grupo de Controles de Vista --- */}
+      <div className="flex items-center gap-1 bg-gray-100 p-1.5 rounded-full mb-px">
         <button
           onClick={() => cambiarVista("tarjeta")}
-          className={`p-2 rounded-full transition-all duration-300 ${
+          className={`p-2.5 rounded-full transition-all duration-300 ${
             vista === "tarjeta"
-              ? "bg-white shadow text-emerald-600"
-              : "text-gray-500 hover:text-gray-800"
+              ? "bg-white shadow-lg text-emerald-600"
+              : "text-gray-500 hover:text-gray-800 hover:bg-white/70"
           }`}
           title="Vista en tarjeta"
         >
@@ -190,10 +195,10 @@ const imagenesEje =
         </button>
         <button
           onClick={() => cambiarVista("lista")}
-          className={`p-2 rounded-full transition-all duration-300 ${
+          className={`p-2.5 rounded-full transition-all duration-300 ${
             vista === "lista"
-              ? "bg-white shadow text-emerald-600"
-              : "text-gray-500 hover:text-gray-800"
+              ? "bg-white shadow-lg text-emerald-600"
+              : "text-gray-500 hover:text-gray-800 hover:bg-white/70"
           }`}
           title="Vista en lista"
         >
@@ -201,9 +206,6 @@ const imagenesEje =
         </button>
       </div>
     </div>
-    
-    {/* El div de los controles de vista que estaba aquí se ha eliminado */}
-
   </div>
 </section>
 

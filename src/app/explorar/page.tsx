@@ -106,7 +106,7 @@ export default function HomePage() {
         <div className="relative">
           <select 
             id="categoria" 
-            className="w-full appearance-none bg-gray-50/70 border border-gray-200/90 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 cursor-pointer"
+            className="w-full appearance-none bg-white border-2 border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-400 cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md hover:border-gray-200"
           >
             <option>Todas las categorías</option>
             <option>Empleo</option>
@@ -117,7 +117,9 @@ export default function HomePage() {
             <option>Internacional</option>
           </select>
           <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+            <svg className="w-5 h-5 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
           </div>
         </div>
       </div>
@@ -131,7 +133,7 @@ export default function HomePage() {
         <div className="relative">
           <select 
             id="ubicacion"
-            className="w-full appearance-none bg-gray-50/70 border border-gray-200/90 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 cursor-pointer"
+            className="w-full appearance-none bg-white border-2 border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-400 cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md hover:border-gray-200"
           >
             <option>Todo el país</option>
             <option>Bogotá</option>
@@ -140,7 +142,9 @@ export default function HomePage() {
             <option>Barranquilla</option>
           </select>
           <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+            <svg className="w-5 h-5 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
           </div>
         </div>
       </div>
@@ -154,7 +158,7 @@ export default function HomePage() {
         <div className="relative">
           <select 
             id="fecha"
-            className="w-full appearance-none bg-gray-50/70 border border-gray-200/90 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 cursor-pointer"
+            className="w-full appearance-none bg-white border-2 border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-400 cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md hover:border-gray-200"
           >
             <option>Cualquier fecha</option>
             <option>Julio 2025</option>
@@ -162,7 +166,9 @@ export default function HomePage() {
             <option>Septiembre 2025</option>
           </select>
           <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+            <svg className="w-5 h-5 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
           </div>
         </div>
       </div>
@@ -176,7 +182,7 @@ export default function HomePage() {
         <div className="relative">
           <select
             id="visualizacion"
-            className="w-full appearance-none bg-gray-50/70 border border-gray-200/90 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 cursor-pointer"
+            className="w-full appearance-none bg-white border-2 border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-400 cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md hover:border-gray-200"
             value={vista}
             onChange={(e) => setVista(e.target.value)}
           >
@@ -186,7 +192,9 @@ export default function HomePage() {
             <option value="Mosaico">Mosaico</option>
           </select>
           <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+            <svg className="w-5 h-5 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
           </div>
         </div>
       </div>
@@ -383,7 +391,7 @@ export default function HomePage() {
     
        {vista === "Tabla" && (
   // El contenedor sigue gestionando el scroll, lo que permite que la tabla de adentro sea más ancha.
-  <div className="bg-white rounded-2xl shadow-lg mt-6 border border-gray-200 max-h-[80vh] overflow-auto">
+  <div className="bg-white rounded-2xl shadow-lg mt-6 border border-gray-200 ">
     {/* 
       Tabla con un ancho mínimo aumentado para que sea más larga hacia los lados.
       Cambiado de min-w-[900px] a min-w-[1200px].

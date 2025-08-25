@@ -196,26 +196,49 @@ export default function GestionRequisitos() {
       </div>
 
       {/* Filtros */}
-      {mostrarFiltros && (
-        <div className="bg-gray-50 border border-gray-200 p-5 rounded-xl space-y-3">
-          <h4 className="font-semibold text-gray-700">Estado del requisito:</h4>
-          <div className="flex flex-wrap gap-3">
-            {['todos', 'completados', 'pendientes'].map((estado) => (
-              <label key={estado} className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="estado"
-                  value={estado}
-                  checked={filtroEstado === estado}
-                  onChange={(e) => setFiltroEstado(e.target.value)}
-                  className="h-4 w-4 text-[#00324D] border-gray-300 focus:ring-[#00324D]"
-                />
-                <span className="text-gray-700 capitalize">{estado}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-      )}
+     {mostrarFiltros && (
+  <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200/70 p-5 rounded-2xl space-y-4 shadow-sm">
+    <h4 className="font-semibold text-gray-700 flex items-center gap-2">
+      <svg className="w-5 h-5 text-[#00324D]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+      </svg>
+      Estado del requisito
+    </h4>
+    <div className="flex flex-wrap gap-4">
+      {[
+        { value: 'todos', label: 'Todos', icon: '✓' },
+        { value: 'completados', label: 'Completados', icon: '✓' },
+        { value: 'pendientes', label: 'Pendientes', icon: '…' }
+      ].map((estado) => (
+        <label 
+          key={estado.value} 
+          className={`relative flex items-center gap-3 cursor-pointer px-4 py-3 rounded-xl border transition-all duration-200 ${
+            filtroEstado === estado.value 
+              ? 'bg-[#00324D] text-white border-[#00324D] shadow-md' 
+              : 'bg-white text-gray-700 border-gray-200 hover:border-[#00324D]/40 hover:shadow-sm'
+          }`}
+        >
+          <input
+            type="radio"
+            name="estado"
+            value={estado.value}
+            checked={filtroEstado === estado.value}
+            onChange={(e) => setFiltroEstado(e.target.value)}
+            className="absolute opacity-0 h-0 w-0"
+          />
+          <span className={`flex items-center justify-center w-6 h-6 rounded-full border-2 ${
+            filtroEstado === estado.value 
+              ? 'bg-white text-[#00324D] border-white' 
+              : 'border-gray-300 text-transparent'
+          }`}>
+            {estado.icon}
+          </span>
+          <span className="font-medium capitalize">{estado.label}</span>
+        </label>
+      ))}
+    </div>
+  </div>
+)}
 
       {/* Requisitos */}
       <div className="space-y-4">

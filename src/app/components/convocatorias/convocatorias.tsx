@@ -5,7 +5,7 @@ import {
   Plus, Edit, Trash2, Gem, Target, FileText, User, BookText, 
   Users, Star, Building, Calendar, Globe, Link as LinkIcon 
 } from "lucide-react";
-import ConvocatoriaModal from "./ConvocatoriaModal";
+import ConvocatoriaModal from "./crearConvocatoria";
 import Swal from 'sweetalert2';
 
 interface ConvocatoriasProps {
@@ -222,14 +222,14 @@ export default function Convocatorias({ modoOscuro }: ConvocatoriasProps) {
   const linkColor = modoOscuro ? 'text-[#39A900] hover:text-[#2d8500]' : 'text-[#39A900] hover:text-[#2d8500]';
 
   return (
-    <div className={`rounded-3xl shadow-2xl p-10 max-w-6xl mx-auto my-12 ${bgColor} ${textColor} ${borderColor}`}>
-      {/* Background decoration - solo en modo claro */}
-      {!modoOscuro && (
-        <>
-          <div className="absolute -top-5 -left-5 w-40 h-40 bg-green-100 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
-          <div className="absolute -bottom-5 -right-5 w-40 h-40 bg-green-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
-        </>
-      )}
+  <div className={`rounded-3xl p-10 max-w-9xl mx-auto my-12 ${bgColor} ${textColor}`}>
+    {/* Background decoration - solo en modo claro */}
+    {!modoOscuro && (
+      <>
+        <div className="absolute -top-5 -left-5 w-40 h-40 bg-green-100 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
+        <div className="absolute -bottom-5 -right-5 w-40 h-40 bg-green-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
+      </>
+    )}
 
       {/* Header */}
       <div className="text-center mb-10">

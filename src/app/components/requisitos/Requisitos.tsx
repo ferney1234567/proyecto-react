@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Edit, Trash2, Plus } from 'lucide-react';
 import { AiOutlineUser } from 'react-icons/ai';
-import ModalRequisito from './RequisitoModal';
+import ModalRequisito from './crearRequisito';
 import Swal from 'sweetalert2';
 
 interface RequisitosProps {
@@ -151,14 +151,18 @@ export default function Requisitos({ modoOscuro }: RequisitosProps) {
 
   return (
     <div
-      className={`relative rounded-3xl shadow-2xl p-10 max-w-9xl mx-auto my-12  ${bgColor} ${textColor} ${borderColor}`}
-    >
-      {/* Fondos decorativos - solo en modo claro */}
-      {!modoOscuro && (
-        <>
-          <div className="absolute -top-5 -left-5 w-40 h-40 bg-green-100 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
-          <div className="absolute -bottom-5 -right-5 w-40 h-40 bg-green-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
-        </>
+    className={`rounded-3xl p-10 max-w-9xl mx-auto my-12  
+      ${modoOscuro 
+        ? 'bg-[#1a0526] text-white' 
+        : 'bg-white-50 text-gray-900' // Blanco más suave
+      }`}
+  >
+    {/* Efectos de fondo decorativos */}
+    {!modoOscuro && (
+      <>
+        <div className="absolute -top-20 -left-20 w-64 h-64 bg-green-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+      </>
       )}
 
       {/* Cabecera */}

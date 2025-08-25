@@ -8,23 +8,38 @@ interface ModalChequeoProps {
   editando: boolean;
   chequeo: {
     chequeo: number;
-    idEmpresa: number;
-    idRequisito: number;
+    empresa: string;  // Cambiado de idEmpresa: number
+    requisito: string; // Cambiado de idRequisito: number
   };
-  empresas?: Array<{ id: number; nombre: string }>;
-  requisitos?: Array<{ id: number; nombre: string }>;
+  empresas?: string[]; // Cambiado a array de strings
+  requisitos?: string[]; // Cambiado a array de strings
   onCerrar: () => void;
   onGuardar: () => void;
-  onChange: (field: keyof typeof chequeo, value: number) => void;
-  modoOscuro: boolean; // 🔹 agregado
+  onChange: (field: keyof typeof chequeo, value: string | number) => void;
+  modoOscuro: boolean;
 }
 
 export default function ModalChequeo({
   abierto,
   editando,
   chequeo,
-  empresas = [],
-  requisitos = [],
+  empresas = [
+    "TecnoSoluciones SAS",
+    "Innovación Digital Ltda",
+    "GlobalTech Colombia",
+    "Servicios Integrales Tech",
+    "Desarrollo Web Express"
+  ],
+  requisitos = [
+    "Documento de identidad",
+    "Certificado académico",
+    "Hoja de vida actualizada",
+    "Referencias laborales",
+    "Portafolio de proyectos",
+    "Certificación de ingresos",
+    "Antecedentes judiciales",
+    "Examen médico ocupacional"
+  ],
   onCerrar,
   onGuardar,
   onChange,
@@ -34,9 +49,6 @@ export default function ModalChequeo({
   const [mostrarRequisitos, setMostrarRequisitos] = useState(false);
 
   if (!abierto) return null;
-
-  const empresaSeleccionada = empresas.find(e => e.id === chequeo.idEmpresa);
-  const requisitoSeleccionado = requisitos.find(r => r.id === chequeo.idRequisito);
 
   // 🔹 estilos condicionales
   const modalBg = modoOscuro ? 'bg-[#1a0526] text-white' : 'bg-white text-gray-900';
@@ -81,22 +93,22 @@ export default function ModalChequeo({
               className={`w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md flex justify-between items-center cursor-pointer ${inputBg}`}
               onClick={() => setMostrarEmpresas(!mostrarEmpresas)}
             >
-              <span>{empresaSeleccionada?.nombre || 'Seleccione una empresa'}</span>
+              <span>{chequeo.empresa || 'Seleccione una empresa'}</span>
               <ChevronDown size={20} className={`transition-transform ${mostrarEmpresas ? 'rotate-180' : ''}`} />
             </div>
 
             {mostrarEmpresas && (
               <div className={`absolute z-10 mt-1 w-full rounded-xl shadow-lg max-h-60 overflow-auto ${dropdownBg}`}>
-                {empresas.map(empresa => (
+                {empresas.map((empresa, index) => (
                   <div
-                    key={empresa.id}
-                    className={`px-4 py-3 cursor-pointer ${optionHover} ${chequeo.idEmpresa === empresa.id ? 'bg-[#39A900]/10 text-[#39A900]' : ''}`}
+                    key={index}
+                    className={`px-4 py-3 cursor-pointer ${optionHover} ${chequeo.empresa === empresa ? 'bg-[#39A900]/10 text-[#39A900]' : ''}`}
                     onClick={() => {
-                      onChange('idEmpresa', empresa.id);
+                      onChange('empresa', empresa);
                       setMostrarEmpresas(false);
                     }}
                   >
-                    {empresa.nombre}
+                    {empresa}
                   </div>
                 ))}
               </div>
@@ -110,22 +122,22 @@ export default function ModalChequeo({
               className={`w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md flex justify-between items-center cursor-pointer ${inputBg}`}
               onClick={() => setMostrarRequisitos(!mostrarRequisitos)}
             >
-              <span>{requisitoSeleccionado?.nombre || 'Seleccione un requisito'}</span>
+              <span>{chequeo.requisito || 'Seleccione un requisito'}</span>
               <ChevronDown size={20} className={`transition-transform ${mostrarRequisitos ? 'rotate-180' : ''}`} />
             </div>
 
             {mostrarRequisitos && (
               <div className={`absolute z-10 mt-1 w-full rounded-xl shadow-lg max-h-60 overflow-auto ${dropdownBg}`}>
-                {requisitos.map(requisito => (
+                {requisitos.map((requisito, index) => (
                   <div
-                    key={requisito.id}
-                    className={`px-4  py-3 cursor-pointer ${optionHover} ${chequeo.idRequisito === requisito.id ? 'bg-[#39A900]/10 text-[#39A900]' : ''}`}
+                    key={index}
+                    className={`px-4 py-3 cursor-pointer ${optionHover} ${chequeo.requisito === requisito ? 'bg-[#39A900]/10 text-[#39A900]' : ''}`}
                     onClick={() => {
-                      onChange('idRequisito', requisito.id);
+                      onChange('requisito', requisito);
                       setMostrarRequisitos(false);
                     }}
                   >
-                    {requisito.nombre}
+                    {requisito}
                   </div>
                 ))}
               </div>

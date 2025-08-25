@@ -2,8 +2,8 @@
 import { useState } from 'react';
 import { Edit, Trash2, Plus } from 'lucide-react';
 import { FaClipboardCheck } from 'react-icons/fa';
-import ModalChequeo from './ModalChequeo';
-import Swal from 'sweetalert2'; // 1. Importar SweetAlert2
+import ModalChequeo from './crearChequeo';
+import Swal from 'sweetalert2';
 
 interface ChequeosProps {
   modoOscuro: boolean;
@@ -12,14 +12,14 @@ interface ChequeosProps {
 interface Chequeo {
   id: number;
   chequeo: number;
-  idEmpresa: number;
-  idRequisito: number;
+  empresa: string;  // Cambiado de idEmpresa: number a empresa: string
+  requisito: string; // Cambiado de idRequisito: number a requisito: string
 }
 
 export default function Chequeos({ modoOscuro }: ChequeosProps) {
   const [chequeos, setChequeos] = useState<Chequeo[]>([
-    { id: 1, chequeo: 1, idEmpresa: 1, idRequisito: 101 },
-    { id: 2, chequeo: 0, idEmpresa: 2, idRequisito: 102 },
+    { id: 1, chequeo: 1, empresa: "Empresa A", requisito: "Documento de identidad" },
+    { id: 2, chequeo: 0, empresa: "Empresa B", requisito: "Certificado académico" },
   ]);
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,23 +27,23 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [nuevoChequeo, setNuevoChequeo] = useState<Omit<Chequeo, 'id'>>({
     chequeo: 0,
-    idEmpresa: 0,
-    idRequisito: 0
+    empresa: "",  // Cambiado a string vacío
+    requisito: "" // Cambiado a string vacío
   });
 
   const handleAddChequeo = () => {
     setEditandoId(null);
-    setNuevoChequeo({ chequeo: 0, idEmpresa: 0, idRequisito: 0 });
+    setNuevoChequeo({ chequeo: 0, empresa: "", requisito: "" });
     setMostrarModal(true);
   };
 
   const cerrarModal = () => {
     setMostrarModal(false);
-    setNuevoChequeo({ chequeo: 0, idEmpresa: 0, idRequisito: 0 });
+    setNuevoChequeo({ chequeo: 0, empresa: "", requisito: "" });
     setEditandoId(null);
   };
 
-  // === FUNCIONES DE ALERTAS SWEETALERT2 ===
+  // FUNCIONES DE ALERTAS SWEETALERT2
   const showSuccess = (mensaje: string) => {
     Swal.fire({
       icon: 'success',
@@ -70,10 +70,10 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
     });
   };
   
-  // 2. Lógica de guardado con alertas
+  // Lógica de guardado con alertas
   const handleSaveChequeo = () => {
-    if (nuevoChequeo.idEmpresa === 0 || nuevoChequeo.idRequisito === 0) {
-      showWarning('Los campos ID Empresa y ID Requisito son obligatorios.');
+    if (nuevoChequeo.empresa.trim() === "" || nuevoChequeo.requisito.trim() === "") {
+      showWarning('Los campos Empresa y Requisito son obligatorios.');
       return;
     }
 
@@ -98,15 +98,15 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
     if (chequeo) {
       setNuevoChequeo({
         chequeo: chequeo.chequeo,
-        idEmpresa: chequeo.idEmpresa,
-        idRequisito: chequeo.idRequisito
+        empresa: chequeo.empresa,
+        requisito: chequeo.requisito
       });
       setEditandoId(id);
       setMostrarModal(true);
     }
   };
 
-  // 3. Lógica de eliminación con alerta de confirmación
+  // Lógica de eliminación con alerta de confirmación
   const handleDeleteChequeo = (id: number) => {
     Swal.fire({
       title: '¿Estás seguro de eliminar este chequeo?',
@@ -129,8 +129,8 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
 
   const filteredChequeos = chequeos.filter(chequeo =>
     chequeo.id.toString().includes(searchTerm.toLowerCase()) ||
-    chequeo.idEmpresa.toString().includes(searchTerm.toLowerCase()) ||
-    chequeo.idRequisito.toString().includes(searchTerm.toLowerCase())
+    chequeo.empresa.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    chequeo.requisito.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Estilos condicionales
@@ -149,8 +149,7 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
 
   return (
     <>
-      <div className={`rounded-3xl shadow-2xl p-10 max-w-6xl mx-auto my-12  ${bgColor} ${textColor} ${borderColor}`}>
-        {/* ... (resto del JSX, no necesita cambios) ... */}
+      <div className={`rounded-3xl p-10 max-w-9xl mx-auto my-12 ${bgColor} ${textColor} ${borderColor}`}>
         <div className="text-center mb-10">
           <h2 className={`text-4xl font-extrabold mb-2 ${titleColor}`}>
             Gestión de Chequeos
@@ -163,7 +162,7 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
           <input
             type="text"
-            placeholder="Buscar chequeos..."
+            placeholder="Buscar por empresa, requisito o ID..."
             className={`border rounded-2xl px-5 py-3 text-lg focus:outline-none focus:ring-2 w-full sm:w-96 transition-all duration-300 hover:shadow-md ${searchBg} ${textColor} ${searchBorder} ${searchFocus} ${placeholderColor}`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -202,15 +201,15 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
                   </div>
                   <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <p className={`text-sm ${labelText}`}>ID Empresa</p>
+                      <p className={`text-sm ${labelText}`}>Empresa</p>
                       <h3 className={`text-lg font-semibold ${modoOscuro ? 'text-white' : 'text-gray-800'}`}>
-                        {chequeo.idEmpresa}
+                        {chequeo.empresa}
                       </h3>
                     </div>
                     <div>
-                      <p className={`text-sm ${labelText}`}>ID Requisito</p>
+                      <p className={`text-sm ${labelText}`}>Requisito</p>
                       <h3 className={`text-lg font-semibold ${modoOscuro ? 'text-white' : 'text-gray-800'}`}>
-                        {chequeo.idRequisito}
+                        {chequeo.requisito}
                       </h3>
                     </div>
                     <div>

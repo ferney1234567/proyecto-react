@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { FaMapMarkerAlt } from 'react-icons/fa';
 import { Edit, Trash2, Plus } from 'lucide-react';
-import ModalDepartamento from './ModalDepartamento';
+import ModalDepartamento from './crearDepartamento';
 import Swal from 'sweetalert2'; // 1. Importar SweetAlert2
 
 interface DepartamentoProps {
@@ -141,7 +141,7 @@ export default function Departamento({ modoOscuro }: DepartamentoProps) {
 
   return (
     <>
-      <div className={`rounded-3xl shadow-2xl p-10 max-w-6xl mx-auto my-12  ${bgColor} ${textColor} ${borderColor}`}>
+      <div className={`rounded-3xl  p-10 max-w-9xl mx-auto my-12  ${bgColor} ${textColor} ${borderColor}`}>
         {/* ... (resto del JSX, no necesita cambios) ... */}
         {/* Cabecera */}
         <div className="text-center mb-10">

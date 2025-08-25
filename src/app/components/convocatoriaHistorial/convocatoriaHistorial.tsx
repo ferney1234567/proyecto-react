@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Edit, Trash2, Plus, Calendar, Link, FileText, User, Bookmark, Users, Heart, Eye, FileInput } from 'lucide-react';
 import { FaClipboardCheck } from 'react-icons/fa';
-import ModalConvocatoriaHistorial from './ModalConvocatoriaHistorial';
+import ModalConvocatoriaHistorial from './crearHistorial';
 import Swal from 'sweetalert2'; // 1. Importar SweetAlert2
 
 interface ConvocatoriasHistorialProps {
@@ -206,7 +206,7 @@ export default function ConvocatoriasHistorial({ modoOscuro }: ConvocatoriasHist
   const linkColor = modoOscuro ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800';
   return (
     <>
-      <div className={`rounded-3xl shadow-2xl p-10 max-w-7xl mx-auto my-12  ${bgColor} ${textColor} ${borderColor}`}>
+      <div className={`rounded-3xl  p-10 max-w-9xl mx-auto my-12  ${bgColor} ${textColor} ${borderColor}`}>
         {/* Cabecera */}
         <div className="text-center mb-10">
           <h2 className={`text-4xl font-extrabold mb-2 ${titleColor}`}>

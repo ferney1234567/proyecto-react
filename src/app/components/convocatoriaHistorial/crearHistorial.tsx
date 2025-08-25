@@ -33,6 +33,7 @@ interface ModalConvocatoriaHistorialProps {
   onCerrar: () => void;
   onGuardar: () => void;
   onChange: (field: keyof typeof convocatoria, value: any) => void;
+  modoOscuro: boolean;
 }
 
 export default function ModalConvocatoriaHistorial({
@@ -45,7 +46,8 @@ export default function ModalConvocatoriaHistorial({
   intereses = [],
   onCerrar,
   onGuardar,
-  onChange
+  onChange,
+  modoOscuro
 }: ModalConvocatoriaHistorialProps) {
 
   const [mostrarEntidades, setMostrarEntidades] = useState(false);
@@ -55,6 +57,17 @@ export default function ModalConvocatoriaHistorial({
   const [mostrarPreviewImagen, setMostrarPreviewImagen] = useState(false);
 
   if (!abierto) return null;
+
+  // 🔹 estilos dinámicos
+  const modalBg = modoOscuro ? 'bg-[#1a0526] text-white' : 'bg-white text-gray-900';
+  const inputBg = modoOscuro ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500';
+  const footerBg = modoOscuro ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200';
+  const cancelBtn = modoOscuro ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-100';
+  const dropdownBg = modoOscuro ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300';
+  const dropdownItemBg = modoOscuro ? 'hover:bg-gray-700' : 'hover:bg-gray-100';
+  const dropdownSelectedBg = modoOscuro ? 'bg-[#39A900]/20 text-[#39A900]' : 'bg-[#39A900]/10 text-[#39A900]';
+  const labelColor = modoOscuro ? 'text-gray-200' : 'text-gray-700';
+  const selectBg = modoOscuro ? 'bg-gray-800 text-white' : 'bg-white text-gray-800';
 
   const entidadSeleccionada = entidades.find(e => e.id === convocatoria.idEntidad);
   const lineaSeleccionada = lineas.find(l => l.id === convocatoria.idLinea);
@@ -74,10 +87,9 @@ export default function ModalConvocatoriaHistorial({
     }
   };
 
-
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden transform transition-all duration-300 scale-95 hover:scale-100 max-h-[90vh] flex flex-col">
+      <div className={`${modalBg} rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden transform transition-all duration-300 scale-95 hover:scale-100 max-h-[90vh] flex flex-col`}>
         {/* Header */}
         <div className="bg-gradient-to-r from-[#39A900] to-[#2d8500] p-6 flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -103,12 +115,12 @@ export default function ModalConvocatoriaHistorial({
             <div className="space-y-6">
               {/* Nombre */}
               <div className="space-y-2">
-                <label className="block text-lg font-medium text-gray-700">Nombre*</label>
+                <label className={`block text-lg font-medium ${labelColor}`}>Nombre*</label>
                 <div className="relative">
                   <FileText className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" size={20} />
                   <input
                     type="text"
-                    className="w-full border border-gray-300 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md  text-gray-800"
+                    className={`w-full border rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
                     value={convocatoria.nombre}
                     onChange={(e) => onChange('nombre', e.target.value)}
                     placeholder="Nombre de la convocatoria"
@@ -118,11 +130,11 @@ export default function ModalConvocatoriaHistorial({
 
               {/* Descripción */}
               <div className="space-y-2">
-                <label className="block text-lg font-medium text-gray-700">Descripción*</label>
+                <label className={`block text-lg font-medium ${labelColor}`}>Descripción*</label>
                 <div className="relative">
                   <FileText className="absolute left-3 top-4 text-[#39A900]" size={20} />
                   <textarea
-                    className="w-full border border-gray-300 rounded-xl pl-12 pr-4 py-3 h-40 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md  text-gray-800"
+                    className={`w-full border rounded-xl pl-12 pr-4 py-3 h-40 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
                     value={convocatoria.descripcion}
                     onChange={(e) => onChange('descripcion', e.target.value)}
                     placeholder="Descripción detallada"
@@ -132,12 +144,12 @@ export default function ModalConvocatoriaHistorial({
 
               {/* Recursos */}
               <div className="space-y-2">
-                <label className="block text-lg font-medium text-gray-700">Recursos</label>
+                <label className={`block text-lg font-medium ${labelColor}`}>Recursos</label>
                 <div className="relative">
                   <Bookmark className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" size={20} />
                   <input
                     type="text"
-                    className="w-full border border-gray-300 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md  text-gray-800"
+                    className={`w-full border rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
                     value={convocatoria.recursos}
                     onChange={(e) => onChange('recursos', e.target.value)}
                     placeholder="Recursos disponibles"
@@ -147,12 +159,12 @@ export default function ModalConvocatoriaHistorial({
 
               {/* Link Convocatoria */}
               <div className="space-y-2">
-                <label className="block text-lg font-medium text-gray-700">Enlace Convocatoria</label>
+                <label className={`block text-lg font-medium ${labelColor}`}>Enlace Convocatoria</label>
                 <div className="relative">
                   <Link className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" size={20} />
                   <input
                     type="url"
-                    className="w-full border border-gray-300 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md  text-gray-800"
+                    className={`w-full border rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
                     value={convocatoria.linkConvocatoria}
                     onChange={(e) => onChange('linkConvocatoria', e.target.value)}
                     placeholder="https://ejemplo.com/convocatoria"
@@ -166,12 +178,12 @@ export default function ModalConvocatoriaHistorial({
               {/* Fechas */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="block text-lg font-medium text-gray-700">Fecha Apertura</label>
+                  <label className={`block text-lg font-medium ${labelColor}`}>Fecha Apertura</label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" size={20} />
                     <input
                       type="datetime-local"
-                      className="w-full border border-gray-300 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md  text-gray-800"
+                      className={`w-full border rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
                       value={convocatoria.fechaApertura}
                       onChange={(e) => onChange('fechaApertura', e.target.value)}
                     />
@@ -179,12 +191,12 @@ export default function ModalConvocatoriaHistorial({
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-lg font-medium text-gray-700">Fecha Cierre</label>
+                  <label className={`block text-lg font-medium ${labelColor}`}>Fecha Cierre</label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" size={20} />
                     <input
                       type="datetime-local"
-                      className="w-full border border-gray-300 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md  text-gray-800"
+                      className={`w-full border rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
                       value={convocatoria.fechaCierre}
                       onChange={(e) => onChange('fechaCierre', e.target.value)}
                     />
@@ -196,9 +208,9 @@ export default function ModalConvocatoriaHistorial({
               <div className="space-y-4">
                 {/* Entidad */}
                 <div className="space-y-2 relative">
-                  <label className="block text-lg font-medium text-gray-700">Entidad</label>
+                  <label className={`block text-lg font-medium ${labelColor}`}>Entidad</label>
                   <div 
-                    className="w-full border border-gray-300 rounded-xl px-4 py-3 pl-12 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md flex justify-between items-center cursor-pointer  text-gray-800"
+                    className={`w-full border rounded-xl px-4 py-3 pl-12 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md flex justify-between items-center cursor-pointer ${dropdownBg}`}
                     onClick={() => setMostrarEntidades(!mostrarEntidades)}
                   >
                     <div className="flex items-center">
@@ -209,11 +221,11 @@ export default function ModalConvocatoriaHistorial({
                   </div>
                   
                   {mostrarEntidades && (
-                    <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-xl shadow-lg max-h-60 overflow-auto">
+                    <div className={`absolute z-10 mt-1 w-full border rounded-xl shadow-lg max-h-60 overflow-auto ${dropdownBg}`}>
                       {entidades.map(entidad => (
                         <div 
                           key={entidad.id}
-                          className={`px-4 py-3 pl-12 hover:bg-gray-100 cursor-pointer flex items-center ${convocatoria.idEntidad === entidad.id ? 'bg-[#39A900]/10 text-[#39A900]' : ''}`}
+                          className={`px-4 py-3 pl-12 cursor-pointer flex items-center ${dropdownItemBg} ${convocatoria.idEntidad === entidad.id ? dropdownSelectedBg : ''}`}
                           onClick={() => {
                             onChange('idEntidad', entidad.id);
                             setMostrarEntidades(false);
@@ -229,9 +241,9 @@ export default function ModalConvocatoriaHistorial({
 
                 {/* Línea */}
                 <div className="space-y-2 relative">
-                  <label className="block text-lg font-medium text-gray-700">Línea</label>
+                  <label className={`block text-lg font-medium ${labelColor}`}>Línea</label>
                   <div 
-                    className="w-full border border-gray-300 rounded-xl px-4 py-3 pl-12 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md flex justify-between items-center cursor-pointer  text-gray-800"
+                    className={`w-full border rounded-xl px-4 py-3 pl-12 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md flex justify-between items-center cursor-pointer ${dropdownBg}`}
                     onClick={() => setMostrarLineas(!mostrarLineas)}
                   >
                     <div className="flex items-center">
@@ -242,11 +254,11 @@ export default function ModalConvocatoriaHistorial({
                   </div>
                   
                   {mostrarLineas && (
-                    <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-xl shadow-lg max-h-60 overflow-auto">
+                    <div className={`absolute z-10 mt-1 w-full border rounded-xl shadow-lg max-h-60 overflow-auto ${dropdownBg}`}>
                       {lineas.map(linea => (
                         <div 
                           key={linea.id}
-                          className={`px-4 py-3 pl-12 hover:bg-gray-100 cursor-pointer flex items-center ${convocatoria.idLinea === linea.id ? 'bg-[#39A900]/10 text-[#39A900]' : ''}`}
+                          className={`px-4 py-3 pl-12 cursor-pointer flex items-center ${dropdownItemBg} ${convocatoria.idLinea === linea.id ? dropdownSelectedBg : ''}`}
                           onClick={() => {
                             onChange('idLinea', linea.id);
                             setMostrarLineas(false);
@@ -262,9 +274,9 @@ export default function ModalConvocatoriaHistorial({
 
                 {/* Público Objetivo */}
                 <div className="space-y-2 relative">
-                  <label className="block text-lg font-medium text-gray-700">Público Objetivo</label>
+                  <label className={`block text-lg font-medium ${labelColor}`}>Público Objetivo</label>
                   <div 
-                    className="w-full border border-gray-300 rounded-xl px-4 py-3 pl-12 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md flex justify-between items-center cursor-pointer  text-gray-800"
+                    className={`w-full border rounded-xl px-4 py-3 pl-12 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md flex justify-between items-center cursor-pointer ${dropdownBg}`}
                     onClick={() => setMostrarPublicos(!mostrarPublicos)}
                   >
                     <div className="flex items-center">
@@ -275,11 +287,11 @@ export default function ModalConvocatoriaHistorial({
                   </div>
                   
                   {mostrarPublicos && (
-                    <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-xl shadow-lg max-h-60 overflow-auto">
+                    <div className={`absolute z-10 mt-1 w-full border rounded-xl shadow-lg max-h-60 overflow-auto ${dropdownBg}`}>
                       {publicos.map(publico => (
                         <div 
                           key={publico.id}
-                          className={`px-4 py-3 pl-12 hover:bg-gray-100 cursor-pointer flex items-center ${convocatoria.idPublicoObjetivo === publico.id ? 'bg-[#39A900]/10 text-[#39A900]' : ''}`}
+                          className={`px-4 py-3 pl-12 cursor-pointer flex items-center ${dropdownItemBg} ${convocatoria.idPublicoObjetivo === publico.id ? dropdownSelectedBg : ''}`}
                           onClick={() => {
                             onChange('idPublicoObjetivo', publico.id);
                             setMostrarPublicos(false);
@@ -295,9 +307,9 @@ export default function ModalConvocatoriaHistorial({
 
                 {/* Interés */}
                 <div className="space-y-2 relative">
-                  <label className="block text-lg font-medium text-gray-700">Área de Interés</label>
+                  <label className={`block text-lg font-medium ${labelColor}`}>Área de Interés</label>
                   <div 
-                    className="w-full border border-gray-300 rounded-xl px-4 py-3 pl-12 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md flex justify-between items-center cursor-pointer  text-gray-800"
+                    className={`w-full border rounded-xl px-4 py-3 pl-12 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md flex justify-between items-center cursor-pointer ${dropdownBg}`}
                     onClick={() => setMostrarIntereses(!mostrarIntereses)}
                   >
                     <div className="flex items-center">
@@ -308,11 +320,11 @@ export default function ModalConvocatoriaHistorial({
                   </div>
                   
                   {mostrarIntereses && (
-                    <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-xl shadow-lg max-h-60 overflow-auto">
+                    <div className={`absolute z-10 mt-1 w-full border rounded-xl shadow-lg max-h-60 overflow-auto ${dropdownBg}`}>
                       {intereses.map(interes => (
                         <div 
                           key={interes.id}
-                          className={`px-4 py-3 pl-12 hover:bg-gray-100 cursor-pointer flex items-center ${convocatoria.idInteres === interes.id ? 'bg-[#39A900]/10 text-[#39A900]' : ''}`}
+                          className={`px-4 py-3 pl-12 cursor-pointer flex items-center ${dropdownItemBg} ${convocatoria.idInteres === interes.id ? dropdownSelectedBg : ''}`}
                           onClick={() => {
                             onChange('idInteres', interes.id);
                             setMostrarIntereses(false);
@@ -334,12 +346,12 @@ export default function ModalConvocatoriaHistorial({
             {/* Información de página */}
             <div className="space-y-6">
               <div className="space-y-2">
-                <label className="block text-lg font-medium text-gray-700">Nombre Página</label>
+                <label className={`block text-lg font-medium ${labelColor}`}>Nombre Página</label>
                 <div className="relative">
                   <FileInput className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" size={20} />
                   <input
                     type="text"
-                    className="w-full border border-gray-300 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md  text-gray-800"
+                    className={`w-full border rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
                     value={convocatoria.nombrePagina}
                     onChange={(e) => onChange('nombrePagina', e.target.value)}
                     placeholder="Nombre de la página"
@@ -348,12 +360,12 @@ export default function ModalConvocatoriaHistorial({
               </div>
 
               <div className="space-y-2">
-                <label className="block text-lg font-medium text-gray-700">URL Página</label>
+                <label className={`block text-lg font-medium ${labelColor}`}>URL Página</label>
                 <div className="relative">
                   <FileInput className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" size={20} />
                   <input
                     type="text"
-                    className="w-full border border-gray-300 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md  text-gray-800"
+                    className={`w-full border rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
                     value={convocatoria.pagina}
                     onChange={(e) => onChange('pagina', e.target.value)}
                     placeholder="URL de la página"
@@ -362,11 +374,11 @@ export default function ModalConvocatoriaHistorial({
               </div>
 
               <div className="space-y-2">
-                <label className="block text-lg font-medium text-gray-700">Objetivo</label>
+                <label className={`block text-lg font-medium ${labelColor}`}>Objetivo</label>
                 <div className="relative">
                   <Target className="absolute left-3 top-4 text-[#39A900]" size={20} />
                   <textarea
-                    className="w-full border border-gray-300 rounded-xl pl-12 pr-4 py-3 h-32 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md  text-gray-800"
+                    className={`w-full border rounded-xl pl-12 pr-4 py-3 h-32 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
                     value={convocatoria.objetivo}
                     onChange={(e) => onChange('objetivo', e.target.value)}
                     placeholder="Objetivo principal"
@@ -379,13 +391,13 @@ export default function ModalConvocatoriaHistorial({
             <div className="space-y-6">
               {/* Selector de Imagen */}
               <div className="space-y-2">
-                <label className="block text-lg font-medium text-gray-700">Imagen</label>
+                <label className={`block text-lg font-medium ${labelColor}`}>Imagen</label>
                 <div className="relative">
                   <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" size={20} />
                   <input
                     type="file"
                     accept="image/*"
-                    className="w-full border border-gray-300 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md  text-gray-800"
+                    className={`w-full border rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
                     onChange={handleImageChange}
                   />
                 </div>
@@ -399,7 +411,7 @@ export default function ModalConvocatoriaHistorial({
                       {mostrarPreviewImagen ? 'Ocultar previsualización' : 'Ver previsualización'}
                     </button>
                     {mostrarPreviewImagen && (
-                      <div className="mt-2 border rounded-xl p-2">
+                      <div className={`mt-2 border rounded-xl p-2 ${modoOscuro ? 'border-gray-600' : 'border-gray-300'}`}>
                         <img 
                           src={convocatoria.imagen} 
                           alt="Previsualización" 
@@ -413,9 +425,9 @@ export default function ModalConvocatoriaHistorial({
 
               {/* Estado */}
               <div className="space-y-2">
-                <label className="block text-lg font-medium text-gray-700">Estado</label>
+                <label className={`block text-lg font-medium ${labelColor}`}>Estado</label>
                 <select
-                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md  text-gray-800"
+                  className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${selectBg}`}
                   value={convocatoria.estado}
                   onChange={(e) => onChange('estado', e.target.value)}
                 >
@@ -427,11 +439,11 @@ export default function ModalConvocatoriaHistorial({
 
               {/* Observaciones */}
               <div className="space-y-2">
-                <label className="block text-lg font-medium text-gray-700">Observaciones</label>
+                <label className={`block text-lg font-medium ${labelColor}`}>Observaciones</label>
                 <div className="relative">
                   <FileText className="absolute left-3 top-4 text-[#39A900]" size={20} />
                   <textarea
-                    className="w-full border border-gray-300 rounded-xl pl-12 pr-4 py-3 h-32 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md  text-gray-800"
+                    className={`w-full border rounded-xl pl-12 pr-4 py-3 h-32 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
                     value={convocatoria.observaciones}
                     onChange={(e) => onChange('observaciones', e.target.value)}
                     placeholder="Observaciones adicionales"
@@ -443,16 +455,16 @@ export default function ModalConvocatoriaHistorial({
         </div>
 
         {/* Footer */}
-        <div className="bg-gray-50 px-8 py-6 flex justify-between items-center border-t border-gray-200">
+        <div className={`${footerBg} px-8 py-6 flex justify-between items-center border-t`}>
           <button
-            className="flex items-center gap-2 px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 transition-colors hover:shadow-md  text-gray-800"
+            className={`flex items-center gap-2 px-6 py-3 border rounded-xl transition-colors hover:shadow-md ${cancelBtn}`}
             onClick={onCerrar}
           >
             <X size={18} />
             <span>Cancelar</span>
           </button>
           <button
-            className="flex items-center gap-2 px-6 py-3 bg-[#39A900] text-white rounded-xl hover:bg-[#2d8500] transition-colors shadow-md hover:shadow-lg transform hover:scale-105 duration-200  text-gray-800"
+            className="flex items-center gap-2 px-6 py-3 bg-[#39A900] text-white rounded-xl hover:bg-[#2d8500] transition-colors shadow-md hover:shadow-lg transform hover:scale-105 duration-200"
             onClick={onGuardar}
           >
             <Check size={18} />

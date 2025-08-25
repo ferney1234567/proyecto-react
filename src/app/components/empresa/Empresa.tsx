@@ -5,7 +5,7 @@ import {
   Plus, Edit, Trash2, Briefcase, Building2, Hash, MapPin, Globe, Phone, Users, Factory,
   Clock, UserCheck, Scale, Mail, Smartphone, FileBadge
 } from 'lucide-react';
-import EmpresaModal from './EmpresaModal';
+import EmpresaModal from './crearEmpresa';
 import Swal from 'sweetalert2';
 
 interface EmpresaProps {
@@ -164,7 +164,7 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
 
   return (
     <>
-      <div className={`rounded-3xl shadow-2xl p-10 max-w-7xl mx-auto my-12  ${bgColor} ${textColor} ${borderColor}`}>
+      <div className={`rounded-3xl  p-10 max-w-9xl mx-auto my-12  ${bgColor} ${textColor} ${borderColor}`}>
         {/* Título principal */}
         <div className="text-center mb-10">
           <h2 className={`text-4xl font-extrabold mb-2 ${titleColor}`}>
@@ -283,16 +283,16 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
 
       {/* Modal para crear/editar empresa */}
        {/* Modal para crear/editar empresa */}
-    {mostrarModal && (
-      <EmpresaModal
-        mostrar={mostrarModal}
-        onClose={cerrarModal}
-        onSave={handleSave}
-        empresa={empresaActual}
-        onChange={handleChange}
-        modoOscuro={modoOscuro}
-      />
-      )}
+   {mostrarModal && (
+  <EmpresaModal
+    isOpen={mostrarModal}
+    onClose={cerrarModal}
+    onSave={handleSave}
+    empresa={empresaActual}
+    onChange={handleChange}
+    modoOscuro={modoOscuro}
+  />
+)}
     </>
   );
 }
