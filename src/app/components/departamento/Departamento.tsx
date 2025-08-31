@@ -5,6 +5,7 @@ import { FaMapMarkerAlt } from 'react-icons/fa';
 import { Edit, Trash2, Plus } from 'lucide-react';
 import ModalDepartamento from './crearDepartamento';
 import Swal from 'sweetalert2'; // 1. Importar SweetAlert2
+import EditarDepartamento from './editarDepartamento';
 
 interface DepartamentoProps {
   modoOscuro: boolean;
@@ -146,7 +147,9 @@ export default function Departamento({ modoOscuro }: DepartamentoProps) {
         {/* Cabecera */}
         <div className="text-center mb-10">
           <h2 className={`text-4xl font-extrabold mb-2 ${titleColor}`}>
+               <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600">
             Gestión de Departamentos
+            </span>
           </h2>
           <p className={`text-lg ${secondaryText}`}>
             Administra los departamentos disponibles
@@ -218,16 +221,24 @@ export default function Departamento({ modoOscuro }: DepartamentoProps) {
         </div>
       </div>
 
-      {/* Modal */}
-      <ModalDepartamento
-        mostrar={mostrarModal}
-        cerrar={cerrarModal}
-        nombre={nombreDepartamento}
-        setNombre={setNombreDepartamento}
-        onGuardar={handleGuardar}
-        editandoId={editandoId}
-        modoOscuro={modoOscuro}
-      />
+    {editandoId ? (
+  <EditarDepartamento
+    mostrar={mostrarModal}
+    cerrar={cerrarModal}
+    nombre={nombreDepartamento}
+    setNombre={setNombreDepartamento}
+    onGuardar={handleGuardar}
+    modoOscuro={modoOscuro}
+  />
+) : (
+  <ModalDepartamento
+            mostrar={mostrarModal}
+            cerrar={cerrarModal}
+            nombre={nombreDepartamento}
+            setNombre={setNombreDepartamento}
+            onGuardar={handleGuardar}
+            modoOscuro={modoOscuro} editandoId={null}  />
+)}
     </>
   );
 }

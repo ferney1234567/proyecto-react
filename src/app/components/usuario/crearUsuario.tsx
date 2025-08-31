@@ -51,7 +51,7 @@ export default function ModalUsuario({
                 </p>
               </div>
             </div>
-            <button 
+            <button
               className="text-white hover:text-red-200 transition-all duration-200 p-2 rounded-full hover:bg-red-500/20 border border-white/20"
               onClick={cerrarModal}
             >

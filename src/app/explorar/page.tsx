@@ -204,7 +204,7 @@ export default function HomePage() {
 </section>
 
    {vista === "Tarjeta" && (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-4 mb-8">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-0 mb-8">
     {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i, index) => (
       <div
         key={i}
@@ -294,7 +294,7 @@ export default function HomePage() {
 
 {/* Vista Lista MEJORADA y UNIFORME */}
 {vista === "Lista" && (
-  <div className="w-full p-4 sm:p-6 lg:p-8">
+  <div className="w-full p-4 sm:p-0 lg:p-0">
     <div className="flex flex-col gap-6">
       {[...Array(8)].map((_, index) => (
         <div
@@ -510,7 +510,7 @@ export default function HomePage() {
 {/* ---------------- Vista Mosaico MEJORADA Y RESPONSIVA ---------------- */}
 {vista === "Mosaico" && (
   <>
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 max-w-[1800px] mx-auto my-8 px-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 max-w-[2300px] mx-auto my-8 px-0">
       {[1, 2, 3, 4,5,6,7,8].map((i, index) => (
         <div
           key={i}

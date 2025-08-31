@@ -4,6 +4,7 @@ import { Edit, Trash2, Plus } from 'lucide-react';
 import { FaClipboardCheck } from 'react-icons/fa';
 import ModalChequeo from './crearChequeo';
 import Swal from 'sweetalert2';
+import ModalEditarChequeo from './editarCheckeo';
 
 interface ChequeosProps {
   modoOscuro: boolean;
@@ -42,6 +43,9 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
     setNuevoChequeo({ chequeo: 0, empresa: "", requisito: "" });
     setEditandoId(null);
   };
+const handleChangeChequeo = (field: keyof Chequeo, value: string | number) => {
+  setNuevoChequeo(prev => ({ ...prev, [field]: value }));
+};
 
   // FUNCIONES DE ALERTAS SWEETALERT2
   const showSuccess = (mensaje: string) => {
@@ -152,7 +156,9 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
       <div className={`rounded-3xl p-10 max-w-9xl mx-auto my-12 ${bgColor} ${textColor} ${borderColor}`}>
         <div className="text-center mb-10">
           <h2 className={`text-4xl font-extrabold mb-2 ${titleColor}`}>
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600">
             Gestión de Chequeos
+            </span>
           </h2>
           <p className={`text-lg ${secondaryText}`}>
             Administra los chequeos del sistema
@@ -251,15 +257,34 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
         </div>
       </div>
 
-      <ModalChequeo
-        abierto={mostrarModal}
-        editando={!!editandoId}
-        chequeo={nuevoChequeo}
-        onCerrar={cerrarModal}
-        onGuardar={handleSaveChequeo}
-        onChange={(field, value) => setNuevoChequeo(prev => ({ ...prev, [field]: value }))}
-        modoOscuro={modoOscuro}
-      />
+     {editandoId === null ? (
+  <ModalChequeo
+    abierto={mostrarModal}
+    editando={false}
+    chequeo={nuevoChequeo}
+    onCerrar={cerrarModal}
+    onGuardar={handleSaveChequeo}
+    onChange={(field, value) => setNuevoChequeo(prev => ({ ...prev, [field]: value }))}
+    modoOscuro={modoOscuro}
+  />
+) : (
+  <ModalEditarChequeo
+    abierto={mostrarModal}
+    editando={true}
+    chequeo={nuevoChequeo}
+    onCerrar={cerrarModal}
+    onGuardar={handleSaveChequeo}
+    onChange={handleChangeChequeo}
+    modoOscuro={modoOscuro}
+  />
+)}
+
     </>
   );
 }
+
+
+
+
+
+

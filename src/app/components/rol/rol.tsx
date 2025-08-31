@@ -1,8 +1,10 @@
+// Rol.tsx (Modificado)
 'use client';
 import { useState } from 'react';
 import { Plus, Edit, Trash2, User } from 'lucide-react';
 import Swal from 'sweetalert2';
 import ModalRol from './crearRol';
+import ModalEditarRol from './editarRol'; // 1. Importar el nuevo componente
 
 interface RolProps {
   modoOscuro: boolean;
@@ -19,8 +21,12 @@ export default function Rol({ modoOscuro }: RolProps) {
     { id: '2', name: 'Editor' },
   ]);
   const [roleSearchTerm, setRoleSearchTerm] = useState('');
-  const [mostrarModal, setMostrarModal] = useState(false);
+  const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
   const [nuevoRol, setNuevoRol] = useState('');
+
+  // 2. Nuevos estados para el modal de edición
+  const [mostrarModalEditar, setMostrarModalEditar] = useState(false);
+  const [rolParaEditar, setRolParaEditar] = useState<Role | null>(null);
 
   // === ALERTAS SWEETALERT2 ===
   const showSuccess = (mensaje: string) => {
@@ -45,10 +51,11 @@ export default function Rol({ modoOscuro }: RolProps) {
     });
   };
 
-  const handleAddRole = () => setMostrarModal(true);
+  // --- Lógica para CREAR rol ---
+  const handleAddRole = () => setMostrarModalCrear(true);
 
-  const cerrarModal = () => {
-    setMostrarModal(false);
+  const cerrarModalCrear = () => {
+    setMostrarModalCrear(false);
     setNuevoRol('');
   };
 
@@ -62,32 +69,37 @@ export default function Rol({ modoOscuro }: RolProps) {
       name: nuevoRol,
     };
     setRoles([...roles, nuevo]);
-    cerrarModal();
+    cerrarModalCrear();
     showSuccess('El rol fue agregado correctamente');
   };
 
+  // --- Lógica para EDITAR rol ---
+  // 3. Modificado para abrir el modal
   const handleEditRole = (id: string) => {
     const rol = roles.find(r => r.id === id);
-    if (!rol) return;
-
-    Swal.fire({
-      title: 'Editar rol',
-      input: 'text',
-      inputValue: rol.name,
-      showCancelButton: true,
-      confirmButtonText: 'Guardar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#39A900',
-      background: modoOscuro ? '#1a0526' : '#fff',
-      color: modoOscuro ? '#fff' : '#333',
-    }).then((result) => {
-      if (result.isConfirmed && result.value) {
-        setRoles(roles.map(r => r.id === id ? { ...r, name: result.value } : r));
-        showSuccess('El rol fue actualizado correctamente');
-      }
-    });
+    if (rol) {
+      setRolParaEditar(rol); // Guarda el rol que se va a editar
+      setMostrarModalEditar(true); // Abre el modal
+    }
+  };
+  
+  const cerrarModalEditar = () => {
+    setMostrarModalEditar(false);
+    setRolParaEditar(null);
   };
 
+  // 4. Nueva función para manejar la actualización desde el modal
+  const handleUpdateRole = (id: string, newName: string) => {
+    if (newName.trim() === '') {
+        showWarning('El nombre del rol no puede estar vacío.');
+        return;
+    }
+    setRoles(roles.map(r => (r.id === id ? { ...r, name: newName } : r)));
+    cerrarModalEditar();
+    showSuccess('El rol fue actualizado correctamente');
+  };
+
+  // --- Lógica para ELIMINAR rol ---
   const handleDeleteRole = (id: string) => {
     Swal.fire({
       title: '¿Eliminar este rol?',
@@ -112,7 +124,7 @@ export default function Rol({ modoOscuro }: RolProps) {
     role.name.toLowerCase().includes(roleSearchTerm.toLowerCase())
   );
 
-  // Estilos condicionales
+  // --- Estilos condicionales (sin cambios) ---
   const bgColor = modoOscuro ? 'bg-[#1a0526]' : 'bg-white';
   const textColor = modoOscuro ? 'text-white' : 'text-gray-900';
   const borderColor = modoOscuro ? 'border-white/20' : 'border-gray-200';
@@ -125,6 +137,7 @@ export default function Rol({ modoOscuro }: RolProps) {
   const iconBg = modoOscuro ? 'bg-[#39A900]/20' : 'bg-[#39A900]/10';
   const secondaryText = modoOscuro ? 'text-gray-300' : 'text-gray-600';
   const titleColor = modoOscuro ? 'text-white' : 'text-gray-800';
+
 return (
   <>
     {/* Contenedor principal */}
@@ -133,7 +146,9 @@ return (
       {/* Header */}
       <div className="text-center mb-10">
         <h2 className={`text-4xl font-extrabold mb-2 ${titleColor}`}>
+           <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600">
           Gestión de Roles
+          </span>
         </h2>
         <p className={`text-lg ${secondaryText}`}>
           Administra los roles del sistema
@@ -218,15 +233,25 @@ return (
       </div>
     </div>
 
-    {/* Modal */}
-    {mostrarModal && (
+    {/* Modal de Crear */}
+    {mostrarModalCrear && (
       <ModalRol
         nuevoRol={nuevoRol}
         setNuevoRol={setNuevoRol}
-        onClose={cerrarModal}
+        onClose={cerrarModalCrear}
         onSave={handleSaveRole}
         modoOscuro={modoOscuro}
       />
+    )}
+
+    {/* 5. Renderizado condicional del Modal de Editar */}
+    {mostrarModalEditar && (
+        <ModalEditarRol 
+            rol={rolParaEditar}
+            onClose={cerrarModalEditar}
+            onSave={handleUpdateRole}
+            modoOscuro={modoOscuro}
+        />
     )}
   </>
 );

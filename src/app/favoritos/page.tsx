@@ -5,6 +5,8 @@ import {
   FaCheckCircle, FaCalendarAlt, FaCalendarTimes, FaMobileAlt, FaGraduationCap,
   FaFileAlt, FaThLarge, FaList, FaStar, FaRegStar,FaRegFileAlt,FaTrashAlt
 } from 'react-icons/fa';
+import Swal from "sweetalert2";
+
 
 import { MdCalendarToday, MdPlace, MdCategory } from 'react-icons/md';
 
@@ -36,7 +38,21 @@ const imagenesEje =
   'img/fabricas.jpg',
   'img/R.jpg'
 ];
-    
+  
+
+const handleEliminar = (id: number) => {
+  // Aquí iría tu lógica para quitar de favoritos
+  Swal.fire({
+    toast: true,                  // tipo toast
+    position: "bottom-end",        // esquina inferior derecha
+    icon: "success",               // ícono de éxito
+    title: "Eliminada de favoritos con éxito ✅",
+    showConfirmButton: false,      // sin botón de confirmación
+    timer: 3000,                   // 3 segundos
+    timerProgressBar: true         // barra de progreso
+  });
+};
+
   
   return (
    <div className="min-h-[90vh] bg-white"> {/* Aumenta el alto mínimo */}
@@ -217,13 +233,14 @@ const imagenesEje =
         className="relative bg-white border border-gray-200 rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 flex flex-col"
       >
         {/* Botón eliminar */}
-        <button 
-          className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md hover:bg-red-100 transition-colors z-20"
-          onClick={() => console.log('Eliminar tarjeta')} // Aquí tu función de eliminar
-          title="Eliminar"
-        >
-          <FaTrashAlt className="text-red-500 text-lg" />
-        </button> 
+       <button 
+  className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md hover:bg-red-100 transition-colors z-20"
+  onClick={() => handleEliminar(index)} 
+  title="Eliminar"
+>
+  <FaTrashAlt className="text-red-500 text-lg" />
+</button>
+
 
         {/* Imagen */}
         <div className="overflow-hidden">
@@ -292,7 +309,7 @@ const imagenesEje =
 
 
 {vista === "lista" && (
-<div className="w-full p-4 sm:p-6 lg:p-8">
+<div className="w-full p-4 sm:p-6 lg:p-0">
     <div className="flex flex-col gap-6">
       {[...Array(8)].map((_, index) => (
         <div
@@ -302,7 +319,7 @@ const imagenesEje =
           {/* Botón eliminar */}
         <button 
           className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md hover:bg-red-100 transition-colors z-20"
-          onClick={() => console.log('Eliminar tarjeta')} // Aquí tu función de eliminar
+           onClick={() => handleEliminar(index)} 
           title="Eliminar"
         >
           <FaTrashAlt className="text-red-500 text-lg" />
@@ -366,21 +383,7 @@ className="w-full h-full object-cover object-[20%] cursor-pointer transition-tra
                 <FaCheckCircle /> Inscribirse
               </button>
 
-              <button
-                onClick={() => setDestacado(!destacado)}
-                className="group ml-auto p-2 rounded-md hover:bg-gray-100 transition-colors"
-                title="Marcar como favorita"
-              >
-                {destacado ? (
-                  <FaStar 
-                    className="text-yellow-400 text-2xl transition-all duration-300 transform group-hover:scale-125 group-hover:rotate-[360deg]" 
-                  />
-                ) : (
-                  <FaRegStar 
-                    className="text-gray-400 text-2xl transition-all duration-300 group-hover:text-yellow-400 group-hover:scale-125 group-hover:rotate-[360deg]"
-                  />
-                )}
-              </button>
+              
             </div>
           </div>
         </div>

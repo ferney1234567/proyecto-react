@@ -5,6 +5,7 @@ import { Edit, Trash2, Plus } from 'lucide-react';
 import { FaClipboardCheck } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 import RequisitosModal from './crearRequisitosSeleccion';
+import EditarRequisitoModal from './EditarRequisito';
 
 interface RequisitosSeleccionProps {
   modoOscuro: boolean;
@@ -141,7 +142,9 @@ return (
       {/* Cabecera */}
       <div className="text-center mb-10">
         <h2 className={`text-4xl font-extrabold mb-2 ${titleColor}`}>
+           <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600">
           Requisitos de Selección
+          </span>
         </h2>
         <p className={`text-lg ${secondaryText}`}>
           Administra los requisitos del sistema
@@ -187,15 +190,13 @@ return (
                 <div className="flex-1">
                   <h3 className={`text-xl font-semibold transition-colors ${
                     modoOscuro ? 'hover:text-[#39A900] text-white' : 'hover:text-[#39A900] text-gray-800'
-                  }`}>
+                  }`}>Nombre:  
                     {r.nombre}
                   </h3>
                   <p className={`text-md ${detailText} mt-2`}>
                     <span className="font-medium">Tipo:</span> {r.tipo}
                   </p>
-                  <p className={`text-md ${detailText} mt-1`}>
-                    <span className="font-medium">Requisito:</span> {r.requisito}
-                  </p>
+                 
                 </div>
               </div>
               <div className="flex gap-3 self-end sm:self-auto">
@@ -238,6 +239,15 @@ return (
       onGuardar={handleGuardar}
       modoOscuro={modoOscuro}
     />
+    {/* Modal de edición */}
+<EditarRequisitoModal
+  mostrar={mostrarModal && !!editandoId}
+  requisito={nuevoRequisito}
+  setRequisito={setNuevoRequisito}
+  onCerrar={cerrarModal}
+  onGuardar={handleGuardar}
+  modoOscuro={modoOscuro}
+/>
   </>
 );
 }

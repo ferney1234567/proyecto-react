@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import ConvocatoriaModal from "./crearConvocatoria";
 import Swal from 'sweetalert2';
+import EditarConvocatoriaModal from "./editarConvocatoria";
 
 interface ConvocatoriasProps {
   modoOscuro: boolean;
@@ -31,7 +32,6 @@ interface Convocatoria {
   usuario: string;
   imagen?: string;
 }
-
 
 export default function Convocatorias({ modoOscuro }: ConvocatoriasProps) {
   const [convocatorias, setConvocatorias] = useState<Convocatoria[]>([
@@ -119,15 +119,33 @@ export default function Convocatorias({ modoOscuro }: ConvocatoriasProps) {
     setMostrarModal(true);
   };
 
+  const [mostrarEditarModal, setMostrarEditarModal] = useState(false);
+  const [convocatoriaEditando, setConvocatoriaEditando] = useState<Convocatoria | null>(null);
+
   const handleEditConvocatoria = (id: string) => {
     const convToEdit = convocatorias.find((c) => c.id === id);
     if (convToEdit) {
-      setEditingId(id);
-      setNuevaConvocatoria(convToEdit);
-      setMostrarModal(true);
+      setConvocatoriaEditando(convToEdit);
+      setMostrarEditarModal(true);
     }
   };
 
+  const handleSaveEdicion = (convocatoriaActualizada: Convocatoria) => {
+    if (!convocatoriaActualizada.nombre || !convocatoriaActualizada.descripcion || !convocatoriaActualizada.entidad) {
+      showWarning('Los campos Nombre, Descripción y Entidad son obligatorios.');
+      return;
+    }
+
+    setConvocatorias(
+      convocatorias.map((c) =>
+        c.id === convocatoriaActualizada.id ? convocatoriaActualizada : c
+      )
+    );
+    showSuccess('Convocatoria actualizada correctamente.');
+    setMostrarEditarModal(false);
+    setConvocatoriaEditando(null);
+  };
+  
   const cerrarModal = () => {
     setMostrarModal(false);
     setEditingId(null);
@@ -207,7 +225,7 @@ export default function Convocatorias({ modoOscuro }: ConvocatoriasProps) {
   const bgColor = modoOscuro ? 'bg-[#1a0526]' : 'bg-white';
   const textColor = modoOscuro ? 'text-white' : 'text-gray-900';
   const borderColor = modoOscuro ? 'border-white/20' : 'border-gray-200';
-  const cardBg = modoOscuro ? 'bg-white/10' : 'bg-white';
+  const cardBg = modoOscuro ? 'bg-gray-800/50' : 'bg-white';
   const placeholderColor = modoOscuro ? 'placeholder-gray-400' : 'placeholder-gray-500';
   const searchBg = modoOscuro ? 'bg-white/10' : 'bg-white';
   const searchBorder = modoOscuro ? 'border-white/20' : 'border-gray-300';
@@ -222,48 +240,50 @@ export default function Convocatorias({ modoOscuro }: ConvocatoriasProps) {
   const linkColor = modoOscuro ? 'text-[#39A900] hover:text-[#2d8500]' : 'text-[#39A900] hover:text-[#2d8500]';
 
   return (
-  <div className={`rounded-3xl p-10 max-w-9xl mx-auto my-12 ${bgColor} ${textColor}`}>
-    {/* Background decoration - solo en modo claro */}
-    {!modoOscuro && (
-      <>
-        <div className="absolute -top-5 -left-5 w-40 h-40 bg-green-100 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
-        <div className="absolute -bottom-5 -right-5 w-40 h-40 bg-green-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
-      </>
-    )}
+    <div className={`min-h-screen rounded-3xl p-4 md:p-8 lg:p-10 max-w-9xl mx-auto my-4 md:my-8 ${bgColor} ${textColor}`}>
+      {/* Background decoration - solo en modo claro */}
+      {!modoOscuro && (
+        <>
+          <div className="absolute top-0 left-0 w-40 h-40 bg-green-100 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
+          <div className="absolute bottom-0 right-0 w-40 h-40 bg-green-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
+        </>
+      )}
 
       {/* Header */}
-      <div className="text-center mb-10">
-        <h2 className={`text-4xl font-extrabold mb-2 ${titleColor}`}>
-          Gestión de Convocatorias
+      <div className="text-center mb-6 md:mb-10">
+        <h2 className={`text-3xl md:text-4xl font-extrabold mb-2 ${titleColor}`}>
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600">
+            Gestión de Convocatorias
+          </span>
         </h2>
-        <p className={`text-lg ${secondaryText}`}>
+        <p className={`text-base md:text-lg ${secondaryText}`}>
           Administra las convocatorias publicadas
         </p>
       </div>
 
       {/* Search + button */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6 md:mb-10">
         <input
           type="text"
           placeholder="Buscar convocatorias..."
-          className={`border rounded-2xl px-5 py-3 text-lg focus:outline-none focus:ring-2 w-full sm:w-96 transition-all duration-300 hover:shadow-md ${searchBg} ${textColor} ${searchBorder} ${searchFocus} ${placeholderColor}`}
+          className={`border rounded-2xl px-4 py-2 md:px-5 md:py-3 text-base md:text-lg focus:outline-none focus:ring-2 w-full sm:w-80 lg:w-96 transition-all duration-300 hover:shadow-md ${searchBg} ${textColor} ${searchBorder} ${searchFocus} ${placeholderColor}`}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
         <button
           onClick={handleAddConvocatoria}
-          className="flex items-center gap-2 px-6 py-3 bg-[#39A900] text-white text-lg font-medium rounded-2xl hover:bg-[#2d8500] transition-all shadow-md hover:shadow-xl transform hover:scale-105 duration-300 w-full sm:w-auto justify-center"
+          className="flex items-center gap-2 px-4 py-2 md:px-6 md:py-3 bg-[#39A900] text-white text-base md:text-lg font-medium rounded-2xl hover:bg-[#2d8500] transition-all shadow-md hover:shadow-xl transform hover:scale-105 duration-300 w-full sm:w-auto justify-center"
         >
-          <Plus size={20} />
+          <Plus size={18} className="md:size-5" />
           Crear Convocatoria
         </button>
       </div>
 
       {/* Convocatorias list */}
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         {filteredConvocatorias.length === 0 ? (
-          <div className={`text-center py-20 rounded-2xl border ${emptyStateBg} ${emptyStateBorder}`}>
-            <p className={`${secondaryText} text-lg`}>
+          <div className={`text-center py-12 md:py-20 rounded-2xl border ${emptyStateBg} ${emptyStateBorder}`}>
+            <p className={`${secondaryText} text-base md:text-lg`}>
               {searchTerm 
                 ? `No se encontraron convocatorias que coincidan con "${searchTerm}"`
                 : 'Aún no hay convocatorias publicadas'}
@@ -273,11 +293,11 @@ export default function Convocatorias({ modoOscuro }: ConvocatoriasProps) {
           filteredConvocatorias.map((conv) => (
             <div 
               key={conv.id} 
-              className={`p-6 rounded-2xl border shadow-md hover:shadow-xl transition-all duration-300 flex flex-col sm:flex-row justify-between items-start gap-6 transform hover:-translate-y-1 ${cardBg} ${borderColor} ${modoOscuro ? 'hover:border-[#39A900]/50' : 'hover:border-[#39A900]'}`}
+              className={`p-4 md:p-6 rounded-2xl border shadow-md hover:shadow-xl transition-all duration-300 flex flex-col lg:flex-row justify-between items-start gap-4 md:gap-6 transform hover:-translate-y-1 ${cardBg} ${borderColor} ${modoOscuro ? 'hover:border-[#39A900]/50' : 'hover:border-[#39A900]'}`}
             >
               {/* Image */}
               {conv.imagen && (
-                <div className="w-full sm:w-48 h-48 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
+                <div className="w-full lg:w-56 h-48 md:h-56 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100 mx-auto lg:mx-0">
                   <img 
                     src={conv.imagen} 
                     alt={conv.nombre} 
@@ -287,48 +307,48 @@ export default function Convocatorias({ modoOscuro }: ConvocatoriasProps) {
               )}
 
               {/* Content */}
-              <div className="flex-1 space-y-4">
-                <h3 className={`text-2xl font-bold transition-colors cursor-pointer ${modoOscuro ? 'hover:text-[#39A900] text-white' : 'hover:text-[#39A900] text-gray-800'}`}>
+              <div className="flex-1 space-y-3 md:space-y-4 w-full">
+                <h3 className={`text-xl md:text-2xl font-bold transition-colors cursor-pointer ${modoOscuro ? 'hover:text-[#39A900] text-white' : 'hover:text-[#39A900] text-gray-800'}`}>
                   {conv.nombre}
                 </h3>
-                <p className={`text-md ${detailText}`}>{conv.descripcion}</p>
+                <p className={`text-sm md:text-base ${detailText}`}>{conv.descripcion}</p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pt-4 border-t ${borderLight}">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 md:gap-x-6 gap-y-3 md:gap-y-4 pt-3 md:pt-4 border-t ${borderLight}">
                   {/* Left column */}
-                  <div className="space-y-3">
-                    <p className="flex items-start gap-3 text-sm">
+                  <div className="space-y-2 md:space-y-3">
+                    <p className="flex items-start gap-2 md:gap-3 text-sm">
                       <Gem size={16} className={`${iconColor} mt-0.5 flex-shrink-0`} />
                       <span><span className={`font-semibold ${modoOscuro ? 'text-gray-300' : 'text-gray-800'}`}>Recursos:</span> {conv.recursos}</span>
                     </p>
-                    <p className="flex items-start gap-3 text-sm">
+                    <p className="flex items-start gap-2 md:gap-3 text-sm">
                       <Target size={16} className={`${iconColor} mt-0.5 flex-shrink-0`} />
                       <span><span className={`font-semibold ${modoOscuro ? 'text-gray-300' : 'text-gray-800'}`}>Objetivos:</span> {conv.objetivos}</span>
                     </p>
-                    <p className="flex items-start gap-3 text-sm">
+                    <p className="flex items-start gap-2 md:gap-3 text-sm">
                       <FileText size={16} className={`${iconColor} mt-0.5 flex-shrink-0`} />
                       <span><span className={`font-semibold ${modoOscuro ? 'text-gray-300' : 'text-gray-800'}`}>Observaciones:</span> {conv.observaciones}</span>
                     </p>
-                    <p className="flex items-center gap-3 text-sm">
+                    <p className="flex items-center gap-2 md:gap-3 text-sm">
                       <User size={16} className={`${iconColor} flex-shrink-0`} />
                       <span><span className={`font-semibold ${modoOscuro ? 'text-gray-300' : 'text-gray-800'}`}>Publicado por:</span> {conv.usuario}</span>
                     </p>
                   </div>
                   
                   {/* Right column */}
-                  <div className="space-y-3">
-                    <p className="flex items-center gap-3 text-sm">
+                  <div className="space-y-2 md:space-y-3">
+                    <p className="flex items-center gap-2 md:gap-3 text-sm">
                       <BookText size={16} className={`${iconColor} flex-shrink-0`} />
                       <span><span className={`font-semibold ${modoOscuro ? 'text-gray-300' : 'text-gray-800'}`}>Línea:</span> {conv.linea}</span>
                     </p>
-                    <p className="flex items-center gap-3 text-sm">
+                    <p className="flex items-center gap-2 md:gap-3 text-sm">
                       <Users size={16} className={`${iconColor} flex-shrink-0`} />
                       <span><span className={`font-semibold ${modoOscuro ? 'text-gray-300' : 'text-gray-800'}`}>Público Objetivo:</span> {conv.publicoObjetivo}</span>
                     </p>
-                    <p className="flex items-center gap-3 text-sm">
+                    <p className="flex items-center gap-2 md:gap-3 text-sm">
                       <Star size={16} className={`${iconColor} flex-shrink-0`} />
                       <span><span className={`font-semibold ${modoOscuro ? 'text-gray-300' : 'text-gray-800'}`}>Área de Interés:</span> {conv.interes}</span>
                     </p>
-                    <p className="flex items-center gap-3 text-sm">
+                    <p className="flex items-center gap-2 md:gap-3 text-sm">
                       <Building size={16} className={`${iconColor} flex-shrink-0`} />
                       <span><span className={`font-semibold ${modoOscuro ? 'text-gray-300' : 'text-gray-800'}`}>Entidad:</span> {conv.entidad}</span>
                     </p>
@@ -336,7 +356,7 @@ export default function Convocatorias({ modoOscuro }: ConvocatoriasProps) {
                 </div>
 
                 {/* Dates and Links */}
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-3 pt-4 border-t ${borderLight} text-sm">
+                <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-x-4 gap-y-2 pt-3 md:pt-4 border-t ${borderLight} text-sm">
                   <p className="flex items-center gap-2">
                     <Calendar size={16} className={iconColor} />
                     <span className={`font-semibold ${modoOscuro ? 'text-gray-300' : 'text-gray-800'}`}>Apertura:</span>
@@ -350,14 +370,14 @@ export default function Convocatorias({ modoOscuro }: ConvocatoriasProps) {
                   <p className="flex items-center gap-2">
                     <Globe size={16} className={iconColor} />
                     <span className={`font-semibold ${modoOscuro ? 'text-gray-300' : 'text-gray-800'}`}>Página Web:</span>
-                    <a href={conv.pagina} target="_blank" rel="noopener noreferrer" className={`${linkColor} hover:underline`}>
+                    <a href={conv.pagina} target="_blank" rel="noopener noreferrer" className={`${linkColor} hover:underline truncate max-w-32 md:max-w-48`}>
                       {conv.nombrePagina || 'Visitar sitio'}
                     </a>
                   </p>
                   <p className="flex items-center gap-2">
                     <LinkIcon size={16} className={iconColor} />
                     <span className={`font-semibold ${modoOscuro ? 'text-gray-300' : 'text-gray-800'}`}>Convocatoria:</span>
-                    <a href={conv.link} target="_blank" rel="noopener noreferrer" className={`${linkColor} hover:underline font-semibold`}>
+                    <a href={conv.link} target="_blank" rel="noopener noreferrer" className={`${linkColor} hover:underline font-semibold truncate max-w-32 md:max-w-48`}>
                       Ver enlace directo
                     </a>
                   </p>
@@ -365,20 +385,20 @@ export default function Convocatorias({ modoOscuro }: ConvocatoriasProps) {
               </div>
 
               {/* Action buttons */}
-              <div className="flex flex-col sm:flex-row lg:flex-col gap-3 self-end sm:self-center mt-4 sm:mt-0">
+              <div className="flex flex-row lg:flex-col gap-2 self-end lg:self-start mt-2 lg:mt-0">
                 <button
                   onClick={() => handleEditConvocatoria(conv.id)}
                   title="Editar convocatoria"
-                  className={`p-3 rounded-xl transition-all transform hover:scale-110 flex items-center justify-center h-12 w-12 ${modoOscuro ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
+                  className={`p-2 md:p-3 rounded-xl transition-all transform hover:scale-110 flex items-center justify-center h-10 w-10 md:h-12 md:w-12 ${modoOscuro ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
                 >
-                  <Edit size={20} className="flex-shrink-0" />
+                  <Edit size={18} className="md:size-5 flex-shrink-0" />
                 </button>
                 <button
                   onClick={() => handleDelete(conv.id)}
                   title="Eliminar convocatoria"
-                  className={`p-3 rounded-xl transition-all transform hover:scale-110 flex items-center justify-center h-12 w-12 ${modoOscuro ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50' : 'bg-red-50 text-red-600 hover:bg-red-100'}`}
+                  className={`p-2 md:p-3 rounded-xl transition-all transform hover:scale-110 flex items-center justify-center h-10 w-10 md:h-12 md:w-12 ${modoOscuro ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50' : 'bg-red-50 text-red-600 hover:bg-red-100'}`}
                 >
-                  <Trash2 size={20} className="flex-shrink-0" />
+                  <Trash2 size={18} className="md:size-5 flex-shrink-0" />
                 </button>
               </div>
             </div>
@@ -386,17 +406,27 @@ export default function Convocatorias({ modoOscuro }: ConvocatoriasProps) {
         )}
       </div>
 
-      {/* Modal */}
-     {mostrarModal && (
+      {/* Modal de creación */}
+      {mostrarModal && (
         <ConvocatoriaModal
           mostrarModal={mostrarModal}
           cerrarModal={cerrarModal}
           convocatoria={nuevaConvocatoria}
           handleInputChange={handleInputChange}
-         handleImageChange={handleImageChange}
-
+          handleImageChange={handleImageChange}
           handleSaveConvocatoria={handleSaveConvocatoria}
           editingId={editingId}
+          modoOscuro={modoOscuro}
+        />
+      )}
+
+      {/* Modal de edición */}
+      {mostrarEditarModal && convocatoriaEditando && (
+        <EditarConvocatoriaModal
+          mostrarModal={mostrarEditarModal}
+          cerrarModal={() => setMostrarEditarModal(false)}
+          convocatoria={convocatoriaEditando}
+          onSave={handleSaveEdicion}
           modoOscuro={modoOscuro}
         />
       )}

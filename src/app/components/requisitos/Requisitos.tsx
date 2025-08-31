@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Edit, Trash2, Plus } from 'lucide-react';
 import { AiOutlineUser } from 'react-icons/ai';
 import ModalRequisito from './crearRequisito';
+import ModalEditarRequisito from './editarRequisitos';
 import Swal from 'sweetalert2';
 
 interface RequisitosProps {
@@ -37,6 +38,7 @@ export default function Requisitos({ modoOscuro }: RequisitosProps) {
 
   const [buscar, setBuscar] = useState('');
   const [mostrarModal, setMostrarModal] = useState(false);
+  const [mostrarEditar, setMostrarEditar] = useState(false);
   const [nuevoRequisito, setNuevoRequisito] = useState<Requisito>({
     id: '',
     nombre: '',
@@ -44,6 +46,7 @@ export default function Requisitos({ modoOscuro }: RequisitosProps) {
     entidad: '',
     tipo: '',
   });
+  const [requisitoSeleccionado, setRequisitoSeleccionado] = useState<Requisito | null>(null);
 
   // === ALERTAS SWEETALERT2 ===
   const showSuccess = (mensaje: string) => {
@@ -91,7 +94,7 @@ export default function Requisitos({ modoOscuro }: RequisitosProps) {
     });
   };
 
-  // === MODAL ===
+  // === MODAL CREAR ===
   const abrirModal = () => {
     setNuevoRequisito({ id: '', nombre: '', observacion: '', entidad: '', tipo: '' });
     setMostrarModal(true);
@@ -123,10 +126,20 @@ export default function Requisitos({ modoOscuro }: RequisitosProps) {
   const editarRequisito = (id: string) => {
     const seleccionado = requisitos.find((r) => r.id === id);
     if (seleccionado) {
-      setNuevoRequisito(seleccionado);
-      setRequisitos(requisitos.filter((r) => r.id !== id));
-      setMostrarModal(true);
+      setRequisitoSeleccionado(seleccionado);
+      setMostrarEditar(true);
     }
+  };
+
+  const guardarCambiosRequisito = () => {
+    if (!requisitoSeleccionado) return;
+
+    setRequisitos((prev) =>
+      prev.map((r) => (r.id === requisitoSeleccionado.id ? requisitoSeleccionado : r))
+    );
+    setMostrarEditar(false);
+    setRequisitoSeleccionado(null);
+    showSuccess('El requisito fue actualizado correctamente');
   };
 
   // === FILTRO DE BÚSQUEDA ===
@@ -134,7 +147,7 @@ export default function Requisitos({ modoOscuro }: RequisitosProps) {
     r.nombre.toLowerCase().includes(buscar.toLowerCase())
   );
 
-  // Estilos condicionales basados en modoOscuro
+  // Estilos condicionales
   const bgColor = modoOscuro ? 'bg-[#1a0526]' : 'bg-white';
   const textColor = modoOscuro ? 'text-white' : 'text-gray-900';
   const borderColor = modoOscuro ? 'border-white/20' : 'border-gray-200';
@@ -151,24 +164,26 @@ export default function Requisitos({ modoOscuro }: RequisitosProps) {
 
   return (
     <div
-    className={`rounded-3xl p-10 max-w-9xl mx-auto my-12  
-      ${modoOscuro 
-        ? 'bg-[#1a0526] text-white' 
-        : 'bg-white-50 text-gray-900' // Blanco más suave
-      }`}
-  >
-    {/* Efectos de fondo decorativos */}
-    {!modoOscuro && (
-      <>
-        <div className="absolute -top-20 -left-20 w-64 h-64 bg-green-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-        <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-      </>
+      className={`rounded-3xl p-10 max-w-9xl mx-auto my-12  
+      ${modoOscuro
+          ? 'bg-[#1a0526] text-white'
+          : 'bg-white-50 text-gray-900' // Blanco más suave
+        }`}
+    >
+      {/* Efectos de fondo decorativos */}
+      {!modoOscuro && (
+        <>
+          <div className="absolute -top-20 -left-20 w-64 h-64 bg-green-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+          <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        </>
       )}
 
       {/* Cabecera */}
       <div className="text-center mb-10">
         <h2 className={`text-4xl font-extrabold mb-2 ${titleColor}`}>
-          Gestión de Requisitos
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600">
+            Gestión de Requisitos
+          </span>
         </h2>
         <p className={`text-lg ${secondaryText}`}>
           Administra los requisitos disponibles
@@ -205,9 +220,8 @@ export default function Requisitos({ modoOscuro }: RequisitosProps) {
           filtrados.map((req) => (
             <div
               key={req.id}
-              className={`p-6 rounded-2xl border shadow-md hover:shadow-xl transition-all duration-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5 transform hover:-translate-y-1 ${cardBg} ${borderColor} ${
-                modoOscuro ? 'hover:border-[#39A900]/50' : 'hover:border-[#39A900]'
-              }`}
+              className={`p-6 rounded-2xl border shadow-md hover:shadow-xl transition-all duration-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5 transform hover:-translate-y-1 ${cardBg} ${borderColor} ${modoOscuro ? 'hover:border-[#39A900]/50' : 'hover:border-[#39A900]'
+                }`}
             >
               <div className="flex items-start gap-4 w-full">
                 <div
@@ -216,20 +230,18 @@ export default function Requisitos({ modoOscuro }: RequisitosProps) {
                   <AiOutlineUser size={24} />
                 </div>
                 <div className="flex-1 space-y-3">
-                  <h3
-                    className={`text-xl font-semibold transition-colors ${
-                      modoOscuro
+                  <p
+                    className={`text-md ${modoOscuro
                         ? 'hover:text-[#39A900] text-white'
                         : 'hover:text-[#39A900] text-gray-800'
-                    }`}
+                      }`}
                   >
                     Nombre: {req.nombre}
-                  </h3>
+                  </p>
                   <p className={`text-md ${detailText}`}>
                     <span
-                      className={`font-medium ${
-                        modoOscuro ? 'text-gray-300' : 'text-gray-700'
-                      }`}
+                      className={`font-medium ${modoOscuro ? 'text-gray-300' : 'text-gray-700'
+                        }`}
                     >
                       Observaciones:
                     </span>{' '}
@@ -237,9 +249,8 @@ export default function Requisitos({ modoOscuro }: RequisitosProps) {
                   </p>
                   <p className={`text-md ${detailText}`}>
                     <span
-                      className={`font-medium ${
-                        modoOscuro ? 'text-gray-300' : 'text-gray-700'
-                      }`}
+                      className={`font-medium ${modoOscuro ? 'text-gray-300' : 'text-gray-700'
+                        }`}
                     >
                       Entidad:
                     </span>{' '}
@@ -247,9 +258,8 @@ export default function Requisitos({ modoOscuro }: RequisitosProps) {
                   </p>
                   <p className={`text-md ${detailText}`}>
                     <span
-                      className={`font-medium ${
-                        modoOscuro ? 'text-gray-300' : 'text-gray-700'
-                      }`}
+                      className={`font-medium ${modoOscuro ? 'text-gray-300' : 'text-gray-700'
+                        }`}
                     >
                       Requisito de Selección:
                     </span>{' '}
@@ -263,22 +273,20 @@ export default function Requisitos({ modoOscuro }: RequisitosProps) {
                 <button
                   onClick={() => editarRequisito(req.id)}
                   title="Editar requisito"
-                  className={`p-3 rounded-xl transition-all transform hover:scale-110 ${
-                    modoOscuro
+                  className={`p-3 rounded-xl transition-all transform hover:scale-110 ${modoOscuro
                       ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50'
                       : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-                  }`}
+                    }`}
                 >
                   <Edit size={20} />
                 </button>
                 <button
                   onClick={() => eliminarRequisito(req.id)}
                   title="Eliminar requisito"
-                  className={`p-3 rounded-xl transition-all transform hover:scale-110 ${
-                    modoOscuro
+                  className={`p-3 rounded-xl transition-all transform hover:scale-110 ${modoOscuro
                       ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50'
                       : 'bg-red-50 text-red-600 hover:bg-red-100'
-                  }`}
+                    }`}
                 >
                   <Trash2 size={20} />
                 </button>
@@ -289,15 +297,28 @@ export default function Requisitos({ modoOscuro }: RequisitosProps) {
       </div>
 
       {/* Modal */}
-      {mostrarModal && (
-        <ModalRequisito
-          requisito={nuevoRequisito}
-          setRequisito={setNuevoRequisito}
-          onClose={cerrarModal}
-          onSave={guardarRequisito}
-          modoOscuro={modoOscuro}
-        />
-      )}
+      <>
+        {mostrarModal && (
+          <ModalRequisito
+            requisito={nuevoRequisito}
+            setRequisito={setNuevoRequisito}
+            onClose={cerrarModal}
+            onSave={guardarRequisito}
+            modoOscuro={modoOscuro}
+          />
+        )}
+
+        {mostrarEditar && requisitoSeleccionado && (
+          <ModalEditarRequisito
+            visible={mostrarEditar}
+            onClose={() => setMostrarEditar(false)}
+            onSave={guardarCambiosRequisito}
+            requisito={requisitoSeleccionado}
+            setRequisito={setRequisitoSeleccionado}
+            modoOscuro={modoOscuro}
+          />
+        )}
+      </>
     </div>
   );
 }

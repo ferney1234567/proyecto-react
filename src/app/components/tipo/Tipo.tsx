@@ -4,6 +4,9 @@ import { Edit, Trash2, Plus } from 'lucide-react';
 import { FaClipboardCheck } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 import ModalTipo from './crearTipo';
+import ModalEditarTipo from './editarTipo';
+
+
 
 interface TipoProps {
   modoOscuro: boolean;
@@ -139,7 +142,9 @@ return (
       {/* Cabecera */}
       <div className="text-center mb-10">
         <h2 className={`text-4xl font-extrabold mb-2 ${titleColor}`}>
+           <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600">
           Gestión de Tipos
+          </span>
         </h2>
         <p className={`text-lg ${secondaryText}`}>
           Administra los tipos disponibles
@@ -232,15 +237,32 @@ return (
     </div>
 
     {/* Modal */}
-    <ModalTipo
-      abierto={mostrarModal}
-      editando={!!editandoId}
-      valor={nuevoTipo}
-      onCerrar={cerrarModal}
-      onGuardar={handleSaveTipo}
-      onCambio={setNuevoTipo}
-      modoOscuro={modoOscuro}
-    />
+   {/* Modal Crear/Editar unificado */}
+{!editandoId && (
+  <ModalTipo
+    abierto={mostrarModal}
+    editando={false}
+    valor={nuevoTipo}
+    onCerrar={cerrarModal}
+    onGuardar={handleSaveTipo}
+    onCambio={setNuevoTipo}
+    modoOscuro={modoOscuro}
+  />
+)}
+
+{editandoId && (
+  <ModalEditarTipo
+    abierto={true}
+    valor={nuevoTipo}
+    onCerrar={cerrarModal}
+    onGuardar={handleSaveTipo}
+    onCambio={setNuevoTipo}
+    modoOscuro={modoOscuro}
+    editando={true}
+  />
+)}
+
+
   </>
 );
 }

@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { Edit, Trash2, Plus } from 'lucide-react';
 import { FaCity } from 'react-icons/fa';
 import CiudadModal from './crearCiudad';
-import Swal from 'sweetalert2'; // 1. Importar SweetAlert2
+import EditarModal from './editarCuidad';
+import Swal from 'sweetalert2';
 
 interface CiudadProps {
   modoOscuro: boolean;
@@ -24,18 +25,12 @@ export default function Ciudad({ modoOscuro }: CiudadProps) {
   const [nombreDepartamento, setNombreDepartamento] = useState('');
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
-  const [mostrarModal, setMostrarModal] = useState(false);
 
-  const abrirModal = () => {
-    setNombreCiudad('');
-    setNombreDepartamento('');
-    setEditandoId(null);
-    setMostrarModal(true);
-  };
+  // estados separados para cada modal
+  const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
+  const [mostrarModalEditar, setMostrarModalEditar] = useState(false);
 
-  const cerrarModal = () => setMostrarModal(false);
-
-  // === FUNCIONES DE ALERTAS SWEETALERT2 ===
+  // === ALERTAS ===
   const showSuccess = (mensaje: string) => {
     Swal.fire({
       icon: 'success',
@@ -62,37 +57,44 @@ export default function Ciudad({ modoOscuro }: CiudadProps) {
     });
   };
 
-  // 2. Lógica de guardado con alertas
+  // === GUARDAR ===
   const handleGuardar = () => {
     if (!nombreCiudad || !nombreDepartamento) {
       showWarning('Debes ingresar el nombre de la ciudad y el departamento.');
       return;
     }
     if (editandoId) {
+      // actualizar
       setCiudades(ciudades.map(c =>
         c.id === editandoId
           ? { ...c, nombreCiudad, nombreDepartamento }
           : c
       ));
       showSuccess('Ciudad actualizada correctamente.');
+      setMostrarModalEditar(false);
     } else {
+      // crear
       setCiudades([...ciudades, { id: Date.now().toString(), nombreCiudad, nombreDepartamento }]);
       showSuccess('Ciudad agregada exitosamente.');
+      setMostrarModalCrear(false);
     }
-    cerrarModal();
+    setNombreCiudad('');
+    setNombreDepartamento('');
+    setEditandoId(null);
   };
 
+  // === EDITAR ===
   const handleEditar = (id: string) => {
     const ciudad = ciudades.find(c => c.id === id);
     if (ciudad) {
       setNombreCiudad(ciudad.nombreCiudad);
       setNombreDepartamento(ciudad.nombreDepartamento);
       setEditandoId(id);
-      setMostrarModal(true);
+      setMostrarModalEditar(true);
     }
   };
 
-  // 3. Lógica de eliminación con alerta de confirmación
+  // === ELIMINAR ===
   const handleEliminar = (id: string) => {
     Swal.fire({
       title: '¿Estás seguro de eliminar esta ciudad?',
@@ -118,7 +120,7 @@ export default function Ciudad({ modoOscuro }: CiudadProps) {
     c.nombreDepartamento.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  // Estilos condicionales
+  // === ESTILOS ===
   const bgColor = modoOscuro ? 'bg-[#1a0526]' : 'bg-white';
   const textColor = modoOscuro ? 'text-white' : 'text-gray-900';
   const borderColor = modoOscuro ? 'border-white/20' : 'border-gray-200';
@@ -126,7 +128,7 @@ export default function Ciudad({ modoOscuro }: CiudadProps) {
   const placeholderColor = modoOscuro ? 'placeholder-gray-400' : 'placeholder-gray-500';
   const searchBg = modoOscuro ? 'bg-white/10' : 'bg-white';
   const searchBorder = modoOscuro ? 'border-white/20' : 'border-gray-300';
-  const searchFocus = modoOscuro ? 'focus:ring-[#39A900] focus:border-[#39A900]' : 'focus:ring-[#39A900] focus:border-[#39A900]';
+  const searchFocus = 'focus:ring-[#39A900] focus:border-[#39A900]';
   const emptyStateBg = modoOscuro ? 'bg-gray-800/30' : 'bg-gray-50';
   const iconBg = modoOscuro ? 'bg-[#39A900]/20' : 'bg-[#39A900]/10';
   const secondaryText = modoOscuro ? 'text-gray-300' : 'text-gray-600';
@@ -136,10 +138,11 @@ export default function Ciudad({ modoOscuro }: CiudadProps) {
   return (
     <>
       <div className={`rounded-3xl  p-10 max-w-9xl mx-auto my-12  ${bgColor} ${textColor} ${borderColor}`}>
-        {/* ... (resto del JSX, no necesita cambios) ... */}
         <div className="text-center mb-10">
           <h2 className={`text-4xl font-extrabold mb-2 ${titleColor}`}>
+               <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600">
             Gestión de Ciudades
+            </span>
           </h2>
           <p className={`text-lg ${secondaryText}`}>
             Administra las ciudades y departamentos
@@ -155,7 +158,7 @@ export default function Ciudad({ modoOscuro }: CiudadProps) {
             onChange={(e) => setBusqueda(e.target.value)}
           />
           <button
-            onClick={abrirModal}
+            onClick={() => setMostrarModalCrear(true)}
             className="flex items-center gap-2 px-6 py-3 bg-[#39A900] text-white text-lg font-medium rounded-2xl hover:bg-[#2d8500] transition-all shadow-md hover:shadow-xl transform hover:scale-105 duration-300 w-full sm:w-auto justify-center"
           >
             <Plus size={20} />
@@ -209,9 +212,23 @@ export default function Ciudad({ modoOscuro }: CiudadProps) {
         </div>
       </div>
 
+      {/* Modal CREAR */}
       <CiudadModal
-        mostrar={mostrarModal}
-        onClose={cerrarModal}
+        mostrar={mostrarModalCrear}
+        onClose={() => setMostrarModalCrear(false)}
+        onSave={handleGuardar}
+        nombreCiudad={nombreCiudad}
+        setNombreCiudad={setNombreCiudad}
+        nombreDepartamento={nombreDepartamento}
+        setNombreDepartamento={setNombreDepartamento}
+        modoOscuro={modoOscuro}
+        editandoId={null}
+      />
+
+      {/* Modal EDITAR */}
+      <EditarModal
+        mostrar={mostrarModalEditar}
+        onClose={() => setMostrarModalEditar(false)}
         onSave={handleGuardar}
         editandoId={editandoId}
         nombreCiudad={nombreCiudad}

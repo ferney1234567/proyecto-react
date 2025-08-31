@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Edit, Trash2, Plus, Search } from 'lucide-react';
 import { FaLaptopCode, FaGraduationCap, FaLightbulb } from 'react-icons/fa';
 import ModalLinea from './crearLinea';
+import EditarLineaModal from './editarLinea'; // Importamos el nuevo modal
 import Swal from 'sweetalert2';
 
 interface LineaProps {
@@ -17,42 +18,42 @@ interface Linea {
 
 export default function Linea({ modoOscuro }: LineaProps) {
   const [lineas, setLineas] = useState<Linea[]>([
-    { id: '1', name: 'Tecnología', descripcion: 'Proyectos relacionados con tecnología e innovación' },
+
     { id: '2', name: 'Educación', descripcion: 'Iniciativas educativas y formativas' },
     { id: '3', name: 'Emprendimiento', descripcion: 'Ideas y apoyo empresarial' },
   ]);
 
   const [lineaSearchTerm, setLineaSearchTerm] = useState('');
   const [mostrarModal, setMostrarModal] = useState(false);
+  const [mostrarModalEditar, setMostrarModalEditar] = useState(false); // Nuevo estado para modal de edición
   const [nuevaLinea, setNuevaLinea] = useState('');
   const [nuevaDescripcion, setNuevaDescripcion] = useState('');
   const [editandoId, setEditandoId] = useState<string | null>(null);
 
-// === ALERTAS SWEETALERT2 ===
-const showSuccess = (mensaje: string) => {
-  Swal.fire({
-    icon: 'success',
-    title: '¡Éxito!',
-    text: mensaje,
-    confirmButtonText: 'Aceptar',
-    confirmButtonColor: '#39A900',
-    background: modoOscuro ? '#1a0526' : '#fff',
-    color: modoOscuro ? '#fff' : '#333'
-  });
-};
+  // === ALERTAS SWEETALERT2 ===
+  const showSuccess = (mensaje: string) => {
+    Swal.fire({
+      icon: 'success',
+      title: '¡Éxito!',
+      text: mensaje,
+      confirmButtonText: 'Aceptar',
+      confirmButtonColor: '#39A900',
+      background: modoOscuro ? '#1a0526' : '#fff',
+      color: modoOscuro ? '#fff' : '#333'
+    });
+  };
 
-const showWarning = (mensaje: string) => {
-  Swal.fire({
-    icon: 'warning',
-    title: 'Atención',
-    text: mensaje,
-    confirmButtonText: 'Aceptar',
-    confirmButtonColor: '#39A900',
-    background: modoOscuro ? '#1a0526' : '#fff',
-    color: modoOscuro ? '#fff' : '#333'
-  });
-};
-
+  const showWarning = (mensaje: string) => {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Atención',
+      text: mensaje,
+      confirmButtonText: 'Aceptar',
+      confirmButtonColor: '#39A900',
+      background: modoOscuro ? '#1a0526' : '#fff',
+      color: modoOscuro ? '#fff' : '#333'
+    });
+  };
 
   const handleAddLinea = () => {
     setEditandoId(null);
@@ -65,7 +66,7 @@ const showWarning = (mensaje: string) => {
     setEditandoId(linea.id);
     setNuevaLinea(linea.name);
     setNuevaDescripcion(linea.descripcion);
-    setMostrarModal(true);
+    setMostrarModalEditar(true); // Abrir modal de edición
   };
 
   const handleDeleteLinea = (id: string) => {
@@ -99,12 +100,13 @@ const showWarning = (mensaje: string) => {
         l.id === editandoId ? { ...l, name: nuevaLinea, descripcion: nuevaDescripcion } : l
       ));
       showSuccess('La línea fue actualizada correctamente');
+      setMostrarModalEditar(false); // Cerrar modal de edición
     } else {
       const nueva = { id: Date.now().toString(), name: nuevaLinea, descripcion: nuevaDescripcion };
       setLineas([...lineas, nueva]);
       showSuccess('La línea fue agregada correctamente');
+      setMostrarModal(false);
     }
-    setMostrarModal(false);
   };
 
   const filteredLineas = lineas.filter(linea =>
@@ -137,14 +139,13 @@ const showWarning = (mensaje: string) => {
   const buttonText = modoOscuro ? 'text-gray-200' : 'text-gray-700';
   const buttonHover = modoOscuro ? 'hover:bg-gray-600' : 'hover:bg-gray-300';
 
-
 return (
   <div
     className={`rounded-3xl p-10 max-w-9xl mx-auto my-12  
       ${modoOscuro 
         ? 'bg-[#1a0526] text-white' 
         : 'bg-white-50 text-gray-900'
-      } overflow-hidden`}  // Cambiado a overflow-hidden
+      }`}  // 👈 quitado overflow-hidden
   >
     {/* Efectos de fondo decorativos */}
     {!modoOscuro && (
@@ -155,7 +156,7 @@ return (
     )}
 
     {/* Cabecera */}
-    <div className="text-center mb-10 relative z-10 overflow-hidden">  {/* Añadido overflow-hidden */}
+    <div className="text-center mb-10 relative z-10">
       <h2 className={`text-4xl font-extrabold mb-2 ${modoOscuro ? 'text-white' : ''}`}>
         <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600">
           Gestión de Líneas
@@ -167,8 +168,8 @@ return (
     </div>
 
     {/* Buscador y botón */}
-    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10 relative z-10 overflow-hidden">  {/* Añadido overflow-hidden */}
-      <div className="relative w-full sm:w-96 overflow-hidden">  {/* Añadido overflow-hidden */}
+    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10 relative z-10">
+      <div className="relative w-full sm:w-96">
         <input
           type="text"
           placeholder="Buscar líneas por nombre o descripción..."
@@ -189,9 +190,9 @@ return (
     </div>
 
     {/* Lista de líneas */}
-    <div className="space-y-5 relative z-10 overflow-hidden">  {/* Añadido overflow-hidden */}
+    <div className="space-y-5 relative z-10">
       {filteredLineas.length === 0 ? (
-        <div className={`text-center py-16 rounded-2xl border border-dashed transition-colors duration-500 ${emptyStateBg} ${emptyStateBorder} overflow-hidden`}>  {/* Añadido overflow-hidden */}
+        <div className={`text-center py-16 rounded-2xl border border-dashed transition-colors duration-500 ${emptyStateBg} ${emptyStateBorder}`}>
           <div className={`mx-auto w-24 h-24 rounded-full flex items-center justify-center mb-4 ${modoOscuro ? 'bg-gray-700' : 'bg-gray-200'}`}>
             <FaLaptopCode className={`w-12 h-12 ${modoOscuro ? 'text-gray-500' : 'text-gray-400'}`} />
           </div>
@@ -212,7 +213,7 @@ return (
         filteredLineas.map((linea) => (
           <div
             key={linea.id}
-            className={`p-6 rounded-2xl border shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group ${cardBg} ${borderColor} ${modoOscuro ? 'hover:border-[#39A900]/50' : 'hover:border-[#39A900]/50'} overflow-hidden`} 
+            className={`p-6 rounded-2xl border shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group ${cardBg} ${borderColor} ${modoOscuro ? 'hover:border-[#39A900]/50' : 'hover:border-[#39A900]/50'}`} 
           >
             <div className="flex flex-col sm:flex-row gap-6">
               {/* Contenido principal */}
@@ -251,20 +252,30 @@ return (
           </div>
         ))
       )}
-    </div>
+      </div>
 
-    {/* Modal */}
-    <ModalLinea
-      mostrar={mostrarModal}
-      cerrar={() => setMostrarModal(false)}
-      nombre={nuevaLinea}
-      descripcion={nuevaDescripcion}
-      setNombre={setNuevaLinea}
-      setDescripcion={setNuevaDescripcion}
-      onGuardar={handleGuardar}
-      editandoId={editandoId}
-      modoOscuro={modoOscuro}
-    />
-  </div>
-);
+      {/* Modal para crear nueva línea */}
+      <ModalLinea
+        mostrar={mostrarModal}
+        cerrar={() => setMostrarModal(false)}
+        nombre={nuevaLinea}
+        descripcion={nuevaDescripcion}
+        setNombre={setNuevaLinea}
+        setDescripcion={setNuevaDescripcion}
+        onGuardar={handleGuardar}
+        modoOscuro={modoOscuro} editandoId={null}      />
+
+      {/* Modal para editar línea (nuevo componente) */}
+      <EditarLineaModal
+        mostrar={mostrarModalEditar}
+        cerrar={() => setMostrarModalEditar(false)}
+        nombre={nuevaLinea}
+        descripcion={nuevaDescripcion}
+        setNombre={setNuevaLinea}
+        setDescripcion={setNuevaDescripcion}
+        onGuardar={handleGuardar}
+        modoOscuro={modoOscuro}
+      />
+    </div>
+  );
 }

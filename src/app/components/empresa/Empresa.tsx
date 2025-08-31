@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { 
+import {
   Plus, Edit, Trash2, Briefcase, Building2, Hash, MapPin, Globe, Phone, Users, Factory,
   Clock, UserCheck, Scale, Mail, Smartphone, FileBadge
 } from 'lucide-react';
 import EmpresaModal from './crearEmpresa';
+import EditarEmpresa from './editarEmpresa';
 import Swal from 'sweetalert2';
 
 interface EmpresaProps {
@@ -71,7 +72,7 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
     e.nombre.toLowerCase().includes(buscar.toLowerCase()) ||
     e.nit.toLowerCase().includes(buscar.toLowerCase())
   );
-  
+
   const abrirModal = (empresa?: Empresa) => {
     if (empresa) {
       setEditandoId(empresa.id);
@@ -82,17 +83,17 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
     }
     setMostrarModal(true);
   };
-  
+
   const cerrarModal = () => {
     setEditandoId(null);
     setEmpresaActual(emptyEmpresa);
     setMostrarModal(false);
   };
-  
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setEmpresaActual({ ...empresaActual, [e.target.name]: e.target.value });
   };
-  
+
   const showSuccess = (mensaje: string) => {
     Swal.fire({
       icon: 'success', title: '¡Éxito!', text: mensaje,
@@ -126,7 +127,7 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
     }
     cerrarModal();
   };
-  
+
   const handleEliminar = (id: string) => {
     Swal.fire({
       title: '¿Estás seguro de eliminar esta empresa?',
@@ -168,7 +169,9 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
         {/* Título principal */}
         <div className="text-center mb-10">
           <h2 className={`text-4xl font-extrabold mb-2 ${titleColor}`}>
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600">
             Gestión de Empresas
+            </span>
           </h2>
           <p className={`text-lg ${secondaryText}`}>
             Administra la información de las empresas registradas
@@ -184,15 +187,15 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
             value={buscar}
             onChange={(e) => setBuscar(e.target.value)}
           />
-         <button
-      className="flex items-center gap-2 px-6 py-3 bg-[#39A900] text-white text-lg font-medium rounded-2xl 
+          <button
+            className="flex items-center gap-2 px-6 py-3 bg-[#39A900] text-white text-lg font-medium rounded-2xl 
                  hover:bg-[#2d8500] transition-all shadow-md hover:shadow-xl transform hover:scale-105 
                  duration-300 w-full sm:w-auto justify-center"
-      onClick={() => abrirModal()}
-    >
-      <Plus size={20} />
-      Agregar Empresa
-    </button>
+            onClick={() => abrirModal()}
+          >
+            <Plus size={20} />
+            Agregar Empresa
+          </button>
         </div>
 
         {/* Lista de empresas */}
@@ -234,12 +237,12 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
                   <div className={`pt-4 border-t ${borderColor}`}>
                     <h4 className={`font-semibold mb-3 text-sm tracking-wider uppercase ${secondaryText}`}>Detalles de la Empresa</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3 text-sm">
-                      <p className="flex items-center gap-3"><Hash size={16} className={iconColor}/> <span className={`font-semibold ${textColor}`}>NIT:</span> {empresa.nit}</p>
-                      <p className="flex items-center gap-3"><Factory size={16} className={iconColor}/> <span className={`font-semibold ${textColor}`}>Sector:</span> {empresa.sector}</p>
-                      <p className="flex items-center gap-3"><Users size={16} className={iconColor}/> <span className={`font-semibold ${textColor}`}>Empleados:</span> {empresa.empleados}</p>
-                      <p className="flex items-center gap-3"><MapPin size={16} className={iconColor}/> <span className={`font-semibold ${textColor}`}>Dirección:</span> {empresa.direccion}</p>
-                      <p className="flex items-center gap-3"><Building2 size={16} className={iconColor}/> <span className={`font-semibold ${textColor}`}>Ciudad:</span> {empresa.ciudad}</p>
-                      <p className="flex items-center gap-3"><Clock size={16} className={iconColor}/> <span className={`font-semibold ${textColor}`}>Antigüedad:</span> {empresa.tiempo}</p>
+                      <p className="flex items-center gap-3"><Hash size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>NIT:</span> {empresa.nit}</p>
+                      <p className="flex items-center gap-3"><Factory size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>Sector:</span> {empresa.sector}</p>
+                      <p className="flex items-center gap-3"><Users size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>Empleados:</span> {empresa.empleados}</p>
+                      <p className="flex items-center gap-3"><MapPin size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>Dirección:</span> {empresa.direccion}</p>
+                      <p className="flex items-center gap-3"><Building2 size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>Ciudad:</span> {empresa.ciudad}</p>
+                      <p className="flex items-center gap-3"><Clock size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>Antigüedad:</span> {empresa.tiempo}</p>
                     </div>
                   </div>
 
@@ -247,13 +250,13 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
                   <div className={`pt-4 border-t ${borderColor}`}>
                     <h4 className={`font-semibold mb-3 text-sm tracking-wider uppercase ${secondaryText}`}>Contacto y Representante Legal</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3 text-sm">
-                      <p className="flex items-center gap-3"><UserCheck size={16} className={iconColor}/> <span className={`font-semibold ${textColor}`}>Rep. Legal:</span> {empresa.nombreLegal} {empresa.apellidoLegal}</p>
-                      <p className="flex items-center gap-3"><Scale size={16} className={iconColor}/> <span className={`font-semibold ${textColor}`}>Cargo:</span> {empresa.cargoLegal}</p>
-                      <p className="flex items-center gap-3"><FileBadge size={16} className={iconColor}/> <span className={`font-semibold ${textColor}`}>Doc. Legal:</span> {empresa.documentoLegal}</p>
-                      <p className="flex items-center gap-3"><Mail size={16} className={iconColor}/> <span className={`font-semibold ${textColor}`}>Email:</span> {empresa.email}</p>
-                      <p className="flex items-center gap-3"><Smartphone size={16} className={iconColor}/> <span className={`font-semibold ${textColor}`}>Celular:</span> {empresa.celular}</p>
-                      <p className="flex items-center gap-3"><Phone size={16} className={iconColor}/> <span className={`font-semibold ${textColor}`}>Teléfono:</span> {empresa.telefonoFijo || empresa.telefono}</p>
-                      <p className="flex items-center gap-3 col-span-full"><Globe size={16} className={iconColor}/> <span className={`font-semibold ${textColor}`}>Página Web:</span> <a href={empresa.paginaWeb} target="_blank" rel="noopener noreferrer" className={`${linkColor} hover:underline`}>{empresa.paginaWeb}</a></p>
+                      <p className="flex items-center gap-3"><UserCheck size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>Rep. Legal:</span> {empresa.nombreLegal} {empresa.apellidoLegal}</p>
+                      <p className="flex items-center gap-3"><Scale size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>Cargo:</span> {empresa.cargoLegal}</p>
+                      <p className="flex items-center gap-3"><FileBadge size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>Doc. Legal:</span> {empresa.documentoLegal}</p>
+                      <p className="flex items-center gap-3"><Mail size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>Email:</span> {empresa.email}</p>
+                      <p className="flex items-center gap-3"><Smartphone size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>Celular:</span> {empresa.celular}</p>
+                      <p className="flex items-center gap-3"><Phone size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>Teléfono:</span> {empresa.telefonoFijo || empresa.telefono}</p>
+                      <p className="flex items-center gap-3 col-span-full"><Globe size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>Página Web:</span> <a href={empresa.paginaWeb} target="_blank" rel="noopener noreferrer" className={`${linkColor} hover:underline`}>{empresa.paginaWeb}</a></p>
                     </div>
                   </div>
                 </div>
@@ -281,9 +284,7 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
         </div>
       </div>
 
-      {/* Modal para crear/editar empresa */}
-       {/* Modal para crear/editar empresa */}
-   {mostrarModal && (
+     {mostrarModal && !editandoId && (
   <EmpresaModal
     isOpen={mostrarModal}
     onClose={cerrarModal}
@@ -293,6 +294,19 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
     modoOscuro={modoOscuro}
   />
 )}
+
+{mostrarModal && editandoId && (
+  <EditarEmpresa
+    isOpen={mostrarModal}
+    onClose={cerrarModal}
+    onSave={handleSave}
+    empresa={empresaActual}
+    onChange={handleChange}
+    modoOscuro={modoOscuro}
+  />
+)}
+
+
     </>
   );
 }

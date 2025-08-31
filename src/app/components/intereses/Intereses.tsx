@@ -3,7 +3,9 @@ import { useState } from 'react';
 import { Edit, Trash2, Plus } from 'lucide-react';
 import { FaBookOpen } from 'react-icons/fa';
 import ModalInteres from './crearInteres';
-import Swal from 'sweetalert2'; // 1. Importar SweetAlert2
+import EditarInteres from './editarIntereses';
+import Swal from 'sweetalert2';
+ // 1. Importar SweetAlert2
 
 interface InteresesProps {
   modoOscuro: boolean;
@@ -140,7 +142,9 @@ export default function Intereses({ modoOscuro }: InteresesProps) {
         {/* ... (resto del JSX, no necesita cambios) ... */}
         <div className="text-center mb-10">
           <h2 className={`text-4xl font-extrabold mb-2 ${titleColor}`}>
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600">
             Gestión de Intereses
+            </span>
           </h2>
           <p className={`text-lg ${secondaryText}`}>
             Administra los intereses disponibles
@@ -212,15 +216,24 @@ export default function Intereses({ modoOscuro }: InteresesProps) {
         </div>
       </div>
 
-      <ModalInteres
-        mostrar={mostrarModal}
-        modoEdicion={modoEdicion}
-        interes={interesActual}
-        onClose={cerrarModal}
-        onChange={(campo, valor) => setInteresActual(prev => ({ ...prev, [campo]: valor }))}
-        onGuardar={handleGuardar}
-        modoOscuro={modoOscuro}
-      />
+     {modoEdicion ? (
+  <EditarInteres
+          mostrar={mostrarModal}
+          interes={interesActual}
+          onClose={cerrarModal}
+          onChange={(campo, valor) => setInteresActual(prev => ({ ...prev, [campo]: valor }))}
+          onGuardar={handleGuardar}
+          modoOscuro={modoOscuro} modoEdicion={false}  />
+) : (
+  <ModalInteres
+            mostrar={mostrarModal}
+            interes={interesActual}
+            onClose={cerrarModal}
+            onChange={(campo, valor) => setInteresActual(prev => ({ ...prev, [campo]: valor }))}
+            onGuardar={handleGuardar}
+            modoOscuro={modoOscuro} modoEdicion={false}  />
+)}
+
     </>
   );
 }

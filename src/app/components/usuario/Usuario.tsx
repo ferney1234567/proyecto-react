@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { Edit, Trash2, Plus } from 'lucide-react';
 import { FaUserTag } from 'react-icons/fa';
 import ModalUsuario from './crearUsuario';
-import Swal from 'sweetalert2'; // 1. Importar SweetAlert2
+import EditarUsuario from './EditarUsuario';
+import Swal from 'sweetalert2';
 
 interface UsuarioProps {
   modoOscuro: boolean;
@@ -28,6 +29,7 @@ export default function Usuario({ modoOscuro }: UsuarioProps) {
   const [mostrarModal, setMostrarModal] = useState(false);
   const [nuevoUsuario, setNuevoUsuario] = useState<Usuario>({ id: '', nombre: '', correo: '', contraseña: '', telefono: '', estado: 'Activo' });
   const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [usuarioEditando, setUsuarioEditando] = useState<Usuario | null>(null);
 
   const usuariosFiltrados = usuarios.filter(
     (u) => u.nombre.toLowerCase().includes(busqueda.toLowerCase()) || u.correo.toLowerCase().includes(busqueda.toLowerCase())
@@ -36,6 +38,12 @@ export default function Usuario({ modoOscuro }: UsuarioProps) {
   const manejarCambio = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setNuevoUsuario({ ...nuevoUsuario, [e.target.name]: e.target.value });
   };
+
+  interface ModalUsuarioProps {
+  cerrarModal: () => void;   // en vez de onClose
+  guardarUsuario: (usuario: Usuario) => void; // en vez de onSave
+  
+}
 
   const abrirModal = () => {
     setMostrarModal(true);
@@ -76,10 +84,10 @@ export default function Usuario({ modoOscuro }: UsuarioProps) {
     });
   };
   
-  // 2. Lógica de guardado con alertas
+  // Lógica de guardado con alertas
   const guardarUsuario = () => {
     // Validación de campos
-    if (!nuevoUsuario.nombre || !nuevoUsuario.correo || !nuevoUsuario.contraseña || !nuevoUsuario.telefono) {
+    if (!nuevoUsuario.nombre || !nuevoUsuario.correo || (!nuevoUsuario.contraseña && !editandoId) || !nuevoUsuario.telefono) {
       showWarning('Por favor, completa todos los campos obligatorios.');
       return;
     }
@@ -96,16 +104,31 @@ export default function Usuario({ modoOscuro }: UsuarioProps) {
     cerrarModal();
   };
 
-  const editarUsuario = (id: string) => {
-    const usuario = usuarios.find((u) => u.id === id);
-    if (usuario) {
-      setNuevoUsuario(usuario);
-      setEditandoId(id);
-      setMostrarModal(true);
-    }
+// Lógica para abrir modal de edición
+const editarUsuario = (id: string) => {
+  const usuario = usuarios.find((u) => u.id === id);
+  if (usuario) {
+    setUsuarioEditando(usuario);
+    setEditandoId(id);
+    setMostrarModal(false); // aseguramos que no quede abierto el de creación
+  }
+};
+
+// Lógica para cerrar modal de edición
+const cerrarModalEdicion = () => {
+  setUsuarioEditando(null);
+  setEditandoId(null);
+};
+
+
+  // Lógica para guardar cambios desde el modal de edición
+  const guardarUsuarioEditado = (usuarioEditado: Usuario) => {
+    setUsuarios((prev) => prev.map((u) => (u.id === usuarioEditado.id ? usuarioEditado : u)));
+    showSuccess('Usuario actualizado correctamente.');
+    cerrarModalEdicion();
   };
   
-  // 3. Lógica de eliminación con alerta de confirmación
+  // Lógica de eliminación con alerta de confirmación
   const eliminarUsuario = (id: string) => {
     Swal.fire({
       title: '¿Estás seguro?',
@@ -147,10 +170,9 @@ export default function Usuario({ modoOscuro }: UsuarioProps) {
 
   return (
     <>
-      <div className={`rounded-3xl  p-10 max-w-9xl mx-auto my-12  ${bgColor} ${textColor} ${borderColor}`}>
-        {/* ... (resto del JSX que ya tenías, no necesita cambios) ... */}
-         {/* Cabecera con efecto gradiente */}
-         <div className="text-center mb-10 relative z-10">
+      <div className={`rounded-3xl p-10 max-w-9xl mx-auto my-12 ${bgColor} ${textColor} ${borderColor}`}>
+        {/* Cabecera con efecto gradiente */}
+        <div className="text-center mb-10 relative z-10">
           <h2 className={`text-4xl font-extrabold mb-2 ${modoOscuro ? 'text-white' : ''}`}>
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600">
               Gestión de Usuarios
@@ -275,17 +297,33 @@ export default function Usuario({ modoOscuro }: UsuarioProps) {
         </div>
       </div>
 
-      {/* Modal */}
-      {mostrarModal && (
-        <ModalUsuario
-          nuevoUsuario={nuevoUsuario}
-          editandoId={editandoId}
-          manejarCambio={manejarCambio}
-          cerrarModal={cerrarModal}
-          guardarUsuario={guardarUsuario}
-          modoOscuro={modoOscuro}
-        />
-      )}
+      {/* Modal para crear usuario */}
+    {/* Modal para crear usuario */}
+{mostrarModal && (
+  <ModalUsuario
+    nuevoUsuario={nuevoUsuario}
+    editandoId={editandoId}
+    manejarCambio={manejarCambio}
+    cerrarModal={cerrarModal}
+    guardarUsuario={guardarUsuario}
+    modoOscuro={modoOscuro}
+  />
+)}
+
+{/* Modal para editar usuario */}
+{/* Modal para editar usuario */}
+{usuarioEditando && (
+  <EditarUsuario
+    usuario={usuarioEditando}
+    onClose={cerrarModalEdicion}  // ✅ usar la función correcta
+    actualizarUsuario={guardarUsuarioEditado}
+    modoOscuro={modoOscuro}
+  />
+)}
+
+
+
     </>
   );
 }
+
