@@ -1,106 +1,32 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import {
-  User,Users,FileText,Building,UserCog,CheckSquare,Tag,Megaphone,Briefcase,Globe2,MapPin,
-  Landmark,Star,LogOut,Moon,Sun,Search,Settings,Bell,Activity,TrendingUp,
+  User, Users, FileText, Building, UserCog, CheckSquare, Tag, Megaphone, Briefcase, Globe2, MapPin,
+  Landmark, Star, Search, Bell, Activity, TrendingUp,
 } from "lucide-react";
 import { FaCheckCircle, FaClipboardList } from "react-icons/fa";
-import Particles from "react-tsparticles";
-import { loadFull } from "tsparticles";
-import type { Container, Engine } from "tsparticles-engine";
-import Linea from "../components/linea/linea";
-import PublicoObjetivo from "../components/publicoObjetivo/PublicoObjetivo";
-import Requisitos from "../components/requisitos/Requisitos";
-import EntidadInstitucion from "../components/entidadInstitucion/EntidadInstitucion";
-import Rol from "../components/rol/rol";
-import RequisitoSeleccion from "../components/requisitosSeleccion/RequisitoSeleccion";
-import Tipo from "../components/tipo/Tipo";
-import Convocatorias from "../components/convocatorias/convocatorias";
-import Empresa from "../components/empresa/Empresa";
-import Usuario from "../components/usuario/Usuario";
-import Ciudad from "../components/cuidad/Cuidad";
-import Departamento from "../components/departamento/Departamento";
-import Interes from "../components/intereses/Intereses";
-import Chequeo from "../components/checkeo/checkeo";
-import ConvocatoriaHistorial from "../components/convocatoriaHistorial/convocatoriaHistorial";
-import ProfileAvatar from "../components/modaluserAdmin/modalAdmin";
+import Linea from "../linea/linea";
+import PublicoObjetivo from "../publicoObjetivo/PublicoObjetivo";
+import Requisitos from "../requisitos/Requisitos";
+import EntidadInstitucion from "../entidadInstitucion/EntidadInstitucion";
+import Rol from "../rol/rol";
+import RequisitoSeleccion from "../requisitosSeleccion/RequisitoSeleccion";
+import Tipo from "../tipo/Tipo";
+import Convocatorias from "../convocatorias/convocatorias";
+import Empresa from "../empresa/Empresa";
+import Usuario from "../usuario/Usuario";
+import Ciudad from "../cuidad/Cuidad";
+import Departamento from "../departamento/Departamento";
+import Interes from "../intereses/Intereses";
+import Chequeo from "../checkeo/checkeo";
+import ConvocatoriaHistorial from "../convocatoriaHistorial/convocatoriaHistorial";
+import ProfileAvatar from "../modaluserAdmin/modalAdmin";
+import Header from "../../../components/layout/header";
+import Footer from "@/components/layout/footer";
 
-// Componente de partículas
-const ParticlesBackground = ({ modoOscuro }: { modoOscuro: boolean }) => {
-  const particlesInit = useCallback(async (engine: Engine) => {
-    await loadFull(engine);
-  }, []);
 
-  const particlesLoaded = useCallback(
-    async (container: Container | undefined) => {
-      // Puedes hacer algo con el contenedor de partículas si es necesario
-    },
-    []
-  );
 
-  return (
-  <Particles
-  id="tsparticles"
-  init={particlesInit}
-  loaded={particlesLoaded}
-  options={{
-    fullScreen: false,
-    background: {
-      color: { value: "transparent" },
-    },
-    fpsLimit: 120,
-    interactivity: {
-      events: {
-        onClick: { enable: false },   // desactivado para mantener ritmo
-        onHover: { enable: false },   // desactivado para mantener ritmo
-        resize: true,
-      },
-      modes: {
-        push: { quantity: 4 },
-        repulse: { distance: 100, duration: 0.4 },
-      },
-    },
-    particles: {
-      color: { value: modoOscuro ? "#39A900" : "#4F46E5" },
-      links: {
-        color: "#39FF14",
-        distance: 150,
-        enable: true,
-        opacity: 0.7,
-        width: 1.2,
-      },
-      collisions: { enable: true },
-      move: {
-        direction: "none",
-        enable: true,
-        outModes: { default: "bounce" },
-        random: false,
-        speed: 2,        // velocidad constante
-        straight: false,
-      },
-      number: {
-        density: { enable: true, area: 800 },
-        value: 80,
-      },
-      opacity: { value: 0.5 },
-      shape: { type: "circle" },
-      size: { value: { min: 1, max: 5 } },
-    },
-    detectRetina: true,
-  }}
-  style={{
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: "100%",
-    height: "100%",
-    zIndex: 0,
-  }}
-/>
-
-  );
-};
 const Modal = ({
   isOpen,
   onClose,
@@ -121,20 +47,18 @@ const Modal = ({
     >
       <div
         className={`rounded-xl w-full max-w-7xl p-6 relative shadow-lg max-h-[90vh] overflow-y-auto scrollbar-hide transition-colors duration-500 
-          ${
-            modoOscuro
-              ? "bg-[#1a0526] text-white border border-white/20"
-              : "bg-white text-gray-900 border border-gray-200"
+          ${modoOscuro
+            ? "bg-[#1a0526] text-white border border-white/20"
+            : "bg-white text-gray-900 border border-gray-200"
           }`}
         onClick={(e) => e.stopPropagation()} // 👉 evita que el click dentro cierre el modal
       >
         <button
           onClick={onClose}
-          className={`absolute top-4 right-4 text-2xl font-bold transition-colors ${
-            modoOscuro
-              ? "text-gray-300 hover:text-red-400"
-              : "text-gray-500 hover:text-red-500"
-          }`}
+          className={`absolute top-4 right-4 text-2xl font-bold transition-colors ${modoOscuro
+            ? "text-gray-300 hover:text-red-400"
+            : "text-gray-500 hover:text-red-500"
+            }`}
         >
           ×
         </button>
@@ -173,7 +97,7 @@ const ComponentesCards = () => {
     "from-fuchsia-500 to-fuchsia-600",
   ];
 
-const components = [
+  const components = [
     {
       id: "linea",
       icon: User,
@@ -299,7 +223,7 @@ const components = [
     color: colorPalette[index % colorPalette.length],
   }));
 
-  
+
 
   const handleCardClick = (id: string) => setActiveComponent(id);
   const handleCloseModal = () => setActiveComponent(null);
@@ -327,9 +251,7 @@ const components = [
       className={`min-h-screen transition-all duration-700 ${bgColor} ${textColor} relative overflow-hidden`}
     >
       {/* Fondo de partículas */}
-      <div className="fixed inset-0 z-0">
-        <ParticlesBackground modoOscuro={modoOscuro} />
-      </div>
+
 
       {/* Resto del contenido con z-index mayor */}
       <div className="relative z-10">
@@ -353,87 +275,15 @@ const components = [
         </Modal>
 
         {/* Header */}
-        <header
-          className={`${sectionBg} shadow-xl relative z-10 transition-all duration-500`}
-        >
-          <div className="max-w-7xl mx-auto px-6 py-6">
-            <div className="flex justify-between items-center">
-              {/* Logo and Title */}
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <div className="w-12 h-12 bg-gradient-to-r from-[#39A900] to-emerald-500 rounded-2xl flex items-center justify-center shadow-lg">
-                    <Settings className="text-white w-6 h-6" />
-                  </div>
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-orange-400 to-red-500 rounded-full animate-pulse"></div>
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-[#39A900] to-emerald-600 bg-clip-text text-transparent">
-                    Sistemas de Gestion de Convocatorias
-                  </h1>
-                </div>
-              </div>
-
-              {/* Search and Controls */}
-              <div className="flex items-center space-x-4">
-                {/* Search Bar */}
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Search className="h-5 w-5 text-gray-400 group-focus-within:text-[#39A900] transition-colors" />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Buscar módulos..."
-                    className={`pl-10 pr-4 py-2 rounded-lg border outline-none transition-all w-64 ${
-                      modoOscuro
-                        ? "bg-white/10 border-white/20 text-white focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900]"
-                        : "bg-white text-gray-800 focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900]"
-                    }`}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-<div className="relative group">
-      <button
-        onClick={() => setShowProfileModal(true)}
-        className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 group-hover:rotate-3 ${
-          modoOscuro
-            ? 'bg-gradient-to-r from-green-700 to-green-900'
-            : 'bg-gradient-to-r from-[#39A900] to-emerald-600'
-        }`}
-      >
-        A
-      </button>
-    </div>
-
-                {/* Dark Mode Toggle */}
-                <button
-                  onClick={toggleModoOscuro}
-                  className={`p-3 rounded-2xl transition-all duration-500 hover:scale-110 ${
-                    modoOscuro
-                      ? "bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400"
-                      : "bg-purple-500/20 hover:bg-purple-500/30 text-purple-600"
-                  }`}
-                  title="Cambiar modo"
-                >
-                  {modoOscuro ? (
-                    <Sun className="h-5 w-5" />
-                  ) : (
-                    <Moon className="h-5 w-5" />
-                  )}
-                </button>
-
-                {/* Logout Button */}
-                <button
-                  onClick={toggleLogoutModal}
-                  className="p-3 rounded-2xl bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-all duration-300 hover:scale-110"
-                  title="Cerrar sesión"
-                >
-                  <LogOut className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </header>
+        <Header
+          sectionBg={sectionBg}
+          modoOscuro={modoOscuro}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          toggleModoOscuro={toggleModoOscuro}
+          toggleLogoutModal={toggleLogoutModal}
+          setShowProfileModal={setShowProfileModal}
+        />
 
         {/* Main Content */}
         <main className="max-w-7xl mx-auto px-6 py-8 relative z-10">
@@ -489,9 +339,8 @@ const components = [
                       <div>
                         <p className="text-sm opacity-70 mb-1">{stat.label}</p>
                         <h3
-                          className={`text-3xl font-bold ${
-                            modoOscuro ? "text-white" : "text-gray-900"
-                          }`}
+                          className={`text-3xl font-bold ${modoOscuro ? "text-white" : "text-gray-900"
+                            }`}
                         >
                           {stat.value}
                         </h3>
@@ -505,11 +354,10 @@ const components = [
 
                     <div className="flex items-center justify-between pt-4 border-t border-gray-200/30 dark:border-white/10">
                       <div
-                        className={`flex items-center text-sm ${
-                          stat.changeType === "alert"
-                            ? "text-red-500"
-                            : "text-emerald-500"
-                        }`}
+                        className={`flex items-center text-sm ${stat.changeType === "alert"
+                          ? "text-red-500"
+                          : "text-emerald-500"
+                          }`}
                       >
                         <TrendingUp className="w-4 h-4 mr-1" />
                         <span className="font-medium">{stat.change}</span>
@@ -587,9 +435,8 @@ const components = [
                             <div className="flex items-center">
                               {/* Aquí mostramos la descripción dinámica con color según modo oscuro */}
                               <span
-                                className={`${
-                                  modoOscuro ? "text-white" : "text-gray-500"
-                                }`}
+                                className={`${modoOscuro ? "text-white" : "text-gray-500"
+                                  }`}
                               >
                                 {component.descripcion}
                               </span>
@@ -614,26 +461,16 @@ const components = [
                 <ProfileAvatar
                   isOpen={showProfileModal}
                   onClose={() => setShowProfileModal(false)}
-                modoOscuro={modoOscuro} 
+                  modoOscuro={modoOscuro}
                 />
               </div>
             )}
           </div>
         </main>
 
-        {/* Footer */}
-        <footer className={`${sectionBg} py-8 relative z-10`}>
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="text-center">
-              <p className="opacity-70 mb-2">
-                © {new Date().getFullYear()} Sistema de Administración
-              </p>
-              <p className="text-sm opacity-50">
-                Desarrollado con para una gestión eficiente
-              </p>
-            </div>
-          </div>
-        </footer>
+        <Footer sectionBg={sectionBg} />
+
+
       </div>
     </div>
   );

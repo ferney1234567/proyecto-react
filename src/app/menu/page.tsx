@@ -9,9 +9,9 @@ import {
 } from 'react-icons/fa';
 import { MdWorkspacePremium } from 'react-icons/md';
 import Link from "next/link";
-import Carousel from "../components/carrucel/Carousel";
-import ModalConvocatoria from '../components/detalleConvo/detalleConvo'; // Ajusta la ruta
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import Carousel from "../../components/carrucel/Carousel";
+import ModalConvocatoria from '../../components/detalleConvo/detalleConvo'; // Ajusta la ruta
+import { ChevronLeft, ChevronRight, Moon, Sun } from 'lucide-react';
 import Swal from "sweetalert2";
 
 export default function HomePage() {
@@ -20,7 +20,19 @@ export default function HomePage() {
   const [pestanaActiva, setPestanaActiva] = useState("descripcion");
   const [destacado, setDestacado] = useState(false);
 
-  
+const [modoOscuro, setModoOscuro] = useState(false);
+
+// Alternar entre claro y oscuro
+const toggleModoOscuro = () => {
+  setModoOscuro((prev) => {
+    const nuevo = !prev;
+    // Guardar en localStorage
+    if (typeof window !== "undefined") {
+      localStorage.setItem("modoOscuro", nuevo.toString());
+    }
+    return nuevo;
+  });
+};  
 
   useEffect(() => {
     const linea = document.getElementById('lineaGradiente');
@@ -126,58 +138,88 @@ const handleFavorito = () => {
     <div className="min-h-[90vh] bg-white"> {/* Aumenta el alto mínimo */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 border border-solid border-gray-200 rounded-lg shadow-sm bg-white">
         {/* HEADER */}
-        <header className="p-4 ">
-          <div className="flex justify-between items-start md:items-center flex-col md:flex-row">
-            {/* CONTENEDOR LOGO + BUSCADOR */}
-            <div className="flex flex-col gap-4 w-full">
+        <header className="p-4">
+  <div className="flex justify-between items-start md:items-center flex-col md:flex-row">
+    {/* CONTENEDOR LOGO + BUSCADOR */}
+    <div className="flex flex-col gap-6 w-full">
+      {/* Logo arriba del buscador */}
+      <div className="flex justify-start -mt-2">
+        <img
+          src="/img/sena.png"
+          alt="Logo Izquierdo"
+          className="h-18 w-auto object-contain"
+        />
+      </div>
 
-              {/* BUSCADOR - Parte inferior */}
-              <div className="relative w-full max-w-xl">
-                <input
-                  type="text"
-                  placeholder="Buscar convocatorias, programas, becas..."
-                  className="pl-12 pr-6 py-2 rounded-full border-2 border-gray-200 bg-white w-full focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 text-base"
-                />
-                <FaSearch className="absolute left-4 top-3.5 text-gray-500 text-xl" />
-              </div>
-            </div>
+      {/* BUSCADOR */}
+      <div className="relative w-full max-w-xl">
+        <input
+          type="text"
+          placeholder="Buscar convocatorias, programas, becas..."
+          className="pl-12 pr-6 py-2 rounded-full border-2 border-gray-200 bg-white w-full focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 text-base"
+        />
+        <FaSearch className="absolute left-4 top-3.5 text-gray-500 text-xl" />
+      </div>
+    </div>
 
-            {/* DERECHA: Cerrar sesión + BR + Navegación */}
-            <div className="flex flex-col items-end space-y-3 mt-4 md:mt-0">
-              <div className="flex items-center space-x-3">
-              </div>
+    {/* DERECHA: Perfil + Navegación */}
+    <div className="flex flex-col items-end space-y-3 mt-4 md:mt-0">
+      {/* Logo arriba del perfil */}
+      <div className="flex justify-end">
+        <img
+          src="/img/logo.png"
+          alt="Logo Derecho"
+          className="h-14 w-auto object-contain"
+        />
+      </div>
 
-              <nav className="flex items-center space-x-6 border-t pt-3">
-                <Link
-                  href="/menu"
-                  className="flex items-center space-x-1 text-[#39A900]  border-b-2 border-[#39A900] pb-1"
-                >
-                  <FaTags className="text-sm" />
-                  <span>Descubrir</span>
-                </Link>
-                <Link
-                  href="/explorar/"
-                  className="flex items-center space-x-1 hover:text-[#39A900] cursor-pointer transition"
-                >
-                  <FaSearchLocation className="text-sm" />
-                  <span>Explorar</span>
-                </Link>
-                <Link
-                  href="/favoritos"
-                  className="flex items-center space-x-1 hover:text-[#39A900] cursor-pointer transition"
-                >
-                  <FaRegBookmark className="text-sm" />
-                  <span>Favoritos</span>
-                </Link>
-                <Link href="/perfilUser">
-                  <div className="h-10 w-10 rounded-full bg-[#8f928f] flex items-center justify-center text-white font-bold shadow-md">
-                    f
-                  </div>
-                </Link>
-              </nav>
-            </div>
+      <nav className="flex items-center space-x-6 border-t pt-3">
+        <Link
+          href="/menu"
+          className="flex items-center space-x-1 text-[#39A900] border-b-2 border-[#39A900] pb-1"
+        >
+          <FaTags className="text-sm" />
+          <span>Descubrir</span>
+        </Link>
+        <Link
+          href="/public/explorar/"
+          className="flex items-center space-x-1 hover:text-[#39A900] cursor-pointer transition"
+        >
+          <FaSearchLocation className="text-sm" />
+          <span>Explorar</span>
+        </Link>
+        <Link
+          href="/usuario/favoritos"
+          className="flex items-center space-x-1 hover:text-[#39A900] cursor-pointer transition"
+        >
+          <FaRegBookmark className="text-sm" />
+          <span>Favoritos</span>
+        </Link>
+        <Link href="/perfilUser">
+          <div className="h-10 w-10 rounded-full bg-[#8f928f] flex items-center justify-center text-white font-bold shadow-md">
+            f
           </div>
-        </header>
+        </Link>
+      </nav>
+
+      {/* Botón modo oscuro */}
+      <div className="fixed top-6 right-6 z-50">
+        <button
+          onClick={toggleModoOscuro}
+          className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
+            modoOscuro
+              ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
+              : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
+          }`}
+          title="Cambiar modo"
+        >
+          {modoOscuro ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
 
         {/* MAIN */}
         <main className="p-4">

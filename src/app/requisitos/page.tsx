@@ -331,7 +331,7 @@ export default function GestionRequisitos() {
       {/* Botones */}
       <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
         <a
-          href="/perfilUser"
+          href="/usuario/perfilUser"
           className="flex items-center justify-center gap-2 text-gray-600 border border-gray-300 px-6 py-3 rounded-lg hover:bg-gray-100 transition-colors"
         >
           <FaTimes /> Cancelar

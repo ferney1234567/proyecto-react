@@ -1,7 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import {User,Lock,Mail,Check,X,Shield,Camera,KeyRound,Verified,Save,
-} from "lucide-react";
+import { User, Lock, Mail, Check, X, Shield, KeyRound, Save, } from "lucide-react";
 
 interface ProfileAvatarProps {
   isOpen: boolean;
@@ -13,7 +12,6 @@ const adminData = {
   nombreUsuario: "alex_admin",
   correo: "alex.doe@example.com",
   rol: "Super Administrador",
-  avatarUrl: "img/convo2.png",
 };
 
 export default function ProfileAvatar({
@@ -42,19 +40,13 @@ export default function ProfileAvatar({
 
   if (!isOpen) return null;
 
-  // 🎨 Estilos dinámicos mejorados
+  // 🎨 Estilos dinámicos
   const overlayBg = "bg-black/70";
-  const modalBg = modoOscuro 
-    ? "bg-gradient-to-br from-[#1a0526] to-[#2a083a] text-white" 
+  const modalBg = modoOscuro
+    ? "bg-gradient-to-br from-[#1a0526] to-[#2a083a] text-white"
     : "bg-gradient-to-br from-white to-gray-50 text-gray-900";
-    
-  const headerBg = modoOscuro 
-    ? "bg-gradient-to-r from-[#2a083a] to-[#1a0526]" 
-    : "bg-gradient-to-r from-gray-50 to-gray-100";
-    
-  const footerBg = modoOscuro 
-    ? "border-white/20" 
-    : "border-gray-200";
+
+  const footerBg = modoOscuro ? "border-white/20" : "border-gray-200";
 
   const badgeBg = modoOscuro
     ? "bg-[#39A900]/20 border border-[#39A900]/40 text-[#8eff5e]"
@@ -76,21 +68,25 @@ export default function ProfileAvatar({
 
   return (
     <div
-      className={`fixed inset-0 ${overlayBg} z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      className={`fixed inset-0 ${overlayBg} z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+      onClick={onClose} // 👉 Cierra al hacer clic fuera
     >
       <div
-        className={`${modalBg} rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden transform transition-all duration-300 ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
+        className={`${modalBg} rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden transform transition-all duration-300 ${isOpen ? "scale-100 opacity-100" : "scale-95 opacity-0"
+          }`}
+        onClick={(e) => e.stopPropagation()} // 👉 Evita que se cierre al hacer clic dentro
       >
         {/* Header */}
-        <div className={`p-6 flex justify-between items-center ${headerBg} border-b ${modoOscuro ? 'border-white/20' : 'border-gray-200'}`}>
-          <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-full ${modoOscuro ? 'bg-white/10' : 'bg-[#39A900]/10'}`}>
-              <User className={`text-xl ${modoOscuro ? 'text-[#8eff5e]' : 'text-[#39A900]'}`} />
-            </div>
-            <h2 className="text-2xl font-bold">Perfil de Usuario</h2>
-          </div>
+        <div className="p-6 bg-[#39A900] border-b border-white/20 relative flex justify-center">
+          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+            <User className="text-white" size={22} />
+            Perfil de Usuario
+          </h2>
+
+          {/* Botón X */}
           <button
-            className={`rounded-full p-2 transition-all ${modoOscuro ? 'hover:bg-white/10 text-white' : 'hover:bg-gray-200 text-gray-700'}`}
+            className="absolute right-4 top-4 rounded-full p-2 hover:bg-white/20 text-white transition-all"
             onClick={onClose}
           >
             <X size={20} />
@@ -101,15 +97,17 @@ export default function ProfileAvatar({
         <div className="p-8">
           {/* Avatar e info */}
           <div className="flex flex-col items-center mb-8">
-            <div 
+            <div
               className="relative group mb-4"
               onMouseEnter={() => setIsHoveringAvatar(true)}
               onMouseLeave={() => setIsHoveringAvatar(false)}
             >
-            
+
             </div>
 
-            <h3 className="text-xl font-bold mb-2">{adminData.nombreUsuario}</h3>
+            <h3 className="text-xl font-bold mb-2">
+              {adminData.nombreUsuario}
+            </h3>
             <div
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${badgeBg} shadow-sm`}
             >
@@ -124,7 +122,8 @@ export default function ProfileAvatar({
               {/* Nombre de Usuario */}
               <div className="space-y-2">
                 <label
-                  className={`block text-sm font-medium ${modoOscuro ? "text-gray-200" : "text-gray-700"}`}
+                  className={`block text-sm font-medium ${modoOscuro ? "text-gray-200" : "text-gray-700"
+                    }`}
                 >
                   Nombre de Usuario
                 </label>
@@ -144,7 +143,8 @@ export default function ProfileAvatar({
               {/* Correo */}
               <div className="space-y-2">
                 <label
-                  className={`block text-sm font-medium ${modoOscuro ? "text-gray-200" : "text-gray-700"}`}
+                  className={`block text-sm font-medium ${modoOscuro ? "text-gray-200" : "text-gray-700"
+                    }`}
                 >
                   Correo Electrónico
                 </label>
@@ -170,7 +170,8 @@ export default function ProfileAvatar({
               {/* Nueva contraseña */}
               <div className="space-y-2">
                 <label
-                  className={`block text-sm font-medium ${modoOscuro ? "text-gray-200" : "text-gray-700"}`}
+                  className={`block text-sm font-medium ${modoOscuro ? "text-gray-200" : "text-gray-700"
+                    }`}
                 >
                   Nueva Contraseña
                 </label>
@@ -190,7 +191,8 @@ export default function ProfileAvatar({
               {/* Confirmar contraseña */}
               <div className="space-y-2">
                 <label
-                  className={`block text-sm font-medium ${modoOscuro ? "text-gray-200" : "text-gray-700"}`}
+                  className={`block text-sm font-medium ${modoOscuro ? "text-gray-200" : "text-gray-700"
+                    }`}
                 >
                   Confirmar Contraseña
                 </label>
@@ -223,7 +225,7 @@ export default function ProfileAvatar({
               </button>
               <button
                 type="submit"
-                className={`flex items-center gap-2 px-6 py-3 rounded-xl text-white ${mainBtnBg} shadow-md transition-all transform hover:scale-[1.02]`}
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl text-white bg-[#39A900] shadow-md transition-all transform hover:scale-[1.02] hover:bg-[#2e8700]`}
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -238,6 +240,7 @@ export default function ProfileAvatar({
                   </>
                 )}
               </button>
+
             </div>
           </form>
         </div>
