@@ -8,11 +8,10 @@ import {
   FaTrashAlt
 } from 'react-icons/fa';
 import { getConvocatorias } from "../../api/convocatorias/routes";
-
-
 import Link from 'next/link';
 import ModalConvocatoria from '../../../components/detalleConvo/detalleConvo'; // Ajusta la ruta
 import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, MapPin, Moon, SlidersHorizontal, Sun, View } from 'lucide-react';
+
 const imagenesEje = [
   '/img/jove.jpg',
   '/img/maxresdefault.jpg',
@@ -26,31 +25,11 @@ const imagenesEje = [
 ];
 
 export default function HomePage() {
-
+  // 👉 Estado de paginación
   const [paginaActual, setPaginaActual] = useState(1);
+  const convocatoriasPorPagina = 12;
 
-  const [vista, setVista] = useState("Tarjeta");
-  const [modalAbierto, setModalAbierto] = useState(false);
-  const [pestanaActiva, setPestanaActiva] = useState("descripcion");
-  const [destacado, setDestacado] = useState(false);
-  const [modoOscuro, setModoOscuro] = useState(false);
-
-  const [convocatoriaSeleccionada, setConvocatoriaSeleccionada] = useState<Convocatoria | null>(null);
-
-
-  // Alternar entre claro y oscuro
-  const toggleModoOscuro = () => {
-    setModoOscuro((prev) => {
-      const nuevo = !prev;
-      // Guardar en localStorage
-      if (typeof window !== "undefined") {
-        localStorage.setItem("modoOscuro", nuevo.toString());
-      }
-      return nuevo;
-    });
-  };
-
-  
+  // 👉 Estado de convocatorias
   interface Convocatoria {
     id: number;
     title: string;
@@ -71,23 +50,53 @@ export default function HomePage() {
     clickCount: number;
     imageUrl?: string;
   }
-  
+
   const [convocatorias, setConvocatorias] = useState<Convocatoria[]>([]);
-  
+  const totalPaginas = Math.ceil(convocatorias.length / convocatoriasPorPagina);
+
+  // 👉 Calcular índice de inicio y fin según página actual
+  const indiceInicio = (paginaActual - 1) * convocatoriasPorPagina;
+  const indiceFin = indiceInicio + convocatoriasPorPagina;
+  const convocatoriasPagina = convocatorias.slice(indiceInicio, indiceFin);
+
+  // 👉 Otros estados
+  const [vista, setVista] = useState("Tarjeta");
+  const [modalAbierto, setModalAbierto] = useState(false);
+  const [pestanaActiva, setPestanaActiva] = useState("descripcion");
+  const [destacado, setDestacado] = useState(false);
+  const [modoOscuro, setModoOscuro] = useState(false);
+  const [convocatoriaSeleccionada, setConvocatoriaSeleccionada] = useState<Convocatoria | null>(null);
+
+  // 👉 Alternar entre claro y oscuro
+  const toggleModoOscuro = () => {
+    setModoOscuro((prev) => {
+      const nuevo = !prev;
+      if (typeof window !== "undefined") {
+        localStorage.setItem("modoOscuro", nuevo.toString());
+      }
+      return nuevo;
+    });
+  };
+
+  // 👉 Cargar convocatorias desde la API
   useEffect(() => {
     const fetchData = async () => {
       try {
         const data = await getConvocatorias();
-        setConvocatorias(data.data || []); // tu backend devuelve { data: [...] }
+        setConvocatorias(data.data || []);
       } catch (err) {
         console.error("Error al cargar convocatorias", err);
       }
     };
-  
+
     fetchData();
   }, []);
-  
-  
+
+
+
+
+
+
 
   return (
     <div className="min-h-[90vh] bg-white"> {/* Aumenta el alto mínimo */}
@@ -292,7 +301,7 @@ export default function HomePage() {
 
      {vista === "Tarjeta" && (
   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-0 mb-8">
-    {convocatorias.map((convocatoria, index) => (
+    {convocatoriasPagina.map((convocatoria, index) => (
       <div
         key={convocatoria.id || index}
         className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 flex flex-col"
@@ -348,7 +357,7 @@ export default function HomePage() {
           <div className="pt-4 mt-auto border-t border-gray-200 flex items-center gap-2">
             <button
               onClick={() => {
-                setConvocatoriaSeleccionada(convocatoria); // ✅ guardamos
+                setConvocatoriaSeleccionada(convocatoria);
                 setModalAbierto(true);
               }}
               className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm bg-[#00324D] text-white hover:bg-[#004267] transition-all duration-300 shadow-sm hover:shadow-md"
@@ -382,7 +391,7 @@ export default function HomePage() {
       <ModalConvocatoria
         modalAbierto={modalAbierto}
         cerrarModal={() => setModalAbierto(false)}
-        convocatoria={convocatoriaSeleccionada} // ✅ aquí se pasa la seleccionada
+        convocatoria={convocatoriaSeleccionada}
       />
     )}
   </div>
@@ -391,12 +400,11 @@ export default function HomePage() {
 
  
 
-
-   {/* Vista Lista MEJORADA y DINÁMICA */}
+{/* Vista Lista MEJORADA y DINÁMICA */}
 {vista === "Lista" && (
   <div className="w-full p-4 sm:p-0 lg:p-0">
     <div className="flex flex-col gap-6">
-      {convocatorias.map((convocatoria, index) => (
+      {convocatoriasPagina.map((convocatoria, index) => (
         <div
           key={convocatoria.id || index}
           className="relative flex flex-col md:flex-row bg-white rounded-lg border border-gray-200 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden"
@@ -501,7 +509,8 @@ export default function HomePage() {
 
 
 
-    {vista === "Tabla" && (
+
+   {vista === "Tabla" && (
   <div className="bg-white rounded-2xl shadow-lg mt-6 border border-gray-200 overflow-x-auto">
     <table className="w-full text-left border-collapse min-w-[1200px]">
       <thead className="sticky top-0 z-10 bg-[#00324D] text-white">
@@ -540,7 +549,7 @@ export default function HomePage() {
       </thead>
 
       <tbody className="text-sm text-gray-700">
-        {convocatorias.map((convocatoria, index) => (
+        {convocatoriasPagina.map((convocatoria, index) => (
           <tr
             key={convocatoria.id || index}
             className="hover:bg-gray-50 transition-colors duration-200"
@@ -637,12 +646,12 @@ export default function HomePage() {
 {vista === "Mosaico" && (
   <>
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 max-w-[2300px] mx-auto my-8 px-0">
-      {convocatorias.map((convocatoria, index) => (
+      {convocatoriasPagina.map((convocatoria, index) => (
         <div
           key={convocatoria.id || index}
           className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 transition-all duration-300 hover:shadow-xl flex flex-col h-full min-h-[320px]"
         >
-          {/* Imagen ancha pero no muy alta */}
+          {/* Imagen */}
           <div className="w-full h-[140px] sm:h-[160px] md:h-[180px] overflow-hidden">
             <img
               onClick={() => {
@@ -668,7 +677,7 @@ export default function HomePage() {
                 {convocatoria.description}
               </p>
 
-              {/* Fechas compactas en una sola línea */}
+              {/* Fechas compactas */}
               <div className="mt-3 flex items-center justify-between text-xs text-gray-600 bg-gray-50 p-2 rounded">
                 <span className="flex items-center gap-1">
                   <FaCalendarAlt className="text-[#00324D]" />
@@ -689,7 +698,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Botones en línea compactos */}
+            {/* Botones compactos */}
             <div className="mt-3 pt-3 border-t border-gray-200 flex items-center gap-2">
               <button
                 onClick={() => {
@@ -735,41 +744,40 @@ export default function HomePage() {
 
 
         {/*-------------------------------- Paginación Moderna con Efecto Glow -----------------------------------*/}
-        <div className="flex justify-center items-center gap-3 mt-4 flex-wrap">
-          {/* Botón Anterior */}
-          <button
-            className="flex items-center justify-center gap-2 px-4 py-2 font-semibold text-gray-700 bg-white border border-gray-200/80 rounded-xl shadow-sm transition-all duration-300 hover:bg-gray-50 hover:border-gray-300 hover:shadow-md hover:-translate-y-px disabled:opacity-50 disabled:shadow-none disabled:transform-none disabled:cursor-not-allowed"
-            disabled={paginaActual === 1}
-            onClick={() => setPaginaActual(paginaActual - 1)}
-          >
-            <ChevronLeft size={18} strokeWidth={2.5} />
-            Anterior
-          </button>
+      {/* ---------------- Paginación ---------------- */}
+            <div className="flex justify-center items-center gap-3 mt-4 flex-wrap">
+              {/* Botón Anterior */}
+              <button
+                className="flex items-center justify-center gap-2 px-4 py-2 font-semibold text-gray-700 bg-white border border-gray-200/80 rounded-xl shadow-sm transition-all hover:bg-gray-50 disabled:opacity-50"
+                disabled={paginaActual === 1}
+                onClick={() => setPaginaActual(paginaActual - 1)}
+              >
+                <ChevronLeft size={18} /> Anterior
+              </button>
 
-          {/* Números de página */}
-          {[1, 2, 3, 4].map((num) => (
-            <button
-              key={num}
-              className={`flex items-center justify-center w-11 h-11 font-bold rounded-xl transition-all duration-300
-      ${paginaActual === num
-                  ? "bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-lg shadow-emerald-500/40 scale-110 ring-2 ring-white/50"
-                  : "text-gray-700 bg-white border border-gray-200/80 shadow-sm hover:bg-gray-50 hover:shadow-md hover:-translate-y-px"}`}
-              onClick={() => setPaginaActual(num)}
-            >
-              {num}
-            </button>
-          ))}
+              {/* Números dinámicos */}
+              {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((num) => (
+                <button
+                  key={num}
+                  className={`flex items-center justify-center w-11 h-11 font-bold rounded-xl transition-all
+        ${paginaActual === num
+                      ? "bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-lg scale-110"
+                      : "text-gray-700 bg-white border border-gray-200/80 shadow-sm hover:bg-gray-50"}`}
+                  onClick={() => setPaginaActual(num)}
+                >
+                  {num}
+                </button>
+              ))}
 
-          {/* Botón Siguiente */}
-          <button
-            className="flex items-center justify-center gap-2 px-4 py-2 font-semibold text-gray-700 bg-white border border-gray-200/80 rounded-xl shadow-sm transition-all duration-300 hover:bg-gray-50 hover:border-gray-300 hover:shadow-md hover:-translate-y-px disabled:opacity-50 disabled:shadow-none disabled:transform-none disabled:cursor-not-allowed"
-            disabled={paginaActual === 4}
-            onClick={() => setPaginaActual(paginaActual + 1)}
-          >
-            Siguiente
-            <ChevronRight size={18} strokeWidth={2.5} />
-          </button>
-        </div>
+              {/* Botón Siguiente */}
+              <button
+                className="flex items-center justify-center gap-2 px-4 py-2 font-semibold text-gray-700 bg-white border border-gray-200/80 rounded-xl shadow-sm transition-all hover:bg-gray-50 disabled:opacity-50"
+                disabled={paginaActual === totalPaginas}
+                onClick={() => setPaginaActual(paginaActual + 1)}
+              >
+                Siguiente <ChevronRight size={18} />
+              </button>
+            </div>
 
 
 

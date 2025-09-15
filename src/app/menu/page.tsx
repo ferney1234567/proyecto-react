@@ -29,7 +29,7 @@ export default function HomePage() {
   const indiceInicio = (paginaActual - 1) * convocatoriasPorPagina;
   const indiceFin = indiceInicio + convocatoriasPorPagina;
   const convocatoriasPagina = convocatorias.slice(indiceInicio, indiceFin);
- 
+
   const [modalAbierto, setModalAbierto] = useState(false);
   const [pestanaActiva, setPestanaActiva] = useState("descripcion");
   const [destacado, setDestacado] = useState(false);
@@ -72,7 +72,7 @@ export default function HomePage() {
     imageUrl?: string;
   }
 
-  
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -260,8 +260,8 @@ export default function HomePage() {
                 <button
                   onClick={toggleModoOscuro}
                   className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
-                      ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
-                      : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
+                    ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
+                    : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
                     }`}
                   title="Cambiar modo"
                 >
@@ -321,96 +321,96 @@ export default function HomePage() {
 
 
             {/*--------------------- Tarjeta destacada desde API ----------------------- */}
-           {/*--------------------- Tarjeta destacada desde API ----------------------- */}
-{convocatoriasPagina.length > 0 && (
-  <div className="relative bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2 flex flex-col">
-    {/* Etiqueta destacada */}
-    <span className="absolute top-1 right-3 text-xs bg-yellow-400 text-black px-2 py-1 rounded-full font-bold z-10 flex items-center gap-1 shadow-md">
-      <MdWorkspacePremium className="text-black text-sm -mt-0.5" />
-      Destacada
-    </span>
+            {/*--------------------- Tarjeta destacada desde API ----------------------- */}
+            {convocatoriasPagina.length > 0 && (
+              <div className="relative bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2 flex flex-col">
+                {/* Etiqueta destacada */}
+                <span className="absolute top-1 right-3 text-xs bg-yellow-400 text-black px-2 py-1 rounded-full font-bold z-10 flex items-center gap-1 shadow-md">
+                  <MdWorkspacePremium className="text-black text-sm -mt-0.5" />
+                  Destacada
+                </span>
 
-    <div className="flex flex-col md:flex-row items-stretch">
-      {/* Imagen */}
-      <div className="w-full md:w-1/2 overflow-hidden">
-        <img
-          onClick={() => {
-            setConvocatoriaSeleccionada(convocatoriasPagina[0]);
-            setModalAbierto(true);
-          }}
-          src={convocatoriasPagina[0].imageUrl || "/img/default.jpg"}
-          alt={convocatoriasPagina[0].title}
-          className="w-full h-90 object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
-        />
-      </div>
+                <div className="flex flex-col md:flex-row items-stretch">
+                  {/* Imagen */}
+                  <div className="w-full md:w-1/2 overflow-hidden">
+                    <img
+                      onClick={() => {
+                        setConvocatoriaSeleccionada(convocatoriasPagina[0]);
+                        setModalAbierto(true);
+                      }}
+                      src={convocatoriasPagina[0].imageUrl || "/img/default.jpg"}
+                      alt={convocatoriasPagina[0].title}
+                      className="w-full h-90 object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
+                    />
+                  </div>
 
-      {/* Contenido */}
-      <div className="flex-1 p-2 md:p-8 flex flex-col">
-        <div className="flex-grow space-y-4">
-          <h3 className="text-xl md:text-2xl font-bold text-[#00324D] flex items-center gap-2">
-            <FaMobileAlt />
-            {convocatoriasPagina[0].title}
-          </h3>
+                  {/* Contenido */}
+                  <div className="flex-1 p-2 md:p-8 flex flex-col">
+                    <div className="flex-grow space-y-4">
+                      <h3 className="text-xl md:text-2xl font-bold text-[#00324D] flex items-center gap-2">
+                        <FaMobileAlt />
+                        {convocatoriasPagina[0].title}
+                      </h3>
 
-          <div className="flex items-start gap-3">
-            <FaGraduationCap className="text-2xl text-[#00324D] flex-shrink-0" />
-            <p className="text-base text-gray-700 leading-relaxed">
-              {convocatoriasPagina[0].description}
-            </p>
-          </div>
+                      <div className="flex items-start gap-3">
+                        <FaGraduationCap className="text-2xl text-[#00324D] flex-shrink-0" />
+                        <p className="text-base text-gray-700 leading-relaxed">
+                          {convocatoriasPagina[0].description}
+                        </p>
+                      </div>
 
-          {/* Fechas */}
-          <div className="flex flex-col sm:flex-row gap-x-6 gap-y-2 pt-2 text-sm text-gray-700">
-            <div className="flex items-center gap-2">
-              <FaCalendarAlt className="text-[#00324D]" />
-              <span>
-                <strong>Apertura:</strong>{" "}
-                {new Date(convocatoriasPagina[0].openDate).toLocaleDateString()}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <FaCalendarTimes className="text-[#00324D]" />
-              <span>
-                <strong>Cierre:</strong>{" "}
-                {new Date(convocatoriasPagina[0].closeDate).toLocaleDateString()}
-              </span>
-            </div>
-          </div>
-        </div>
+                      {/* Fechas */}
+                      <div className="flex flex-col sm:flex-row gap-x-6 gap-y-2 pt-2 text-sm text-gray-700">
+                        <div className="flex items-center gap-2">
+                          <FaCalendarAlt className="text-[#00324D]" />
+                          <span>
+                            <strong>Apertura:</strong>{" "}
+                            {new Date(convocatoriasPagina[0].openDate).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <FaCalendarTimes className="text-[#00324D]" />
+                          <span>
+                            <strong>Cierre:</strong>{" "}
+                            {new Date(convocatoriasPagina[0].closeDate).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
 
-        {/* Botones */}
-        <div className="mt-5 pt-5 border-t border-gray-200 flex items-center gap-3 flex-wrap">
-          <button
-            onClick={() => {
-              setConvocatoriaSeleccionada(convocatoriasPagina[0]);
-              setModalAbierto(true);
-            }}
-            className="flex items-center gap-2 bg-[#00324D] text-white px-5 py-2.5 rounded-md font-semibold text-base hover:bg-[#004267] transition-all"
-          >
-            <FaRegFileAlt /> Detalles
-          </button>
+                    {/* Botones */}
+                    <div className="mt-5 pt-5 border-t border-gray-200 flex items-center gap-3 flex-wrap">
+                      <button
+                        onClick={() => {
+                          setConvocatoriaSeleccionada(convocatoriasPagina[0]);
+                          setModalAbierto(true);
+                        }}
+                        className="flex items-center gap-2 bg-[#00324D] text-white px-5 py-2.5 rounded-md font-semibold text-base hover:bg-[#004267] transition-all"
+                      >
+                        <FaRegFileAlt /> Detalles
+                      </button>
 
-          <button className="flex items-center gap-2 bg-[#39A900] text-white px-5 py-2.5 rounded-md font-semibold text-base hover:bg-lime-600 transition-all">
-            <FaCheckCircle /> Inscribirse
-          </button>
+                      <button className="flex items-center gap-2 bg-[#39A900] text-white px-5 py-2.5 rounded-md font-semibold text-base hover:bg-lime-600 transition-all">
+                        <FaCheckCircle /> Inscribirse
+                      </button>
 
-          {/* Favorito */}
-          <button
-            onClick={handleFavorito}
-            className="group ml-auto p-2 rounded-md hover:bg-gray-100 transition-colors"
-            title="Marcar como favorita"
-          >
-            {destacado ? (
-              <FaStar className="text-yellow-400 text-2xl transition-all group-hover:scale-125 group-hover:rotate-[360deg]" />
-            ) : (
-              <FaRegStar className="text-gray-400 text-2xl transition-all group-hover:text-yellow-400 group-hover:scale-125 group-hover:rotate-[360deg]" />
+                      {/* Favorito */}
+                      <button
+                        onClick={handleFavorito}
+                        className="group ml-auto p-2 rounded-md hover:bg-gray-100 transition-colors"
+                        title="Marcar como favorita"
+                      >
+                        {destacado ? (
+                          <FaStar className="text-yellow-400 text-2xl transition-all group-hover:scale-125 group-hover:rotate-[360deg]" />
+                        ) : (
+                          <FaRegStar className="text-gray-400 text-2xl transition-all group-hover:text-yellow-400 group-hover:scale-125 group-hover:rotate-[360deg]" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
             <ModalConvocatoria
               modalAbierto={modalAbierto}
               cerrarModal={() => setModalAbierto(false)}
@@ -419,86 +419,86 @@ export default function HomePage() {
 
 
             {/* ------------------- 3 tarjetas dinámicas desde API -------------- */}
-          {/* ------------------- 3 tarjetas dinámicas desde API -------------- */}
-<div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-  {convocatoriasPagina.slice(1, 4).map((convocatoria, index) => (
-    <div
-      key={convocatoria.id || index}
-      className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 flex flex-col"
-    >
-      {/* Imagen */}
-      <div className="overflow-hidden">
-        <img
-          onClick={() => {
-            setConvocatoriaSeleccionada(convocatoria);
-            setModalAbierto(true);
-          }}
-          src={convocatoria.imageUrl || "/img/default.jpg"}
-          alt={convocatoria.title}
-          className="w-full h-[230px] object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
-        />
-      </div>
+            {/* ------------------- 3 tarjetas dinámicas desde API -------------- */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+              {convocatoriasPagina.slice(1, 4).map((convocatoria, index) => (
+                <div
+                  key={convocatoria.id || index}
+                  className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 flex flex-col"
+                >
+                  {/* Imagen */}
+                  <div className="overflow-hidden">
+                    <img
+                      onClick={() => {
+                        setConvocatoriaSeleccionada(convocatoria);
+                        setModalAbierto(true);
+                      }}
+                      src={convocatoria.imageUrl || "/img/default.jpg"}
+                      alt={convocatoria.title}
+                      className="w-full h-[230px] object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
+                    />
+                  </div>
 
-      {/* Contenido */}
-      <div className="p-5 flex flex-col justify-between flex-grow">
-        <div>
-          <h4 className="font-bold text-lg text-[#00324D] mb-3 flex items-center gap-2">
-            <FaMobileAlt />
-            {convocatoria.title}
-          </h4>
+                  {/* Contenido */}
+                  <div className="p-5 flex flex-col justify-between flex-grow">
+                    <div>
+                      <h4 className="font-bold text-lg text-[#00324D] mb-3 flex items-center gap-2">
+                        <FaMobileAlt />
+                        {convocatoria.title}
+                      </h4>
 
-          <p className="text-gray-600 mb-4 flex items-start gap-3">
-            <FaGraduationCap className="text-2xl text-[#00324D] mt-0.5 flex-shrink-0" />
-            <span className="text-sm">{convocatoria.description}</span>
-          </p>
+                      <p className="text-gray-600 mb-4 flex items-start gap-3">
+                        <FaGraduationCap className="text-2xl text-[#00324D] mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">{convocatoria.description}</span>
+                      </p>
 
-          {/* Fechas */}
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm text-gray-700 mb-4">
-            <span className="flex items-center gap-1.5">
-              <FaCalendarAlt className="text-[#00324D]" />
-              <strong>Apertura:</strong>{" "}
-              {new Date(convocatoria.openDate).toLocaleDateString()}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <FaCalendarTimes className="text-[#00324D]" />
-              <strong>Cierre:</strong>{" "}
-              {new Date(convocatoria.closeDate).toLocaleDateString()}
-            </span>
-          </div>
-        </div>
+                      {/* Fechas */}
+                      <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm text-gray-700 mb-4">
+                        <span className="flex items-center gap-1.5">
+                          <FaCalendarAlt className="text-[#00324D]" />
+                          <strong>Apertura:</strong>{" "}
+                          {new Date(convocatoria.openDate).toLocaleDateString()}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <FaCalendarTimes className="text-[#00324D]" />
+                          <strong>Cierre:</strong>{" "}
+                          {new Date(convocatoria.closeDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
 
-        {/* Botones */}
-        <div className="pt-4 mt-auto border-t border-gray-200 flex items-center gap-2">
-          <button
-            onClick={() => {
-              setConvocatoriaSeleccionada(convocatoria);
-              setModalAbierto(true);
-            }}
-            className="flex items-center gap-2 px-4 py-2 rounded-md font-semibold text-sm bg-[#00324D] text-white hover:bg-[#004267] transition-all"
-          >
-            <FaRegFileAlt /> Detalles
-          </button>
+                    {/* Botones */}
+                    <div className="pt-4 mt-auto border-t border-gray-200 flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setConvocatoriaSeleccionada(convocatoria);
+                          setModalAbierto(true);
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 rounded-md font-semibold text-sm bg-[#00324D] text-white hover:bg-[#004267] transition-all"
+                      >
+                        <FaRegFileAlt /> Detalles
+                      </button>
 
-          <button className="flex items-center gap-2 px-4 py-2 rounded-md font-semibold text-sm bg-[#39A900] text-white hover:bg-lime-600 transition-all">
-            <FaCheckCircle /> Inscribirse
-          </button>
+                      <button className="flex items-center gap-2 px-4 py-2 rounded-md font-semibold text-sm bg-[#39A900] text-white hover:bg-lime-600 transition-all">
+                        <FaCheckCircle /> Inscribirse
+                      </button>
 
-          <button
-            onClick={handleFavorito}
-            className="group ml-auto p-2 rounded-md hover:bg-gray-100 transition-colors"
-            title="Marcar como favorita"
-          >
-            {destacado ? (
-              <FaStar className="text-yellow-400 text-2xl transition-all group-hover:scale-125 group-hover:rotate-[360deg]" />
-            ) : (
-              <FaRegStar className="text-gray-400 text-2xl transition-all group-hover:text-yellow-400 group-hover:scale-125 group-hover:rotate-[360deg]" />
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  ))}
-</div>
+                      <button
+                        onClick={handleFavorito}
+                        className="group ml-auto p-2 rounded-md hover:bg-gray-100 transition-colors"
+                        title="Marcar como favorita"
+                      >
+                        {destacado ? (
+                          <FaStar className="text-yellow-400 text-2xl transition-all group-hover:scale-125 group-hover:rotate-[360deg]" />
+                        ) : (
+                          <FaRegStar className="text-gray-400 text-2xl transition-all group-hover:text-yellow-400 group-hover:scale-125 group-hover:rotate-[360deg]" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
 
 
             {/* Modal */}
@@ -511,220 +511,220 @@ export default function HomePage() {
 
 
             {/* ------------------- 4 tarjetas MEJORADAS desde API -------------- */}
-           {/* ------------------- 4 tarjetas MEJORADAS desde API -------------- */}
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-8 mb-8">
-  {convocatoriasPagina.slice(4, 8).map((convocatoria, index) => (
-    <div
-      key={convocatoria.id || index}
-      className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-2xl flex flex-col"
-    >
-      {/* Imagen */}
-      <div className="w-full h-[240px] overflow-hidden">
-        <img
-          onClick={() => {
-            setConvocatoriaSeleccionada(convocatoria);
-            setModalAbierto(true);
-          }}
-          src={convocatoria.imageUrl || "/img/default.jpg"}
-          alt={convocatoria.title}
-          className="w-full h-full object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
-        />
-      </div>
+            {/* ------------------- 4 tarjetas MEJORADAS desde API -------------- */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-8 mb-8">
+              {convocatoriasPagina.slice(4, 8).map((convocatoria, index) => (
+                <div
+                  key={convocatoria.id || index}
+                  className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-2xl flex flex-col"
+                >
+                  {/* Imagen */}
+                  <div className="w-full h-[240px] overflow-hidden">
+                    <img
+                      onClick={() => {
+                        setConvocatoriaSeleccionada(convocatoria);
+                        setModalAbierto(true);
+                      }}
+                      src={convocatoria.imageUrl || "/img/default.jpg"}
+                      alt={convocatoria.title}
+                      className="w-full h-full object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
+                    />
+                  </div>
 
-      {/* Contenido */}
-      <div className="p-5 flex flex-col flex-grow">
-        <div className="flex-grow">
-          <h4 className="text-[#00324D] font-bold text-lg flex items-center gap-2 mb-3">
-            <FaMobileAlt />
-            {convocatoria.title}
-          </h4>
-          <p className="text-sm text-gray-700 flex items-start gap-3 mb-4">
-            <FaGraduationCap className="text-xl text-[#00324D] mt-0.5 flex-shrink-0" />
-            {convocatoria.description}
-          </p>
+                  {/* Contenido */}
+                  <div className="p-5 flex flex-col flex-grow">
+                    <div className="flex-grow">
+                      <h4 className="text-[#00324D] font-bold text-lg flex items-center gap-2 mb-3">
+                        <FaMobileAlt />
+                        {convocatoria.title}
+                      </h4>
+                      <p className="text-sm text-gray-700 flex items-start gap-3 mb-4">
+                        <FaGraduationCap className="text-xl text-[#00324D] mt-0.5 flex-shrink-0" />
+                        {convocatoria.description}
+                      </p>
 
-          {/* Fechas */}
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-800">
-            <p className="flex items-center gap-2">
-              <FaCalendarAlt className="text-[#00324D]" />
-              <strong>Apertura:</strong>{" "}
-              {new Date(convocatoria.openDate).toLocaleDateString()}
-            </p>
-            <p className="flex items-center gap-2">
-              <FaCalendarTimes className="text-[#00324D]" />
-              <strong>Cierre:</strong>{" "}
-              {new Date(convocatoria.closeDate).toLocaleDateString()}
-            </p>
-          </div>
-        </div>
+                      {/* Fechas */}
+                      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-800">
+                        <p className="flex items-center gap-2">
+                          <FaCalendarAlt className="text-[#00324D]" />
+                          <strong>Apertura:</strong>{" "}
+                          {new Date(convocatoria.openDate).toLocaleDateString()}
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <FaCalendarTimes className="text-[#00324D]" />
+                          <strong>Cierre:</strong>{" "}
+                          {new Date(convocatoria.closeDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
 
-        {/* Botones */}
-        <div className="pt-4 mt-4 border-t border-gray-200 flex items-center gap-2">
-          <button
-            onClick={() => {
-              setConvocatoriaSeleccionada(convocatoria);
-              setModalAbierto(true);
-            }}
-            className="flex items-center gap-2 px-4 py-2 rounded-md font-semibold text-sm bg-[#00324D] text-white hover:bg-[#004267] transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-          >
-            <FaRegFileAlt />
-            Detalles
-          </button>
+                    {/* Botones */}
+                    <div className="pt-4 mt-4 border-t border-gray-200 flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setConvocatoriaSeleccionada(convocatoria);
+                          setModalAbierto(true);
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 rounded-md font-semibold text-sm bg-[#00324D] text-white hover:bg-[#004267] transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                      >
+                        <FaRegFileAlt />
+                        Detalles
+                      </button>
 
-          <button className="flex items-center gap-2 px-4 py-2 rounded-md font-semibold text-sm bg-[#39A900] text-white hover:bg-lime-600 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
-            <FaCheckCircle />
-            Inscribirse
-          </button>
+                      <button className="flex items-center gap-2 px-4 py-2 rounded-md font-semibold text-sm bg-[#39A900] text-white hover:bg-lime-600 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                        <FaCheckCircle />
+                        Inscribirse
+                      </button>
 
-          <button
-            onClick={handleFavorito}
-            className="group ml-auto p-2 rounded-md hover:bg-gray-100 transition-colors"
-            title="Marcar como favorita"
-          >
-            {destacado ? (
-              <FaStar className="text-yellow-400 text-2xl transition-all duration-300 transform group-hover:scale-125 group-hover:rotate-[360deg]" />
-            ) : (
-              <FaRegStar className="text-gray-400 text-2xl transition-all duration-300 group-hover:text-yellow-400 group-hover:scale-125 group-hover:rotate-[360deg]" />
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  ))}
-</div>
+                      <button
+                        onClick={handleFavorito}
+                        className="group ml-auto p-2 rounded-md hover:bg-gray-100 transition-colors"
+                        title="Marcar como favorita"
+                      >
+                        {destacado ? (
+                          <FaStar className="text-yellow-400 text-2xl transition-all duration-300 transform group-hover:scale-125 group-hover:rotate-[360deg]" />
+                        ) : (
+                          <FaRegStar className="text-gray-400 text-2xl transition-all duration-300 group-hover:text-yellow-400 group-hover:scale-125 group-hover:rotate-[360deg]" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
 
-<ModalConvocatoria
-  modalAbierto={modalAbierto}
-  cerrarModal={() => setModalAbierto(false)}
-  convocatoria={convocatoriaSeleccionada}
-/>
+            <ModalConvocatoria
+              modalAbierto={modalAbierto}
+              cerrarModal={() => setModalAbierto(false)}
+              convocatoria={convocatoriaSeleccionada}
+            />
 
 
             {/* ------------------- Mosaico de 4 tarjetas dinámicas (misma UI) ------------------- */}
-           {/* ------------------- Mosaico de 4 tarjetas dinámicas ------------------- */}
-<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-[2800px] mx-auto my-8 px-0">
-  {convocatoriasPagina.slice(8, 12).map((convocatoria, index) => (
-    <div
-      key={convocatoria.id || index}
-      className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 
+            {/* ------------------- Mosaico de 4 tarjetas dinámicas ------------------- */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-[2800px] mx-auto my-8 px-0">
+              {convocatoriasPagina.slice(8, 12).map((convocatoria, index) => (
+                <div
+                  key={convocatoria.id || index}
+                  className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 
                  transition-all duration-300 hover:shadow-2xl hover:scale-105 
                  flex flex-col h-full min-h-[320px]"
-    >
-      {/* Imagen */}
-      <div className="w-full h-[140px] sm:h-[160px] md:h-[180px] overflow-hidden">
-        <img
-          onClick={() => {
-            setConvocatoriaSeleccionada(convocatoria);
-            setModalAbierto(true);
-          }}
-          src={convocatoria.imageUrl || "/img/default.jpg"}
-          alt={convocatoria.title}
-          className="w-full h-full object-cover object-[20%] cursor-pointer transition-transform duration-300 hover:scale-110"
-        />
-      </div>
+                >
+                  {/* Imagen */}
+                  <div className="w-full h-[140px] sm:h-[160px] md:h-[180px] overflow-hidden">
+                    <img
+                      onClick={() => {
+                        setConvocatoriaSeleccionada(convocatoria);
+                        setModalAbierto(true);
+                      }}
+                      src={convocatoria.imageUrl || "/img/default.jpg"}
+                      alt={convocatoria.title}
+                      className="w-full h-full object-cover object-[20%] cursor-pointer transition-transform duration-300 hover:scale-110"
+                    />
+                  </div>
 
-      {/* Contenido */}
-      <div className="p-4 flex flex-col flex-grow">
-        <div className="flex-grow space-y-2">
-          <h4 className="text-[#00324D] text-base font-semibold flex items-center gap-2">
-            <FaMobileAlt className="text-[#00324D]" />
-            {convocatoria.title}
-          </h4>
+                  {/* Contenido */}
+                  <div className="p-4 flex flex-col flex-grow">
+                    <div className="flex-grow space-y-2">
+                      <h4 className="text-[#00324D] text-base font-semibold flex items-center gap-2">
+                        <FaMobileAlt className="text-[#00324D]" />
+                        {convocatoria.title}
+                      </h4>
 
-          <p className="text-sm text-gray-700 line-clamp-2 flex items-start gap-2 overflow-hidden text-ellipsis whitespace-nowrap">
-            <FaGraduationCap className="text-[#00324D] mt-0.5 flex-shrink-0" />
-            <span>{convocatoria.description}</span>
-          </p>
+                      <p className="text-sm text-gray-700 line-clamp-2 flex items-start gap-2 overflow-hidden text-ellipsis whitespace-nowrap">
+                        <FaGraduationCap className="text-[#00324D] mt-0.5 flex-shrink-0" />
+                        <span>{convocatoria.description}</span>
+                      </p>
 
-          {/* Fechas */}
-          <div className="mt-3 flex items-center justify-between text-xs text-gray-600 bg-gray-50 p-2 rounded">
-            <span className="flex items-center gap-1">
-              <FaCalendarAlt className="text-[#00324D]" />
-              <span>{new Date(convocatoria.openDate).toLocaleDateString()}</span>
-            </span>
-            <span className="flex items-center gap-1">
-              <FaClock className="text-[#00324D]" />
-              <span>{new Date(convocatoria.closeDate).toLocaleDateString()}</span>
-            </span>
-          </div>
-        </div>
+                      {/* Fechas */}
+                      <div className="mt-3 flex items-center justify-between text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                        <span className="flex items-center gap-1">
+                          <FaCalendarAlt className="text-[#00324D]" />
+                          <span>{new Date(convocatoria.openDate).toLocaleDateString()}</span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <FaClock className="text-[#00324D]" />
+                          <span>{new Date(convocatoria.closeDate).toLocaleDateString()}</span>
+                        </span>
+                      </div>
+                    </div>
 
-        {/* Botones compactos */}
-        <div className="mt-3 pt-3 border-t border-gray-200 flex items-center gap-2">
-          <button
-            onClick={() => {
-              setConvocatoriaSeleccionada(convocatoria);
-              setModalAbierto(true);
-            }}
-            className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md text-xs bg-[#00324D] text-white hover:bg-[#004267]"
-          >
-            <FaRegFileAlt size={12} /> Detalles
-          </button>
+                    {/* Botones compactos */}
+                    <div className="mt-3 pt-3 border-t border-gray-200 flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setConvocatoriaSeleccionada(convocatoria);
+                          setModalAbierto(true);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md text-xs bg-[#00324D] text-white hover:bg-[#004267]"
+                      >
+                        <FaRegFileAlt size={12} /> Detalles
+                      </button>
 
-          <button className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md text-xs bg-[#39A900] text-white hover:bg-[#2d8a00]">
-            <FaCheckCircle size={12} /> Inscribirse
-          </button>
+                      <button className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md text-xs bg-[#39A900] text-white hover:bg-[#2d8a00]">
+                        <FaCheckCircle size={12} /> Inscribirse
+                      </button>
 
-          <button
-            onClick={handleFavorito}
-            className="group ml-auto p-2 rounded-md hover:bg-gray-100 transition-colors"
-            title="Marcar como favorita"
-          >
-            {destacado ? (
-              <FaStar className="text-yellow-400 text-2xl transition-all duration-300 transform group-hover:scale-125 group-hover:rotate-[360deg]" />
-            ) : (
-              <FaRegStar className="text-gray-400 text-2xl transition-all duration-300 group-hover:text-yellow-400 group-hover:scale-125 group-hover:rotate-[360deg]" />
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  ))}
-</div>
+                      <button
+                        onClick={handleFavorito}
+                        className="group ml-auto p-2 rounded-md hover:bg-gray-100 transition-colors"
+                        title="Marcar como favorita"
+                      >
+                        {destacado ? (
+                          <FaStar className="text-yellow-400 text-2xl transition-all duration-300 transform group-hover:scale-125 group-hover:rotate-[360deg]" />
+                        ) : (
+                          <FaRegStar className="text-gray-400 text-2xl transition-all duration-300 group-hover:text-yellow-400 group-hover:scale-125 group-hover:rotate-[360deg]" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
 
-<ModalConvocatoria
-  modalAbierto={modalAbierto}
-  cerrarModal={() => setModalAbierto(false)}
-  convocatoria={convocatoriaSeleccionada}
-/>
+            <ModalConvocatoria
+              modalAbierto={modalAbierto}
+              cerrarModal={() => setModalAbierto(false)}
+              convocatoria={convocatoriaSeleccionada}
+            />
 
 
 
             {/*-------------------------------- Paginación Moderna con Efecto Glow -----------------------------------*/}
-{/* ---------------- Paginación ---------------- */}
-<div className="flex justify-center items-center gap-3 mt-4 flex-wrap">
-  {/* Botón Anterior */}
-  <button
-    className="flex items-center justify-center gap-2 px-4 py-2 font-semibold text-gray-700 bg-white border border-gray-200/80 rounded-xl shadow-sm transition-all hover:bg-gray-50 disabled:opacity-50"
-    disabled={paginaActual === 1}
-    onClick={() => setPaginaActual(paginaActual - 1)}
-  >
-    <ChevronLeft size={18} /> Anterior
-  </button>
+            {/* ---------------- Paginación ---------------- */}
+            <div className="flex justify-center items-center gap-3 mt-4 flex-wrap">
+              {/* Botón Anterior */}
+              <button
+                className="flex items-center justify-center gap-2 px-4 py-2 font-semibold text-gray-700 bg-white border border-gray-200/80 rounded-xl shadow-sm transition-all hover:bg-gray-50 disabled:opacity-50"
+                disabled={paginaActual === 1}
+                onClick={() => setPaginaActual(paginaActual - 1)}
+              >
+                <ChevronLeft size={18} /> Anterior
+              </button>
 
-  {/* Números dinámicos */}
-  {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((num) => (
-    <button
-      key={num}
-      className={`flex items-center justify-center w-11 h-11 font-bold rounded-xl transition-all
+              {/* Números dinámicos */}
+              {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((num) => (
+                <button
+                  key={num}
+                  className={`flex items-center justify-center w-11 h-11 font-bold rounded-xl transition-all
         ${paginaActual === num
-          ? "bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-lg scale-110"
-          : "text-gray-700 bg-white border border-gray-200/80 shadow-sm hover:bg-gray-50"}`}
-      onClick={() => setPaginaActual(num)}
-    >
-      {num}
-    </button>
-  ))}
+                      ? "bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-lg scale-110"
+                      : "text-gray-700 bg-white border border-gray-200/80 shadow-sm hover:bg-gray-50"}`}
+                  onClick={() => setPaginaActual(num)}
+                >
+                  {num}
+                </button>
+              ))}
 
-  {/* Botón Siguiente */}
-  <button
-    className="flex items-center justify-center gap-2 px-4 py-2 font-semibold text-gray-700 bg-white border border-gray-200/80 rounded-xl shadow-sm transition-all hover:bg-gray-50 disabled:opacity-50"
-    disabled={paginaActual === totalPaginas}
-    onClick={() => setPaginaActual(paginaActual + 1)}
-  >
-    Siguiente <ChevronRight size={18} />
-  </button>
-</div>
+              {/* Botón Siguiente */}
+              <button
+                className="flex items-center justify-center gap-2 px-4 py-2 font-semibold text-gray-700 bg-white border border-gray-200/80 rounded-xl shadow-sm transition-all hover:bg-gray-50 disabled:opacity-50"
+                disabled={paginaActual === totalPaginas}
+                onClick={() => setPaginaActual(paginaActual + 1)}
+              >
+                Siguiente <ChevronRight size={18} />
+              </button>
+            </div>
 
 
           </section>
