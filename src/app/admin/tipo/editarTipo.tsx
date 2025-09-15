@@ -1,29 +1,35 @@
-'use client';
-
 import { FaTimes, FaSave, FaListUl } from 'react-icons/fa';
 
-interface ModalTipoProps {
+interface Category {
+  id: number;
+  name: string;
+}
+
+interface ModalEditarGrupoProps {
   abierto: boolean;
-  editando: boolean;
-  valor: string;
+  valor: string;              // Nombre actual
+  categoriaId: number | null; // Categoría actual
+  categorias: Category[];     // Lista de categorías
   onCerrar: () => void;
   onGuardar: () => void;
-  onCambio: (value: string) => void;
+  onCambioNombre: (value: string) => void;
+  onCambioCategoria: (id: number) => void;
   modoOscuro: boolean;
 }
 
-export default function ModalTipo({
+export default function ModalEditarGrupo({
   abierto,
-  editando,
   valor,
+  categoriaId,
+  categorias,
   onCerrar,
   onGuardar,
-  onCambio,
+  onCambioNombre,
+  onCambioCategoria,
   modoOscuro,
-}: ModalTipoProps) {
+}: ModalEditarGrupoProps) {
   if (!abierto) return null;
 
-  // 🎨 Estilos dinámicos
   const modalBg = modoOscuro ? 'bg-[#1a0526] text-white' : 'bg-white text-gray-900';
   const inputBg = modoOscuro
     ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400'
@@ -36,59 +42,61 @@ export default function ModalTipo({
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-      <div
-        className={`${modalBg} rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all duration-300 scale-95 hover:scale-100`}
-      >
+      <div className={`${modalBg} rounded-2xl shadow-2xl w-full max-w-lg`}>
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#39A900] to-[#2d8500] p-6 flex justify-between items-center">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-6 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/20 rounded-full">
               <FaListUl className="text-white text-xl" />
             </div>
-            <h2 className="text-2xl font-bold text-white">
-              {editando ? 'Editar Tipo' : 'Crear Nuevo Tipo'}
-            </h2>
+            <h2 className="text-2xl font-bold text-white">Editar Grupo</h2>
           </div>
-          <button
-            className="text-white hover:text-gray-200 transition-colors p-1 rounded-full hover:bg-white/10"
-            onClick={onCerrar}
-          >
+          <button onClick={onCerrar} className="text-white hover:text-gray-200 p-1 rounded-full hover:bg-white/10">
             <FaTimes size={24} />
           </button>
         </div>
 
         {/* Body */}
         <div className="p-8 space-y-6">
-          <div className="space-y-2">
-            <label htmlFor="nombreTipo" className={`block text-sm font-medium ${labelColor}`}>
-              Nombre del Tipo
-            </label>
+          {/* Nombre */}
+          <div>
+            <label className={`block text-sm font-medium ${labelColor}`}>Nombre del Grupo</label>
             <input
               type="text"
-              id="nombreTipo"
-              className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
-              placeholder="Ej: Académico, Experiencia..."
+              className={`w-full border rounded-xl px-4 py-3 ${inputBg}`}
               value={valor}
-              onChange={(e) => onCambio(e.target.value)}
+              onChange={(e) => onCambioNombre(e.target.value)}
             />
+          </div>
+
+          {/* Categoría */}
+          <div>
+            <label className={`block text-sm font-medium ${labelColor}`}>Categoría</label>
+            <select
+              className={`w-full border rounded-xl px-4 py-3 ${inputBg}`}
+              value={categoriaId ?? ''}
+              onChange={(e) => onCambioCategoria(Number(e.target.value))}
+            >
+              <option value="">Seleccione una categoría</option>
+              {categorias.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
         {/* Footer */}
         <div className={`${footerBg} px-8 py-6 flex justify-between items-center border-t`}>
-          <button
-            className={`flex items-center gap-2 px-6 py-3 border rounded-xl transition-colors hover:shadow-md ${cancelBtn}`}
-            onClick={onCerrar}
-          >
-            <FaTimes size={18} />
-            <span>Cancelar</span>
+          <button className={`px-6 py-3 border rounded-xl ${cancelBtn}`} onClick={onCerrar}>
+            <FaTimes size={18} /> Cancelar
           </button>
           <button
-            className="flex items-center gap-2 px-6 py-3 bg-[#39A900] text-white rounded-xl hover:bg-[#2d8500] transition-colors shadow-md hover:shadow-lg transform hover:scale-105 duration-200"
+            className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700"
             onClick={onGuardar}
           >
-            <FaSave size={18} />
-            <span>{editando ? 'Guardar Cambios' : 'Crear Tipo'}</span>
+            <FaSave size={18} /> Guardar Cambios
           </button>
         </div>
       </div>

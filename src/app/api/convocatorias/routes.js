@@ -48,3 +48,36 @@ export const deleteConvocatoria = async (id) => {
   if (!res.ok) throw new Error("Error al eliminar convocatoria");
   return res.json();
 };
+
+
+const BASE_URL = "http://localhost:4000/api/v1";
+
+export const getEntidades = async () => {
+  const res = await fetch(`${BASE_URL}/institutions`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Error al obtener entidades");
+  return res.json();
+};
+
+export const getLineas = async () => {
+  const res = await fetch(`${BASE_URL}/lines`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Error al obtener líneas");
+  return res.json();
+};
+
+export const getPublicos = async () => {
+  const res = await fetch(`${BASE_URL}/targets`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Error al obtener públicos");
+  return res.json();
+};
+
+export const getIntereses = async () => {
+  const res = await fetch(`${BASE_URL}/interests`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Error al obtener intereses");
+  return res.json();
+};
+
+export const getUsuarios = async () => {
+  const res = await fetch(`${BASE_URL}/users`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Error al obtener usuarios");
+  return res.json();
+};

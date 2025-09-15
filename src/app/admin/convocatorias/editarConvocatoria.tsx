@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  X, Upload, Save, FileText
-} from "lucide-react";
+import { X, Upload, Save, FileText } from "lucide-react";
 
 interface ConvocatoriaAPI {
   id: number;
@@ -49,7 +47,7 @@ interface ConvocatoriaForm {
 interface EditarConvocatoriaModalProps {
   mostrarModal: boolean;
   cerrarModal: () => void;
-  convocatoria: ConvocatoriaAPI;   // 👉 recibes datos en formato API
+  convocatoria: ConvocatoriaAPI;
   onSave: (conv: ConvocatoriaForm) => void;
   modoOscuro: boolean;
 }
@@ -59,12 +57,11 @@ export default function EditarConvocatoriaModal({
   cerrarModal,
   convocatoria,
   onSave,
-  modoOscuro
+  modoOscuro,
 }: EditarConvocatoriaModalProps) {
   const [formData, setFormData] = useState<ConvocatoriaForm | null>(null);
   const [imagenPreview, setImagenPreview] = useState<string | undefined>(undefined);
 
-  // 🔹 Cuando recibo la convocatoria, la adapto al formulario
   useEffect(() => {
     if (mostrarModal && convocatoria) {
       const mapped: ConvocatoriaForm = {
@@ -93,7 +90,6 @@ export default function EditarConvocatoriaModal({
 
   if (!mostrarModal || !formData) return null;
 
-  // 🔹 Manejo de inputs
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -101,7 +97,6 @@ export default function EditarConvocatoriaModal({
     setFormData((prev) => (prev ? { ...prev, [name]: value } : prev));
   };
 
-  // 🔹 Manejo de imagen
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const reader = new FileReader();
@@ -114,13 +109,11 @@ export default function EditarConvocatoriaModal({
     }
   };
 
-  // 🔹 Guardar cambios (devuelvo en formato formulario → luego mapeas en handleUpdate)
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (formData) onSave(formData);
   };
 
-  // 🎨 Estilos dinámicos
   const modalBg = modoOscuro ? "bg-[#1a0526] text-white" : "bg-white text-gray-900";
   const inputBg = modoOscuro
     ? "bg-gray-800 border-gray-600 text-white placeholder-gray-400"
@@ -134,7 +127,9 @@ export default function EditarConvocatoriaModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-      <div className={`${modalBg} rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto`}>
+      <div
+        className={`${modalBg} rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto`}
+      >
         {/* Header */}
         <div className="bg-gradient-to-r from-[#39A900] to-[#2d8500] p-6 flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -189,18 +184,160 @@ export default function EditarConvocatoriaModal({
             />
           </div>
 
+          {/* Recursos + Link */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className={`block text-sm font-medium ${labelColor}`}>Recursos</label>
+              <input
+                type="text"
+                name="recursos"
+                value={formData.recursos}
+                onChange={handleInputChange}
+                className={`w-full border rounded-xl px-4 py-2 ${inputBg}`}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className={`block text-sm font-medium ${labelColor}`}>Link</label>
+              <input
+                type="url"
+                name="link"
+                value={formData.link}
+                onChange={handleInputChange}
+                className={`w-full border rounded-xl px-4 py-2 ${inputBg}`}
+              />
+            </div>
+          </div>
+
+          {/* Fechas */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className={`block text-sm font-medium ${labelColor}`}>Fecha Apertura</label>
+              <input
+                type="date"
+                name="fechaApertura"
+                value={formData.fechaApertura?.split("T")[0]}
+                onChange={handleInputChange}
+                className={`w-full border rounded-xl px-4 py-2 ${inputBg}`}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className={`block text-sm font-medium ${labelColor}`}>Fecha Cierre</label>
+              <input
+                type="date"
+                name="fechaCierre"
+                value={formData.fechaCierre?.split("T")[0]}
+                onChange={handleInputChange}
+                className={`w-full border rounded-xl px-4 py-2 ${inputBg}`}
+              />
+            </div>
+          </div>
+
+          {/* Nombre página + URL */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className={`block text-sm font-medium ${labelColor}`}>Nombre Página</label>
+              <input
+                type="text"
+                name="nombrePagina"
+                value={formData.nombrePagina}
+                onChange={handleInputChange}
+                className={`w-full border rounded-xl px-4 py-2 ${inputBg}`}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className={`block text-sm font-medium ${labelColor}`}>URL Página</label>
+              <input
+                type="url"
+                name="pagina"
+                value={formData.pagina}
+                onChange={handleInputChange}
+                className={`w-full border rounded-xl px-4 py-2 ${inputBg}`}
+              />
+            </div>
+          </div>
+
+          {/* Objetivos + Observaciones */}
+          <div className="space-y-2">
+            <label className={`block text-sm font-medium ${labelColor}`}>Objetivos</label>
+            <textarea
+              name="objetivos"
+              value={formData.objetivos}
+              onChange={handleInputChange}
+              className={`w-full border rounded-xl px-4 py-2 min-h-[80px] ${inputBg}`}
+            />
+          </div>
+          <div className="space-y-2">
+            <label className={`block text-sm font-medium ${labelColor}`}>Observaciones</label>
+            <textarea
+              name="observaciones"
+              value={formData.observaciones}
+              onChange={handleInputChange}
+              className={`w-full border rounded-xl px-4 py-2 min-h-[80px] ${inputBg}`}
+            />
+          </div>
+
+          {/* Linea + Público Objetivo + Interés + Usuario */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="space-y-2">
+              <label className={`block text-sm font-medium ${labelColor}`}>Línea</label>
+              <input
+                type="text"
+                name="linea"
+                value={formData.linea}
+                onChange={handleInputChange}
+                className={`w-full border rounded-xl px-4 py-2 ${inputBg}`}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className={`block text-sm font-medium ${labelColor}`}>Público Objetivo</label>
+              <input
+                type="text"
+                name="publicoObjetivo"
+                value={formData.publicoObjetivo}
+                onChange={handleInputChange}
+                className={`w-full border rounded-xl px-4 py-2 ${inputBg}`}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className={`block text-sm font-medium ${labelColor}`}>Interés</label>
+              <input
+                type="text"
+                name="interes"
+                value={formData.interes}
+                onChange={handleInputChange}
+                className={`w-full border rounded-xl px-4 py-2 ${inputBg}`}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className={`block text-sm font-medium ${labelColor}`}>Usuario Responsable</label>
+              <input
+                type="text"
+                name="usuario"
+                value={formData.usuario}
+                onChange={handleInputChange}
+                className={`w-full border rounded-xl px-4 py-2 ${inputBg}`}
+              />
+            </div>
+          </div>
+
           {/* Imagen */}
           <div className="space-y-2">
             <label className={`block text-sm font-medium ${labelColor}`}>Imagen</label>
             <div className="flex items-center gap-4">
-              <label className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer ${uploadBorder} hover:border-[#39A900]`}>
+              <label
+                className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer ${uploadBorder} hover:border-[#39A900]`}
+              >
                 <Upload size={22} className="mb-2 text-[#39A900]" />
                 <p className="text-sm">Subir imagen</p>
                 <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
               </label>
               {imagenPreview && (
                 <div className="w-32 h-32 rounded-xl overflow-hidden border shadow-md">
-                  <img src={imagenPreview} alt="Vista previa" className="w-full h-full object-cover" />
+                  <img
+                    src={imagenPreview}
+                    alt="Vista previa"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               )}
             </div>

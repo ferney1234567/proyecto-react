@@ -290,7 +290,7 @@ export default function HomePage() {
           </div>
         </section>
 
-       {vista === "Tarjeta" && (
+     {vista === "Tarjeta" && (
   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-0 mb-8">
     {convocatorias.map((convocatoria, index) => (
       <div
@@ -301,7 +301,7 @@ export default function HomePage() {
         <div className="overflow-hidden">
           <img
             onClick={() => {
-              setConvocatoriaSeleccionada(convocatoria);
+              setConvocatoriaSeleccionada(convocatoria); // ✅ guardamos
               setModalAbierto(true);
             }}
             src={convocatoria.imageUrl || "/img/default.jpg"}
@@ -322,9 +322,7 @@ export default function HomePage() {
             {/* Descripción */}
             <p className="text-gray-600 mb-4 flex items-start gap-3">
               <FaGraduationCap className="text-lg sm:text-xl text-[#00324D] mt-0.5 flex-shrink-0" />
-              <span className="text-sm">
-                {convocatoria.description}
-              </span>
+              <span className="text-sm">{convocatoria.description}</span>
             </p>
 
             {/* Fechas */}
@@ -350,7 +348,7 @@ export default function HomePage() {
           <div className="pt-4 mt-auto border-t border-gray-200 flex items-center gap-2">
             <button
               onClick={() => {
-                setConvocatoriaSeleccionada(convocatoria);
+                setConvocatoriaSeleccionada(convocatoria); // ✅ guardamos
                 setModalAbierto(true);
               }}
               className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm bg-[#00324D] text-white hover:bg-[#004267] transition-all duration-300 shadow-sm hover:shadow-md"
@@ -380,19 +378,21 @@ export default function HomePage() {
     ))}
 
     {/* Modal dinámico */}
- {convocatoriaSeleccionada && (
-  <ModalConvocatoria
-    modalAbierto={modalAbierto}
-    cerrarModal={() => setModalAbierto(false)}
-    convocatoria={convocatoriaSeleccionada}
-  />
-)}
-
+    {convocatoriaSeleccionada && (
+      <ModalConvocatoria
+        modalAbierto={modalAbierto}
+        cerrarModal={() => setModalAbierto(false)}
+        convocatoria={convocatoriaSeleccionada} // ✅ aquí se pasa la seleccionada
+      />
+    )}
   </div>
 )}
 
 
-       {/* Vista Lista MEJORADA y DINÁMICA */}
+ 
+
+
+   {/* Vista Lista MEJORADA y DINÁMICA */}
 {vista === "Lista" && (
   <div className="w-full p-4 sm:p-0 lg:p-0">
     <div className="flex flex-col gap-6">
@@ -462,7 +462,7 @@ export default function HomePage() {
                 }}
                 className="flex items-center gap-2 px-5 py-2 rounded-md font-semibold text-sm bg-[#00324D] text-white hover:bg-[#004267] transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
               >
-                <FaFileAlt /> Detalles
+                <FaRegFileAlt /> Detalles
               </button>
 
               <button className="flex items-center gap-2 px-5 py-2 rounded-md font-semibold text-sm bg-[#39A900] text-white hover:bg-lime-600 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
@@ -501,7 +501,7 @@ export default function HomePage() {
 
 
 
-     {vista === "Tabla" && (
+    {vista === "Tabla" && (
   <div className="bg-white rounded-2xl shadow-lg mt-6 border border-gray-200 overflow-x-auto">
     <table className="w-full text-left border-collapse min-w-[1200px]">
       <thead className="sticky top-0 z-10 bg-[#00324D] text-white">
@@ -592,7 +592,7 @@ export default function HomePage() {
                   }}
                   className="flex items-center gap-2 px-3 py-2 bg-[#00324D] text-white rounded-lg hover:bg-[#005072] transition-colors text-sm font-semibold"
                 >
-                  <FaFileAlt />
+                  <FaRegFileAlt />
                   Detalles
                 </button>
 
@@ -633,7 +633,7 @@ export default function HomePage() {
 
 
 
-      {/* ---------------- Vista Mosaico MEJORADA Y RESPONSIVA ---------------- */}
+{/* ---------------- Vista Mosaico MEJORADA Y RESPONSIVA ---------------- */}
 {vista === "Mosaico" && (
   <>
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 max-w-[2300px] mx-auto my-8 px-0">
@@ -646,7 +646,7 @@ export default function HomePage() {
           <div className="w-full h-[140px] sm:h-[160px] md:h-[180px] overflow-hidden">
             <img
               onClick={() => {
-                setConvocatoriaSeleccionada(convocatoria);
+                setConvocatoriaSeleccionada(convocatoria); // ✅ guardamos
                 setModalAbierto(true);
               }}
               src={convocatoria.imageUrl || "/img/default.jpg"}
@@ -693,7 +693,7 @@ export default function HomePage() {
             <div className="mt-3 pt-3 border-t border-gray-200 flex items-center gap-2">
               <button
                 onClick={() => {
-                  setConvocatoriaSeleccionada(convocatoria);
+                  setConvocatoriaSeleccionada(convocatoria); // ✅ guardamos
                   setModalAbierto(true);
                 }}
                 className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md text-xs bg-[#00324D] text-white hover:bg-[#004267]"
@@ -725,11 +725,12 @@ export default function HomePage() {
       <ModalConvocatoria
         modalAbierto={modalAbierto}
         cerrarModal={() => setModalAbierto(false)}
-        convocatoria={convocatoriaSeleccionada}
+        convocatoria={convocatoriaSeleccionada} // ✅ pasamos la seleccionada
       />
     )}
   </>
 )}
+
 
 
 
