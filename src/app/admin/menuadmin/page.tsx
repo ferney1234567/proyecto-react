@@ -20,10 +20,12 @@ import Ciudad from "../cuidad/Cuidad";
 import Departamento from "../departamento/Departamento";
 import Interes from "../intereses/Intereses";
 import Chequeo from "../checkeo/checkeo";
+import RequisitosCategoria from "../requisitosCategoria/requisitosCategoria";
 import ConvocatoriaHistorial from "../convocatoriaHistorial/convocatoriaHistorial";
 import ProfileAvatar from "../modaluserAdmin/modalAdmin";
 import Header from "../../../components/layout/header";
 import Footer from "@/components/layout/footer";
+import { MdCategory } from "react-icons/md";
 
 
 
@@ -210,6 +212,14 @@ const ComponentesCards = () => {
       descripcion: "Proceso de verificación de información de postulantes.",
       component: (m: boolean) => <Chequeo modoOscuro={m} />,
     },
+     {
+  id: "requisitosCategoria",
+  icon: MdCategory,
+  name: "requisitos Categoria",
+  value: "1,868",
+  descripcion: "Categoría o línea específica en la que se enmarca la convocatoria.",
+  component: (m: boolean) => <RequisitosCategoria modoOscuro={m} />,
+},
     {
       id: "convocatoriaHistorial",
       icon: FaClipboardList,

@@ -33,13 +33,12 @@ export default function ModalUsuario({
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-      <div className={`${modalBg} rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all duration-300 animate-pulse-once`}>
+      <div className={`${modalBg} rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden`}>
         {/* Header */}
         <div className="bg-gradient-to-r from-[#39A900] via-[#45b800] to-[#2d8500] p-6 relative overflow-hidden">
-          <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
           <div className="relative flex justify-between items-center">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-white/20 rounded-xl border border-white/30 backdrop-blur-sm">
+              <div className="p-3 bg-white/20 rounded-xl border border-white/30">
                 <FaUserPlus className="text-white text-2xl" />
               </div>
               <div>
@@ -52,7 +51,7 @@ export default function ModalUsuario({
               </div>
             </div>
             <button
-              className="text-white hover:text-red-200 transition-all duration-200 p-2 rounded-full hover:bg-red-500/20 border border-white/20"
+              className="text-white hover:text-red-200 p-2 rounded-full hover:bg-red-500/20 border border-white/20"
               onClick={cerrarModal}
             >
               <FaTimes size={20} />
@@ -64,113 +63,105 @@ export default function ModalUsuario({
         <div className="p-8 space-y-6">
           <div className="grid grid-cols-1 gap-6">
             {/* Nombre */}
-            <div className="space-y-2">
-              <label htmlFor="nombre" className={`block text-sm font-semibold ${labelColor}`}>
+            <div>
+              <label htmlFor="name" className={`block text-sm font-semibold ${labelColor}`}>
                 Nombre completo
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <FaUser className="text-[#39A900] text-lg" />
-                </div>
+                <FaUser className="absolute left-4 top-1/2 -translate-y-1/2 text-[#39A900]" />
                 <input
                   type="text"
-                  id="nombre"
-                  name="nombre"
-                  className={`w-full border border-gray-300 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900]/30 focus:border-[#39A900] text-base transition-all duration-200 ${inputBg}`}
+                  id="name"
+                  name="name"
+                  className={`w-full border rounded-xl pl-12 pr-4 py-3 ${inputBg}`}
                   placeholder="Ingrese el nombre completo"
-                  value={nuevoUsuario.nombre}
+                  value={nuevoUsuario.name}
                   onChange={manejarCambio}
                 />
               </div>
             </div>
 
             {/* Correo */}
-            <div className="space-y-2">
-              <label htmlFor="correo" className={`block text-sm font-semibold ${labelColor}`}>
+            <div>
+              <label htmlFor="email" className={`block text-sm font-semibold ${labelColor}`}>
                 Correo electrónico
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <FaEnvelope className="text-[#39A900] text-lg" />
-                </div>
+                <FaEnvelope className="absolute left-4 top-1/2 -translate-y-1/2 text-[#39A900]" />
                 <input
                   type="email"
-                  id="correo"
-                  name="correo"
-                  className={`w-full border border-gray-300 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900]/30 focus:border-[#39A900] text-base transition-all duration-200 ${inputBg}`}
+                  id="email"
+                  name="email"
+                  className={`w-full border rounded-xl pl-12 pr-4 py-3 ${inputBg}`}
                   placeholder="usuario@ejemplo.com"
-                  value={nuevoUsuario.correo}
+                  value={nuevoUsuario.email}
                   onChange={manejarCambio}
                 />
               </div>
             </div>
 
             {/* Contraseña */}
-            <div className="space-y-2">
-              <label htmlFor="contraseña" className={`block text-sm font-semibold ${labelColor}`}>
+            <div>
+              <label htmlFor="password" className={`block text-sm font-semibold ${labelColor}`}>
                 {editandoId ? 'Nueva contraseña' : 'Contraseña'}
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <FaLock className="text-[#39A900] text-lg" />
-                </div>
+                <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#39A900]" />
                 <input
                   type="password"
-                  id="contraseña"
-                  name="contraseña"
-                  className={`w-full border border-gray-300 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900]/30 focus:border-[#39A900] text-base transition-all duration-200 ${inputBg}`}
+                  id="password"
+                  name="password"
+                  className={`w-full border rounded-xl pl-12 pr-4 py-3 ${inputBg}`}
                   placeholder={editandoId ? 'Dejar vacío para mantener la actual' : 'Mínimo 8 caracteres'}
-                  value={nuevoUsuario.contraseña}
+                  value={nuevoUsuario.password}
                   onChange={manejarCambio}
                 />
               </div>
             </div>
 
             {/* Teléfono */}
-            <div className="space-y-2">
-              <label htmlFor="telefono" className={`block text-sm font-semibold ${labelColor}`}>
+            <div>
+              <label htmlFor="phone" className={`block text-sm font-semibold ${labelColor}`}>
                 Teléfono
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <FaPhone className="text-[#39A900] text-lg" />
-                </div>
+                <FaPhone className="absolute left-4 top-1/2 -translate-y-1/2 text-[#39A900]" />
                 <input
                   type="tel"
-                  id="telefono"
-                  name="telefono"
-                  className={`w-full border border-gray-300 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900]/30 focus:border-[#39A900] text-base transition-all duration-200 ${inputBg}`}
+                  id="phone"
+                  name="phone"
+                  className={`w-full border rounded-xl pl-12 pr-4 py-3 ${inputBg}`}
                   placeholder="Ej: 3001234567"
-                  value={nuevoUsuario.telefono}
+                  value={nuevoUsuario.phone}
                   onChange={manejarCambio}
                 />
               </div>
             </div>
 
             {/* Estado */}
-            <div className="space-y-2">
-              <label htmlFor="estado" className={`block text-sm font-semibold ${labelColor}`}>
+            <div>
+              <label htmlFor="is_active" className={`block text-sm font-semibold ${labelColor}`}>
                 Estado del usuario
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
-                  <FaUserCheck className="text-[#39A900] text-lg" />
-                </div>
+                <FaUserCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-[#39A900]" />
                 <select
-                  id="estado"
-                  name="estado"
-                  className={`w-full border border-gray-300 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900]/30 focus:border-[#39A900] text-base appearance-none transition-all duration-200 cursor-pointer ${inputBg}`}
-                  value={nuevoUsuario.estado}
-                  onChange={manejarCambio}
+                  id="is_active"
+                  name="is_active"
+                  className={`w-full border rounded-xl pl-12 pr-4 py-3 ${inputBg}`}
+                  value={nuevoUsuario.is_active ? 'true' : 'false'}
+                  onChange={(e) => manejarCambio({
+                    ...e,
+                    target: {
+                      ...e.target,
+                      name: 'is_active',
+                      value: e.target.value === 'true'
+                    }
+                  } as any)}
                 >
-                  <option value="Activo">Activo</option>
-                  <option value="Inactivo">Inactivo</option>
+                  <option value="true">Activo</option>
+                  <option value="false">Inactivo</option>
                 </select>
-                <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
               </div>
             </div>
           </div>
@@ -179,14 +170,14 @@ export default function ModalUsuario({
         {/* Footer */}
         <div className={`${footerBg} px-8 py-6 flex justify-between items-center border-t`}>
           <button
-            className={`flex items-center gap-3 px-6 py-3 rounded-xl transition-all duration-200 font-medium ${cancelBtn}`}
+            className={`flex items-center gap-3 px-6 py-3 rounded-xl ${cancelBtn}`}
             onClick={cerrarModal}
           >
             <FaTimes size={16} />
             <span>Cancelar</span>
           </button>
           <button
-            className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-[#39A900] to-[#2d8500] text-white rounded-xl hover:from-[#2d8500] hover:to-[#1f5c00] transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
+            className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-[#39A900] to-[#2d8500] text-white rounded-xl"
             onClick={guardarUsuario}
           >
             <FaSave size={16} />

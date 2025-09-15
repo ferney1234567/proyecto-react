@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   FaTags, FaSearchLocation, FaRegBookmark, FaSearch, FaSignOutAlt, FaStar, FaRegStar,
   FaCheckCircle, FaCalendarAlt, FaCalendarTimes, FaMobileAlt, FaGraduationCap,
   FaClock, FaFileAlt, FaImage, FaCog, FaInfoCircle, FaUserTie, FaRegFileAlt,
   FaTrashAlt
 } from 'react-icons/fa';
+import { getConvocatorias } from "../../api/convocatorias/routes";
+
 
 import Link from 'next/link';
 import ModalConvocatoria from '../../../components/detalleConvo/detalleConvo'; // Ajusta la ruta
@@ -31,9 +33,10 @@ export default function HomePage() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [pestanaActiva, setPestanaActiva] = useState("descripcion");
   const [destacado, setDestacado] = useState(false);
-
-
   const [modoOscuro, setModoOscuro] = useState(false);
+
+  const [convocatoriaSeleccionada, setConvocatoriaSeleccionada] = useState<Convocatoria | null>(null);
+
 
   // Alternar entre claro y oscuro
   const toggleModoOscuro = () => {
@@ -46,6 +49,45 @@ export default function HomePage() {
       return nuevo;
     });
   };
+
+  
+  interface Convocatoria {
+    id: number;
+    title: string;
+    description: string;
+    resources: string;
+    callLink: string;
+    openDate: string;
+    closeDate: string;
+    pageName: string;
+    pageUrl: string;
+    objective: string;
+    notes: string;
+    institutionId: number;
+    lineId: number;
+    targetAudienceId: number;
+    interestId: number;
+    userId: number;
+    clickCount: number;
+    imageUrl?: string;
+  }
+  
+  const [convocatorias, setConvocatorias] = useState<Convocatoria[]>([]);
+  
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await getConvocatorias();
+        setConvocatorias(data.data || []); // tu backend devuelve { data: [...] }
+      } catch (err) {
+        console.error("Error al cargar convocatorias", err);
+      }
+    };
+  
+    fetchData();
+  }, []);
+  
+  
 
   return (
     <div className="min-h-[90vh] bg-white"> {/* Aumenta el alto mínimo */}
@@ -248,394 +290,447 @@ export default function HomePage() {
           </div>
         </section>
 
-        {vista === "Tarjeta" && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-0 mb-8">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i, index) => (
-              <div
-                key={i}
-                className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 flex flex-col"
-              >
-                {/* Imagen */}
-                <div className="overflow-hidden">
-                  <img
-                    onClick={() => setModalAbierto(true)}
-                    src={imagenesEje[index]}
-                    alt={`Imagen ${i}`}
-                    className="w-full h-[180px] sm:h-[200px] md:h-[220px] object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
-                  />
-                </div>
+       {vista === "Tarjeta" && (
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-0 mb-8">
+    {convocatorias.map((convocatoria, index) => (
+      <div
+        key={convocatoria.id || index}
+        className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 flex flex-col"
+      >
+        {/* Imagen */}
+        <div className="overflow-hidden">
+          <img
+            onClick={() => {
+              setConvocatoriaSeleccionada(convocatoria);
+              setModalAbierto(true);
+            }}
+            src={convocatoria.imageUrl || "/img/default.jpg"}
+            alt={convocatoria.title}
+            className="w-full h-[180px] sm:h-[200px] md:h-[220px] object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
+          />
+        </div>
 
-                {/* Contenido */}
-                <div className="p-4 sm:p-5 flex flex-col justify-between flex-grow">
-                  <div>
-                    {/* Título */}
-                    <h4 className="font-bold text-lg text-[#00324D] mb-3 flex items-center gap-2">
-                      <FaMobileAlt className="text-[#00324D]" />
-                      Curso de Tecnología {i}
-                    </h4>
+        {/* Contenido */}
+        <div className="p-4 sm:p-5 flex flex-col justify-between flex-grow">
+          <div>
+            {/* Título */}
+            <h4 className="font-bold text-lg text-[#00324D] mb-3 flex items-center gap-2">
+              <FaMobileAlt className="text-[#00324D]" />
+              {convocatoria.title}
+            </h4>
 
-                    {/* Descripción */}
-                    <p className="text-gray-600 mb-4 flex items-start gap-3">
-                      <FaGraduationCap className="text-lg sm:text-xl text-[#00324D] mt-0.5 flex-shrink-0" />
-                      <span className="text-sm">
-                        Dirigido a estudiantes y profesionales interesados en el área.
-                      </span>
-                    </p>
+            {/* Descripción */}
+            <p className="text-gray-600 mb-4 flex items-start gap-3">
+              <FaGraduationCap className="text-lg sm:text-xl text-[#00324D] mt-0.5 flex-shrink-0" />
+              <span className="text-sm">
+                {convocatoria.description}
+              </span>
+            </p>
 
-                    {/* Fechas */}
-                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm text-gray-700 mb-4">
-                      <span className="flex items-center gap-1.5">
-                        <FaCalendarAlt className="text-[#00324D]" />
-                        <strong>Apertura:</strong> 01/08/2025
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <FaCalendarTimes className="text-[#00324D]" />
-                        <strong>Cierre:</strong> 30/08/2025
-                      </span>
-                    </div>
-                  </div>
+            {/* Fechas */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm text-gray-700 mb-4">
+              <span className="flex items-center gap-1.5">
+                <FaCalendarAlt className="text-[#00324D]" />
+                <strong>Apertura:</strong>{" "}
+                {convocatoria.openDate
+                  ? new Date(convocatoria.openDate).toLocaleDateString()
+                  : "—"}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <FaCalendarTimes className="text-[#00324D]" />
+                <strong>Cierre:</strong>{" "}
+                {convocatoria.closeDate
+                  ? new Date(convocatoria.closeDate).toLocaleDateString()
+                  : "—"}
+              </span>
+            </div>
+          </div>
 
-                  {/* Botones */}
-                  <div className="pt-4 mt-auto border-t border-gray-200 flex items-center gap-2">
-                    <button
-                      onClick={() => setModalAbierto(true)}
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm bg-[#00324D] text-white hover:bg-[#004267] transition-all duration-300 shadow-sm hover:shadow-md"
-                    >
-                      <FaRegFileAlt /> Detalles
-                    </button>
+          {/* Botones */}
+          <div className="pt-4 mt-auto border-t border-gray-200 flex items-center gap-2">
+            <button
+              onClick={() => {
+                setConvocatoriaSeleccionada(convocatoria);
+                setModalAbierto(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm bg-[#00324D] text-white hover:bg-[#004267] transition-all duration-300 shadow-sm hover:shadow-md"
+            >
+              <FaRegFileAlt /> Detalles
+            </button>
 
-                    <button className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm bg-[#39A900] text-white hover:bg-lime-600 transition-all duration-300 shadow-sm hover:shadow-md">
-                      <FaCheckCircle /> Inscribirse
-                    </button>
+            <button className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm bg-[#39A900] text-white hover:bg-lime-600 transition-all duration-300 shadow-sm hover:shadow-md">
+              <FaCheckCircle /> Inscribirse
+            </button>
 
-                    {/* Favorito */}
-                    <button
-                      onClick={() => setDestacado(!destacado)}
-                      className="group ml-auto p-2 rounded-md hover:bg-gray-100 transition-colors"
-                      title="Marcar como favorita"
-                    >
-                      {destacado ? (
-                        <FaStar
-                          className="text-yellow-400 text-2xl transition-all duration-300 transform group-hover:scale-125 group-hover:rotate-[360deg]"
-                        />
-                      ) : (
-                        <FaRegStar
-                          className="text-gray-400 text-2xl transition-all duration-300 group-hover:text-yellow-400 group-hover:scale-125 group-hover:rotate-[360deg]"
-                        />
-                      )}
-                    </button>
-                  </div>
+            {/* Favorito */}
+            <button
+              onClick={() => setDestacado(!destacado)}
+              className="group ml-auto p-2 rounded-md hover:bg-gray-100 transition-colors"
+              title="Marcar como favorita"
+            >
+              {destacado ? (
+                <FaStar className="text-yellow-400 text-2xl transition-all duration-300 transform group-hover:scale-125 group-hover:rotate-[360deg]" />
+              ) : (
+                <FaRegStar className="text-gray-400 text-2xl transition-all duration-300 group-hover:text-yellow-400 group-hover:scale-125 group-hover:rotate-[360deg]" />
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    ))}
+
+    {/* Modal dinámico */}
+ {convocatoriaSeleccionada && (
+  <ModalConvocatoria
+    modalAbierto={modalAbierto}
+    cerrarModal={() => setModalAbierto(false)}
+    convocatoria={convocatoriaSeleccionada}
+  />
+)}
+
+  </div>
+)}
+
+
+       {/* Vista Lista MEJORADA y DINÁMICA */}
+{vista === "Lista" && (
+  <div className="w-full p-4 sm:p-0 lg:p-0">
+    <div className="flex flex-col gap-6">
+      {convocatorias.map((convocatoria, index) => (
+        <div
+          key={convocatoria.id || index}
+          className="relative flex flex-col md:flex-row bg-white rounded-lg border border-gray-200 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden"
+        >
+          {/* Imagen */}
+          <div className="w-full md:w-[400px] h-[260px] flex-shrink-0 bg-gray-100 overflow-hidden">
+            <img
+              onClick={() => {
+                setConvocatoriaSeleccionada(convocatoria);
+                setModalAbierto(true);
+              }}
+              src={convocatoria.imageUrl || "/img/default.jpg"}
+              alt={convocatoria.title}
+              className="w-full h-full object-cover object-[20%] cursor-pointer transition-transform duration-300 hover:scale-110"
+            />
+          </div>
+
+          {/* Contenido */}
+          <div className="flex flex-col flex-grow p-6">
+            <div className="flex-grow">
+              <h4 className="text-xl font-bold text-[#00324D] flex items-center gap-3">
+                <FaMobileAlt className="text-[#00324D]" />
+                {convocatoria.title}
+              </h4>
+
+              <div className="border-t border-gray-200 my-4"></div>
+
+              <div className="space-y-4">
+                {/* Descripción */}
+                <p className="text-sm text-gray-700 flex items-start gap-3 min-h-[40px]">
+                  <FaGraduationCap className="text-xl text-[#00324D] flex-shrink-0 mt-0.5" />
+                  <span className="line-clamp-2">
+                    {convocatoria.description}
+                  </span>
+                </p>
+
+                {/* Fechas */}
+                <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-800">
+                  <span className="flex items-center gap-2">
+                    <FaCalendarAlt className="text-[#00324D]" />
+                    <strong>Apertura:</strong>{" "}
+                    {convocatoria.openDate
+                      ? new Date(convocatoria.openDate).toLocaleDateString()
+                      : "—"}
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <FaCalendarTimes className="text-[#00324D]" />
+                    <strong>Cierre:</strong>{" "}
+                    {convocatoria.closeDate
+                      ? new Date(convocatoria.closeDate).toLocaleDateString()
+                      : "—"}
+                  </span>
                 </div>
               </div>
-            ))}
-
-            {/* Modal */}
-            <ModalConvocatoria
-              modalAbierto={modalAbierto}
-              cerrarModal={() => setModalAbierto(false)}
-            />
-          </div>
-        )}
-
-        {/* Vista Lista MEJORADA y UNIFORME */}
-        {vista === "Lista" && (
-          <div className="w-full p-4 sm:p-0 lg:p-0">
-            <div className="flex flex-col gap-6">
-              {[...Array(8)].map((_, index) => (
-                <div
-                  key={index}
-                  className="relative flex flex-col md:flex-row bg-white rounded-lg border border-gray-200 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden"
-                >
-                  {/* Contenedor de Imagen (más grande y uniforme) */}
-                  {/* Contenedor de Imagen (más grande y uniforme con enfoque a la izquierda) */}
-                  <div className="w-full md:w-[400px] h-[260px] flex-shrink-0 bg-gray-100 overflow-hidden">
-                    <img
-                      onClick={() => setModalAbierto(true)}
-                      src={imagenesEje[index]}
-                      alt={`Convocatoria ${index}`}
-                      className="w-full h-full object-cover object-[20%] cursor-pointer transition-transform duration-300 hover:scale-110"
-                    />
-                  </div>
-
-
-                  {/* Contenido */}
-                  <div className="flex flex-col flex-grow p-6">
-                    <div className="flex-grow">
-                      <h4 className="text-xl font-bold text-[#00324D] flex items-center gap-3">
-                        <FaMobileAlt className="text-[#00324D]" />
-                        Técnico en Desarrollo de Aplicaciones Web
-                      </h4>
-
-                      <div className="border-t border-gray-200 my-4"></div>
-
-                      <div className="space-y-4">
-                        {/* Párrafo con altura consistente */}
-                        <p className="text-sm text-gray-700 flex items-start gap-3 min-h-[40px]">
-                          <FaGraduationCap className="text-xl text-[#00324D] flex-shrink-0 mt-0.5" />
-                          <span className="line-clamp-2">
-                            Aprende a crear aplicaciones web modernas con las últimas tecnologías del mercado.
-                            Este texto puede ser más largo para demostrar cómo se corta automáticamente.
-                          </span>
-                        </p>
-
-                        <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-800">
-                          <span className="flex items-center gap-2">
-                            <FaCalendarAlt className="text-[#00324D]" />
-                            <strong>Apertura:</strong> 15 julio
-                          </span>
-                          <span className="flex items-center gap-2">
-                            <FaCalendarTimes className="text-[#00324D]" />
-                            <strong>Cierre:</strong> 31 julio
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Botones con línea separadora */}
-                    <div className="flex flex-wrap items-center gap-3 pt-4 mt-auto border-t border-gray-200">
-                      <button
-                        onClick={() => setModalAbierto(true)}
-                        className="flex items-center gap-2 px-5 py-2 rounded-md font-semibold text-sm bg-[#00324D] text-white hover:bg-[#004267] transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                      >
-                        <FaFileAlt /> Detalles
-                      </button>
-
-                      <button className="flex items-center gap-2 px-5 py-2 rounded-md font-semibold text-sm bg-[#39A900] text-white hover:bg-lime-600 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
-                        <FaCheckCircle /> Inscribirse
-                      </button>
-
-                      <button
-                        onClick={() => setDestacado(!destacado)}
-                        className="group ml-auto p-2 rounded-md hover:bg-gray-100 transition-colors"
-                        title="Marcar como favorita"
-                      >
-                        {destacado ? (
-                          <FaStar
-                            className="text-yellow-400 text-2xl transition-all duration-300 transform group-hover:scale-125 group-hover:rotate-[360deg]"
-                          />
-                        ) : (
-                          <FaRegStar
-                            className="text-gray-400 text-2xl transition-all duration-300 group-hover:text-yellow-400 group-hover:scale-125 group-hover:rotate-[360deg]"
-                          />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              <ModalConvocatoria
-                modalAbierto={modalAbierto}
-                cerrarModal={() => setModalAbierto(false)}
-              />
-            </div>
-          </div>
-        )}
-
-
-
-        {vista === "Tabla" && (
-          // El contenedor sigue gestionando el scroll, lo que permite que la tabla de adentro sea más ancha.
-          <div className="bg-white rounded-2xl shadow-lg mt-6 border border-gray-200 ">
-            {/* 
-      Tabla con un ancho mínimo aumentado para que sea más larga hacia los lados.
-      Cambiado de min-w-[900px] a min-w-[1200px].
-    */}
-            <table className="w-full text-left border-collapse min-w-[1200px]">
-
-              <thead className="sticky top-0 z-10 bg-[#00324D] text-white">
-                <tr>
-                  <th className="px-6 py-4 text-sm font-medium uppercase tracking-wider border border-gray-300">
-                    <span className="flex items-center gap-2">
-                      <FaImage />
-                      Convocatoria
-                    </span>
-                  </th>
-                  <th className="px-6 py-4 text-sm font-medium uppercase tracking-wider border border-gray-300">
-                    <span className="flex items-center gap-2">
-                      <FaInfoCircle />
-                      Descripción
-                    </span>
-                  </th>
-                  <th className="px-6 py-4 text-sm font-medium uppercase tracking-wider border border-gray-300">
-                    <span className="flex items-center gap-2">
-                      <FaCalendarAlt />
-                      Apertura
-                    </span>
-                  </th>
-                  <th className="px-6 py-4 text-sm font-medium uppercase tracking-wider border border-gray-300">
-                    <span className="flex items-center gap-2">
-                      <FaCalendarTimes />
-                      Cierre
-                    </span>
-                  </th>
-                  <th className="px-6 py-4 text-sm font-medium uppercase tracking-wider text-center border border-gray-300">
-                    <span className="flex items-center justify-center gap-2">
-                      <FaCog />
-                      Acciones
-                    </span>
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="text-sm text-gray-700">
-                {[...Array(8)].map((_, index) => (
-                  <tr key={index} className="hover:bg-gray-50 transition-colors duration-200">
-
-                    <td className="px-6 py-4 align-middle border border-gray-200">
-                      <div className="flex items-center gap-4">
-                        <img
-                          onClick={() => setModalAbierto(true)}
-                          src={imagenesEje[index]}
-                          alt={`Convocatoria ${index}`}
-                          className="w-48 h-28 object-cover rounded-md flex-shrink-0 cursor-pointer"
-                        />
-                        <span className="font-semibold text-[#00324D] text-base">
-                          Técnico en desarrollo de Aplicaciones Web
-                        </span>
-                      </div>
-                    </td>
-
-                    <td className="px-6 py-4 text-gray-600 align-middle border border-gray-200">
-                      Aprende a crear aplicaciones web modernas con tecnologías del mercado.
-                    </td>
-
-                    <td className="px-6 py-4 text-gray-600 whitespace-nowrap align-middle border border-gray-200">
-                      15 julio
-                    </td>
-
-                    <td className="px-6 py-4 text-gray-600 whitespace-nowrap align-middle border border-gray-200">
-                      31 julio
-                    </td>
-
-                    <td className="px-6 py-4 align-middle border border-gray-200">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => setModalAbierto(true)}
-                          className="flex items-center gap-2 px-3 py-2 bg-[#00324D] text-white rounded-lg hover:bg-[#005072] transition-colors text-sm font-semibold"
-                        >
-                          <FaFileAlt />
-                          Detalles
-                        </button>
-                        <button className="flex items-center gap-2 px-3 py-2 bg-[#39A900] text-white rounded-lg hover:bg-[#2c8000] transition-colors text-sm font-semibold">
-                          <FaCheckCircle />
-                          Inscribirse
-                        </button>
-                        <button
-                          onClick={() => setDestacado(!destacado)}
-                          className="group ml-auto p-2 rounded-md hover:bg-gray-100 transition-colors"
-                          title="Marcar como favorita"
-                        >
-                          {destacado ? (
-                            <FaStar
-                              className="text-yellow-400 text-2xl transition-all duration-300 transform group-hover:scale-125 group-hover:rotate-[360deg]"
-                            />
-                          ) : (
-                            <FaRegStar
-                              className="text-gray-400 text-2xl transition-all duration-300 group-hover:text-yellow-400 group-hover:scale-125 group-hover:rotate-[360deg]"
-                            />
-                          )}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <ModalConvocatoria
-              modalAbierto={modalAbierto}
-              cerrarModal={() => setModalAbierto(false)}
-            />
-          </div>
-        )}
-
-
-
-        {/* ---------------- Vista Mosaico MEJORADA Y RESPONSIVA ---------------- */}
-        {vista === "Mosaico" && (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 max-w-[2300px] mx-auto my-8 px-0">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((i, index) => (
-                <div
-                  key={i}
-                  className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 transition-all duration-300 hover:shadow-xl flex flex-col h-full min-h-[320px]"
-                >
-                  {/* Imagen ancha pero no muy alta */}
-                  <div className="w-full h-[140px] sm:h-[160px] md:h-[180px] overflow-hidden">
-                    <img
-                      onClick={() => setModalAbierto(true)}
-                      src={imagenesEje[index]}
-                      alt={`Convocatoria ${i}`}
-                      className="w-full h-full object-cover object-[20%] cursor-pointer transition-transform duration-300 hover:scale-105"
-                    />
-                  </div>
-
-                  {/* Contenido compacto */}
-                  <div className="p-4 flex flex-col flex-grow">
-                    <div className="flex-grow space-y-2">
-                      <h4 className="text-[#00324D] text-base font-semibold flex items-center gap-2">
-                        <FaMobileAlt className="text-[#00324D]" />
-                        Desarrollo apps móviles
-                      </h4>
-
-                      <p className="text-sm text-gray-700 line-clamp-3">
-                        <FaGraduationCap className="float-left mr-2 mt-1 text-[#00324D]" />
-                        Becas para formación técnica y profesional en diversas disciplinas relacionadas con desarrollo móvil.
-                      </p>
-
-                      {/* Fechas compactas en una sola línea */}
-                      <div className="mt-3 flex items-center justify-between text-xs text-gray-600 bg-gray-50 p-2 rounded">
-                        <span className="flex items-center gap-1">
-                          <FaCalendarAlt className="text-[#00324D]" />
-                          <span>01/11/2025</span>
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <FaClock className="text-[#00324D]" />
-                          <span>29/11/2025</span>
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Botones en línea compactos */}
-                    <div className="mt-3 pt-3 border-t border-gray-200 flex items-center gap-2">
-                      <button
-                        onClick={() => setModalAbierto(true)}
-                        className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md text-xs bg-[#00324D] text-white hover:bg-[#004267]"
-                      >
-                        <FaRegFileAlt size={12} /> Detalles
-                      </button>
-                      <button className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md text-xs bg-[#39A900] text-white hover:bg-[#2d8a00]">
-                        <FaCheckCircle size={12} /> Inscribirse
-                      </button>
-                      <button
-                        onClick={() => setDestacado(!destacado)}
-                        className="group ml-auto p-2 rounded-md hover:bg-gray-100 transition-colors"
-                        title="Marcar como favorita"
-                      >
-                        {destacado ? (
-                          <FaStar
-                            className="text-yellow-400 text-2xl transition-all duration-300 transform group-hover:scale-125 group-hover:rotate-[360deg]"
-                          />
-                        ) : (
-                          <FaRegStar
-                            className="text-gray-400 text-2xl transition-all duration-300 group-hover:text-yellow-400 group-hover:scale-125 group-hover:rotate-[360deg]"
-                          />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
             </div>
 
-            {/* Modal */}
-            <ModalConvocatoria
-              modalAbierto={modalAbierto}
-              cerrarModal={() => setModalAbierto(false)}
+            {/* Botones */}
+            <div className="flex flex-wrap items-center gap-3 pt-4 mt-auto border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setConvocatoriaSeleccionada(convocatoria);
+                  setModalAbierto(true);
+                }}
+                className="flex items-center gap-2 px-5 py-2 rounded-md font-semibold text-sm bg-[#00324D] text-white hover:bg-[#004267] transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              >
+                <FaFileAlt /> Detalles
+              </button>
+
+              <button className="flex items-center gap-2 px-5 py-2 rounded-md font-semibold text-sm bg-[#39A900] text-white hover:bg-lime-600 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                <FaCheckCircle /> Inscribirse
+              </button>
+
+              {/* Favorito */}
+              <button
+                onClick={() => setDestacado(!destacado)}
+                className="group ml-auto p-2 rounded-md hover:bg-gray-100 transition-colors"
+                title="Marcar como favorita"
+              >
+                {destacado ? (
+                  <FaStar className="text-yellow-400 text-2xl transition-all duration-300 transform group-hover:scale-125 group-hover:rotate-[360deg]" />
+                ) : (
+                  <FaRegStar className="text-gray-400 text-2xl transition-all duration-300 group-hover:text-yellow-400 group-hover:scale-125 group-hover:rotate-[360deg]" />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {/* Modal dinámico */}
+      {convocatoriaSeleccionada && (
+        <ModalConvocatoria
+          modalAbierto={modalAbierto}
+          cerrarModal={() => setModalAbierto(false)}
+          convocatoria={convocatoriaSeleccionada}
+        />
+      )}
+    </div>
+  </div>
+)}
+
+
+
+
+     {vista === "Tabla" && (
+  <div className="bg-white rounded-2xl shadow-lg mt-6 border border-gray-200 overflow-x-auto">
+    <table className="w-full text-left border-collapse min-w-[1200px]">
+      <thead className="sticky top-0 z-10 bg-[#00324D] text-white">
+        <tr>
+          <th className="px-6 py-4 text-sm font-medium uppercase tracking-wider border border-gray-300">
+            <span className="flex items-center gap-2">
+              <FaImage />
+              Convocatoria
+            </span>
+          </th>
+          <th className="px-6 py-4 text-sm font-medium uppercase tracking-wider border border-gray-300">
+            <span className="flex items-center gap-2">
+              <FaInfoCircle />
+              Descripción
+            </span>
+          </th>
+          <th className="px-6 py-4 text-sm font-medium uppercase tracking-wider border border-gray-300">
+            <span className="flex items-center gap-2">
+              <FaCalendarAlt />
+              Apertura
+            </span>
+          </th>
+          <th className="px-6 py-4 text-sm font-medium uppercase tracking-wider border border-gray-300">
+            <span className="flex items-center gap-2">
+              <FaCalendarTimes />
+              Cierre
+            </span>
+          </th>
+          <th className="px-6 py-4 text-sm font-medium uppercase tracking-wider text-center border border-gray-300">
+            <span className="flex items-center justify-center gap-2">
+              <FaCog />
+              Acciones
+            </span>
+          </th>
+        </tr>
+      </thead>
+
+      <tbody className="text-sm text-gray-700">
+        {convocatorias.map((convocatoria, index) => (
+          <tr
+            key={convocatoria.id || index}
+            className="hover:bg-gray-50 transition-colors duration-200"
+          >
+            {/* Convocatoria con imagen y título */}
+            <td className="px-6 py-4 align-middle border border-gray-200">
+              <div className="flex items-center gap-4">
+                <img
+                  onClick={() => {
+                    setConvocatoriaSeleccionada(convocatoria);
+                    setModalAbierto(true);
+                  }}
+                  src={convocatoria.imageUrl || "/img/default.jpg"}
+                  alt={convocatoria.title}
+                  className="w-48 h-28 object-cover rounded-md flex-shrink-0 cursor-pointer"
+                />
+                <span className="font-semibold text-[#00324D] text-base">
+                  {convocatoria.title}
+                </span>
+              </div>
+            </td>
+
+            {/* Descripción */}
+            <td className="px-6 py-4 text-gray-600 align-middle border border-gray-200">
+              {convocatoria.description}
+            </td>
+
+            {/* Apertura */}
+            <td className="px-6 py-4 text-gray-600 whitespace-nowrap align-middle border border-gray-200">
+              {convocatoria.openDate
+                ? new Date(convocatoria.openDate).toLocaleDateString()
+                : "—"}
+            </td>
+
+            {/* Cierre */}
+            <td className="px-6 py-4 text-gray-600 whitespace-nowrap align-middle border border-gray-200">
+              {convocatoria.closeDate
+                ? new Date(convocatoria.closeDate).toLocaleDateString()
+                : "—"}
+            </td>
+
+            {/* Acciones */}
+            <td className="px-6 py-4 align-middle border border-gray-200">
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  onClick={() => {
+                    setConvocatoriaSeleccionada(convocatoria);
+                    setModalAbierto(true);
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 bg-[#00324D] text-white rounded-lg hover:bg-[#005072] transition-colors text-sm font-semibold"
+                >
+                  <FaFileAlt />
+                  Detalles
+                </button>
+
+                <button className="flex items-center gap-2 px-3 py-2 bg-[#39A900] text-white rounded-lg hover:bg-[#2c8000] transition-colors text-sm font-semibold">
+                  <FaCheckCircle />
+                  Inscribirse
+                </button>
+
+                <button
+                  onClick={() => setDestacado(!destacado)}
+                  className="group ml-auto p-2 rounded-md hover:bg-gray-100 transition-colors"
+                  title="Marcar como favorita"
+                >
+                  {destacado ? (
+                    <FaStar className="text-yellow-400 text-2xl transition-all duration-300 transform group-hover:scale-125 group-hover:rotate-[360deg]" />
+                  ) : (
+                    <FaRegStar className="text-gray-400 text-2xl transition-all duration-300 group-hover:text-yellow-400 group-hover:scale-125 group-hover:rotate-[360deg]" />
+                  )}
+                </button>
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+
+    {/* Modal dinámico */}
+    {convocatoriaSeleccionada && (
+      <ModalConvocatoria
+        modalAbierto={modalAbierto}
+        cerrarModal={() => setModalAbierto(false)}
+        convocatoria={convocatoriaSeleccionada}
+      />
+    )}
+  </div>
+)}
+
+
+
+
+      {/* ---------------- Vista Mosaico MEJORADA Y RESPONSIVA ---------------- */}
+{vista === "Mosaico" && (
+  <>
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 max-w-[2300px] mx-auto my-8 px-0">
+      {convocatorias.map((convocatoria, index) => (
+        <div
+          key={convocatoria.id || index}
+          className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 transition-all duration-300 hover:shadow-xl flex flex-col h-full min-h-[320px]"
+        >
+          {/* Imagen ancha pero no muy alta */}
+          <div className="w-full h-[140px] sm:h-[160px] md:h-[180px] overflow-hidden">
+            <img
+              onClick={() => {
+                setConvocatoriaSeleccionada(convocatoria);
+                setModalAbierto(true);
+              }}
+              src={convocatoria.imageUrl || "/img/default.jpg"}
+              alt={convocatoria.title}
+              className="w-full h-full object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
             />
-          </>
-        )}
+          </div>
+
+          {/* Contenido compacto */}
+          <div className="p-4 flex flex-col flex-grow">
+            <div className="flex-grow space-y-2">
+              <h4 className="text-[#00324D] text-base font-semibold flex items-center gap-2">
+                <FaMobileAlt className="text-[#00324D]" />
+                {convocatoria.title}
+              </h4>
+
+              <p className="text-sm text-gray-700 line-clamp-3">
+                <FaGraduationCap className="float-left mr-2 mt-1 text-[#00324D]" />
+                {convocatoria.description}
+              </p>
+
+              {/* Fechas compactas en una sola línea */}
+              <div className="mt-3 flex items-center justify-between text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                <span className="flex items-center gap-1">
+                  <FaCalendarAlt className="text-[#00324D]" />
+                  <span>
+                    {convocatoria.openDate
+                      ? new Date(convocatoria.openDate).toLocaleDateString()
+                      : "—"}
+                  </span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <FaClock className="text-[#00324D]" />
+                  <span>
+                    {convocatoria.closeDate
+                      ? new Date(convocatoria.closeDate).toLocaleDateString()
+                      : "—"}
+                  </span>
+                </span>
+              </div>
+            </div>
+
+            {/* Botones en línea compactos */}
+            <div className="mt-3 pt-3 border-t border-gray-200 flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setConvocatoriaSeleccionada(convocatoria);
+                  setModalAbierto(true);
+                }}
+                className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md text-xs bg-[#00324D] text-white hover:bg-[#004267]"
+              >
+                <FaRegFileAlt size={12} /> Detalles
+              </button>
+              <button className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md text-xs bg-[#39A900] text-white hover:bg-[#2d8a00]">
+                <FaCheckCircle size={12} /> Inscribirse
+              </button>
+              <button
+                onClick={() => setDestacado(!destacado)}
+                className="group ml-auto p-2 rounded-md hover:bg-gray-100 transition-colors"
+                title="Marcar como favorita"
+              >
+                {destacado ? (
+                  <FaStar className="text-yellow-400 text-2xl transition-all duration-300 transform group-hover:scale-125 group-hover:rotate-[360deg]" />
+                ) : (
+                  <FaRegStar className="text-gray-400 text-2xl transition-all duration-300 group-hover:text-yellow-400 group-hover:scale-125 group-hover:rotate-[360deg]" />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    {/* Modal dinámico */}
+    {convocatoriaSeleccionada && (
+      <ModalConvocatoria
+        modalAbierto={modalAbierto}
+        cerrarModal={() => setModalAbierto(false)}
+        convocatoria={convocatoriaSeleccionada}
+      />
+    )}
+  </>
+)}
+
 
 
         {/*-------------------------------- Paginación Moderna con Efecto Glow -----------------------------------*/}

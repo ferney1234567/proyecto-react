@@ -1,36 +1,38 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { FaBuilding, FaSave, FaTimes } from 'react-icons/fa';
+import { FaBuilding, FaGlobe, FaSave, FaTimes } from 'react-icons/fa';
 
-interface EntidadModalProps {
+interface EditarEntidadProps {
   visible: boolean;
   onClose: () => void;
-  onSave: () => void;
-  nuevaEntidad: string;
-  setNuevaEntidad: (value: string) => void;
+  entidad: { id: string; name: string; website: string };
+  onSave: (id: string, nuevoNombre: string, nuevoSitio: string) => void;
   modoOscuro: boolean;
 }
 
-export default function EntidadModal({
+export default function EditarEntidad({
   visible,
   onClose,
+  entidad,
   onSave,
-  nuevaEntidad,
-  setNuevaEntidad,
-  modoOscuro
-}: EntidadModalProps) {
+  modoOscuro,
+}: EditarEntidadProps) {
   const [animacion, setAnimacion] = useState(false);
   const [renderizar, setRenderizar] = useState(false);
+  const [nuevoNombre, setNuevoNombre] = useState(entidad.name);
+  const [nuevoSitio, setNuevoSitio] = useState(entidad.website || '');
 
   useEffect(() => {
     if (visible) {
       setRenderizar(true);
+      setNuevoNombre(entidad.name);
+      setNuevoSitio(entidad.website || '');
       setTimeout(() => setAnimacion(true), 10);
     } else {
       setAnimacion(false);
       setTimeout(() => setRenderizar(false), 300);
     }
-  }, [visible]);
+  }, [visible, entidad]);
 
   if (!renderizar) return null;
 
@@ -57,7 +59,7 @@ export default function EntidadModal({
         } ${modalBg}`}
       >
         {/* Header con gradiente e ícono */}
-        <div className="bg-gradient-to-r from-[#39A900] to-[#2d8500] p-6 flex justify-between items-center">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/20 rounded-full">
               <FaBuilding className="text-white text-xl" />
@@ -74,6 +76,7 @@ export default function EntidadModal({
 
         {/* Formulario */}
         <div className="p-8 space-y-6">
+          {/* Nombre */}
           <div className="space-y-2">
             <label className={`block text-sm font-medium ${labelColor}`}>
               Nombre de la entidad
@@ -85,10 +88,30 @@ export default function EntidadModal({
               />
               <input
                 type="text"
-                value={nuevaEntidad}
-                onChange={(e) => setNuevaEntidad(e.target.value)}
+                value={nuevoNombre}
+                onChange={(e) => setNuevoNombre(e.target.value)}
                 className={`w-full border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
                 placeholder="Ej: Universidad Nacional, Hospital Central..."
+              />
+            </div>
+          </div>
+
+          {/* Sitio web */}
+          <div className="space-y-2">
+            <label className={`block text-sm font-medium ${labelColor}`}>
+              Sitio web
+            </label>
+            <div className="relative">
+              <FaGlobe
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]"
+                size={18}
+              />
+              <input
+                type="url"
+                value={nuevoSitio}
+                onChange={(e) => setNuevoSitio(e.target.value)}
+                className={`w-full border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
+                placeholder="https://www.ejemplo.com"
               />
             </div>
           </div>
@@ -104,8 +127,8 @@ export default function EntidadModal({
             <span>Cancelar</span>
           </button>
           <button
-            onClick={onSave}
-            className="flex items-center gap-2 px-6 py-3 bg-[#39A900] text-white rounded-xl hover:bg-[#2d8500] transition-colors shadow-md hover:shadow-lg transform hover:scale-105 duration-200"
+            onClick={() => onSave(entidad.id, nuevoNombre, nuevoSitio)}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-xl hover:scale-105 transition-colors shadow-md hover:shadow-lg transform duration-200"
           >
             <FaSave size={18} />
             <span>Guardar Cambios</span>

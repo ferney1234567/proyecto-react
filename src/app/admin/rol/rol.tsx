@@ -1,10 +1,10 @@
-// Rol.tsx (Modificado)
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, User } from 'lucide-react';
 import Swal from 'sweetalert2';
 import ModalRol from './crearRol';
-import ModalEditarRol from './editarRol'; // 1. Importar el nuevo componente
+import ModalEditarRol from './editarRol';
+import { getRoles, createRole, updateRole, deleteRole } from '../../api/roles/route';
 
 interface RolProps {
   modoOscuro: boolean;
@@ -16,19 +16,14 @@ interface Role {
 }
 
 export default function Rol({ modoOscuro }: RolProps) {
-  const [roles, setRoles] = useState<Role[]>([
-    { id: '1', name: 'Administrador' },
-    { id: '2', name: 'Editor' },
-  ]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [roleSearchTerm, setRoleSearchTerm] = useState('');
   const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
   const [nuevoRol, setNuevoRol] = useState('');
-
-  // 2. Nuevos estados para el modal de edición
   const [mostrarModalEditar, setMostrarModalEditar] = useState(false);
   const [rolParaEditar, setRolParaEditar] = useState<Role | null>(null);
 
-  // === ALERTAS SWEETALERT2 ===
+  // === ALERTAS ===
   const showSuccess = (mensaje: string) => {
     Swal.fire({
       icon: 'success',
@@ -51,55 +46,51 @@ export default function Rol({ modoOscuro }: RolProps) {
     });
   };
 
-  // --- Lógica para CREAR rol ---
-  const handleAddRole = () => setMostrarModalCrear(true);
+  // ==================== CRUD ====================
 
-  const cerrarModalCrear = () => {
-    setMostrarModalCrear(false);
-    setNuevoRol('');
+  const cargarRoles = async () => {
+    try {
+      const data = await getRoles();
+      setRoles(data);
+    } catch (error: any) {
+      showWarning(error.message);
+    }
   };
 
-  const handleSaveRole = () => {
+  useEffect(() => {
+    cargarRoles();
+  }, []);
+
+  const handleSaveRole = async () => {
     if (nuevoRol.trim() === '') {
       showWarning('El nombre del rol es obligatorio');
       return;
     }
-    const nuevo: Role = {
-      id: Date.now().toString(),
-      name: nuevoRol,
-    };
-    setRoles([...roles, nuevo]);
-    cerrarModalCrear();
-    showSuccess('El rol fue agregado correctamente');
-  };
-
-  // --- Lógica para EDITAR rol ---
-  // 3. Modificado para abrir el modal
-  const handleEditRole = (id: string) => {
-    const rol = roles.find(r => r.id === id);
-    if (rol) {
-      setRolParaEditar(rol); // Guarda el rol que se va a editar
-      setMostrarModalEditar(true); // Abre el modal
+    try {
+      await createRole(nuevoRol);
+      await cargarRoles();
+      cerrarModalCrear();
+      showSuccess('El rol fue agregado correctamente');
+    } catch (error: any) {
+      showWarning(error.message);
     }
   };
-  
-  const cerrarModalEditar = () => {
-    setMostrarModalEditar(false);
-    setRolParaEditar(null);
-  };
 
-  // 4. Nueva función para manejar la actualización desde el modal
-  const handleUpdateRole = (id: string, newName: string) => {
+  const handleUpdateRole = async (id: string, newName: string) => {
     if (newName.trim() === '') {
-        showWarning('El nombre del rol no puede estar vacío.');
-        return;
+      showWarning('El nombre del rol no puede estar vacío.');
+      return;
     }
-    setRoles(roles.map(r => (r.id === id ? { ...r, name: newName } : r)));
-    cerrarModalEditar();
-    showSuccess('El rol fue actualizado correctamente');
+    try {
+      await updateRole(id, newName);
+      await cargarRoles();
+      cerrarModalEditar();
+      showSuccess('El rol fue actualizado correctamente');
+    } catch (error: any) {
+      showWarning(error.message);
+    }
   };
 
-  // --- Lógica para ELIMINAR rol ---
   const handleDeleteRole = (id: string) => {
     Swal.fire({
       title: '¿Eliminar este rol?',
@@ -112,19 +103,38 @@ export default function Rol({ modoOscuro }: RolProps) {
       cancelButtonText: 'Cancelar',
       background: modoOscuro ? '#1a0526' : '#fff',
       color: modoOscuro ? '#fff' : '#333',
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        setRoles(roles.filter(r => r.id !== id));
-        showSuccess('El rol fue eliminado correctamente');
+        try {
+          await deleteRole(id);
+          await cargarRoles();
+          showSuccess('El rol fue eliminado correctamente');
+        } catch (error: any) {
+          showWarning(error.message);
+        }
       }
     });
   };
 
+  // ==================== Modales ====================
+  const handleAddRole = () => setMostrarModalCrear(true);
+  const cerrarModalCrear = () => { setMostrarModalCrear(false); setNuevoRol(''); };
+
+  const handleEditRole = (id: string) => {
+    const rol = roles.find(r => r.id === id);
+    if (rol) {
+      setRolParaEditar(rol);
+      setMostrarModalEditar(true);
+    }
+  };
+  const cerrarModalEditar = () => { setMostrarModalEditar(false); setRolParaEditar(null); };
+
+  // ==================== FILTRO ====================
   const filteredRoles = roles.filter(role =>
     role.name.toLowerCase().includes(roleSearchTerm.toLowerCase())
   );
 
-  // --- Estilos condicionales (sin cambios) ---
+  // ==================== ESTILOS ====================
   const bgColor = modoOscuro ? 'bg-[#1a0526]' : 'bg-white';
   const textColor = modoOscuro ? 'text-white' : 'text-gray-900';
   const borderColor = modoOscuro ? 'border-white/20' : 'border-gray-200';
@@ -138,121 +148,98 @@ export default function Rol({ modoOscuro }: RolProps) {
   const secondaryText = modoOscuro ? 'text-gray-300' : 'text-gray-600';
   const titleColor = modoOscuro ? 'text-white' : 'text-gray-800';
 
-return (
-  <>
-    {/* Contenedor principal */}
-    <div className={`rounded-3xl p-10 max-w-9xl mx-auto my-12 ${bgColor} ${textColor}`}>
-      
-      {/* Header */}
-      <div className="text-center mb-10">
-        <h2 className={`text-4xl font-extrabold mb-2 ${titleColor}`}>
-           <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600">
-          Gestión de Roles
-          </span>
-        </h2>
-        <p className={`text-lg ${secondaryText}`}>
-          Administra los roles del sistema
-        </p>
-      </div>
+  // ==================== RENDER ====================
+  return (
+    <>
+      <div className={`rounded-3xl p-10 max-w-9xl mx-auto my-12 ${bgColor} ${textColor}`}>
+        {/* Header */}
+        <div className="text-center mb-10">
+          <h2 className={`text-4xl font-extrabold mb-2 ${titleColor}`}>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600">
+              Gestión de Roles
+            </span>
+          </h2>
+          <p className={`text-lg ${secondaryText}`}>
+            Administra los roles del sistema
+          </p>
+        </div>
 
-      {/* Buscador + botón */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-        <input
-          type="text"
-          placeholder="Buscar roles..."
-          className={`border rounded-2xl px-5 py-3 text-lg focus:outline-none focus:ring-2 w-full sm:w-96 transition-all duration-300 hover:shadow-md ${searchBg} ${textColor} ${searchBorder} ${searchFocus} ${placeholderColor}`}
-          value={roleSearchTerm}
-          onChange={(e) => setRoleSearchTerm(e.target.value)}
-        />
-        <button
-          onClick={handleAddRole}
-          className="flex items-center gap-2 px-6 py-3 bg-[#39A900] text-white text-lg font-medium rounded-2xl hover:bg-[#2d8500] transition-all shadow-md hover:shadow-xl transform hover:scale-105 duration-300 w-full sm:w-auto justify-center"
-        >
-          <Plus size={20} />
-          Agregar Nuevo Rol
-        </button>
-      </div>
+        {/* Buscador + botón */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
+          <input
+            type="text"
+            placeholder="Buscar roles..."
+            className={`border rounded-2xl px-5 py-3 text-lg focus:outline-none focus:ring-2 w-full sm:w-96 transition-all duration-300 hover:shadow-md ${searchBg} ${textColor} ${searchBorder} ${searchFocus} ${placeholderColor}`}
+            value={roleSearchTerm}
+            onChange={(e) => setRoleSearchTerm(e.target.value)}
+          />
+          <button
+            onClick={handleAddRole}
+            className="flex items-center gap-2 px-6 py-3 bg-[#39A900] text-white text-lg font-medium rounded-2xl hover:bg-[#2d8500] transition-all shadow-md hover:shadow-xl transform hover:scale-105 duration-300 w-full sm:w-auto justify-center"
+          >
+            <Plus size={20} />
+            Agregar Nuevo Rol
+          </button>
+        </div>
 
-      {/* Lista de roles */}
-      <div className="space-y-5">
-        {filteredRoles.length === 0 ? (
-          <div className={`text-center py-16 rounded-2xl border ${emptyStateBg}`}>
-            <p className={`${secondaryText} text-lg`}>
-              No se encontraron roles
-            </p>
-          </div>
-        ) : (
-          filteredRoles.map((role) => (
-            <div 
-              key={role.id} 
-              className={`p-6 rounded-2xl border shadow-md hover:shadow-xl transition-all duration-300 flex flex-col sm:flex-row justify-between items-center gap-5 transform hover:-translate-y-1 ${cardBg} ${borderColor} ${
-                modoOscuro 
-                  ? 'hover:border-[#39A900]/50' 
-                  : 'hover:border-[#39A900]'
-              }`}
-            >
-              <div className="flex items-center gap-2 w-full">
-                <div className={`p-4 rounded-xl transition-colors ${iconBg} text-[#39A900]`}>
-                  <User size={24} />
-                </div>
-                <h3 className={`text-xl font-semibold transition-colors ${
-                  modoOscuro ? 'hover:text-[#39A900] text-white' : 'hover:text-[#39A900] text-gray-800'
-                }`}>
-                  {role.name}
-                </h3>
-              </div>
-
-              {/* Botones acción */}
-              <div className="flex gap-3">
-                <button
-                  onClick={() => handleEditRole(role.id)}
-                  title="Editar rol"
-                  className={`p-3 rounded-xl transition-all transform hover:scale-110 ${
-                    modoOscuro
-                      ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50'
-                      : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-                  }`}
-                >
-                  <Edit size={20} />
-                </button>
-                <button
-                  onClick={() => handleDeleteRole(role.id)}
-                  title="Eliminar rol"
-                  className={`p-3 rounded-xl transition-all transform hover:scale-110 ${
-                    modoOscuro
-                      ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50'
-                      : 'bg-red-50 text-red-600 hover:bg-red-100'
-                  }`}
-                >
-                  <Trash2 size={20} />
-                </button>
-              </div>
+        {/* Lista de roles */}
+        <div className="space-y-5">
+          {filteredRoles.length === 0 ? (
+            <div className={`text-center py-16 rounded-2xl border ${emptyStateBg}`}>
+              <p className={`${secondaryText} text-lg`}>No se encontraron roles</p>
             </div>
-          ))
-        )}
+          ) : (
+            filteredRoles.map((role) => (
+              <div key={role.id} className={`p-6 rounded-2xl border shadow-md hover:shadow-xl transition-all duration-300 flex flex-col sm:flex-row justify-between items-center gap-5 transform hover:-translate-y-1 ${cardBg} ${borderColor}`}>
+                <div className="flex items-center gap-2 w-full">
+                  <div className={`p-4 rounded-xl transition-colors ${iconBg} text-[#39A900]`}>
+                    <User size={24} />
+                  </div>
+                  <h3 className={`text-xl font-semibold ${modoOscuro ? 'text-white hover:text-[#39A900]' : 'text-gray-800 hover:text-[#39A900]'}`}>
+                    {role.name}
+                  </h3>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleEditRole(role.id)}
+                    className={`p-3 rounded-xl ${modoOscuro ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-50 text-blue-600'} hover:scale-110 transition`}
+                  >
+                    <Edit size={20} />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteRole(role.id)}
+                    className={`p-3 rounded-xl ${modoOscuro ? 'bg-red-900/30 text-red-400' : 'bg-red-50 text-red-600'} hover:scale-110 transition`}
+                  >
+                    <Trash2 size={20} />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
-    </div>
 
-    {/* Modal de Crear */}
-    {mostrarModalCrear && (
-      <ModalRol
-        nuevoRol={nuevoRol}
-        setNuevoRol={setNuevoRol}
-        onClose={cerrarModalCrear}
-        onSave={handleSaveRole}
-        modoOscuro={modoOscuro}
-      />
-    )}
-
-    {/* 5. Renderizado condicional del Modal de Editar */}
-    {mostrarModalEditar && (
-        <ModalEditarRol 
-            rol={rolParaEditar}
-            onClose={cerrarModalEditar}
-            onSave={handleUpdateRole}
-            modoOscuro={modoOscuro}
+      {/* Modal Crear */}
+      {mostrarModalCrear && (
+        <ModalRol
+          nuevoRol={nuevoRol}
+          setNuevoRol={setNuevoRol}
+          onClose={cerrarModalCrear}
+          onSave={handleSaveRole}
+          modoOscuro={modoOscuro}
         />
-    )}
-  </>
-);
+      )}
+
+      {/* Modal Editar */}
+      {mostrarModalEditar && rolParaEditar && (
+        <ModalEditarRol
+          rol={rolParaEditar}
+          onClose={cerrarModalEditar}
+          onSave={handleUpdateRole}
+          modoOscuro={modoOscuro}
+        />
+      )}
+    </>
+  );
 }

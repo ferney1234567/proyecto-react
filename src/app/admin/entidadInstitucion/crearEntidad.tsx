@@ -1,5 +1,6 @@
 'use client';
-import { FaUniversity, FaBuilding, FaTimes, FaSave } from 'react-icons/fa';
+import { useState, useEffect } from 'react';
+import { FaUniversity, FaBuilding, FaGlobe, FaTimes, FaSave } from 'react-icons/fa';
 
 interface EntidadModalProps {
   visible: boolean;
@@ -7,7 +8,9 @@ interface EntidadModalProps {
   onSave: () => void;
   nuevaEntidad: string;
   setNuevaEntidad: (val: string) => void;
-  modoOscuro: boolean; // 🔹 nueva prop
+  nuevoSitio: string;
+  setNuevoSitio: (val: string) => void;
+  modoOscuro: boolean;
 }
 
 export default function EntidadModal({
@@ -16,9 +19,24 @@ export default function EntidadModal({
   onSave,
   nuevaEntidad,
   setNuevaEntidad,
+  nuevoSitio,
+  setNuevoSitio,
   modoOscuro,
 }: EntidadModalProps) {
-  if (!visible) return null;
+  const [animacion, setAnimacion] = useState(false);
+  const [renderizar, setRenderizar] = useState(false);
+
+  useEffect(() => {
+    if (visible) {
+      setRenderizar(true);
+      setTimeout(() => setAnimacion(true), 10);
+    } else {
+      setAnimacion(false);
+      setTimeout(() => setRenderizar(false), 300);
+    }
+  }, [visible]);
+
+  if (!renderizar) return null;
 
   // 🔹 estilos condicionales
   const modalBg = modoOscuro ? 'bg-[#1a0526] text-white' : 'bg-white text-gray-900';
@@ -32,9 +50,15 @@ export default function EntidadModal({
   const labelColor = modoOscuro ? 'text-gray-300' : 'text-gray-700';
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div
+      className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 ${
+        animacion ? 'opacity-100' : 'opacity-0'
+      }`}
+    >
       <div
-        className={`${modalBg} rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all duration-300 scale-95 hover:scale-100`}
+        className={`${modalBg} rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all duration-300 ${
+          animacion ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+        }`}
       >
         {/* Header */}
         <div className="bg-gradient-to-r from-[#39A900] to-[#2d8500] p-6 flex justify-between items-center">
@@ -54,19 +78,44 @@ export default function EntidadModal({
 
         {/* Body */}
         <div className="p-8 space-y-6">
+          {/* Nombre */}
           <div className="space-y-2">
             <label htmlFor="nombreEntidad" className={`block text-sm font-medium ${labelColor}`}>
               Nombre de la Entidad
             </label>
             <div className="relative">
-              <FaBuilding className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" size={18} />
+              <FaBuilding
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]"
+                size={18}
+              />
               <input
                 type="text"
                 id="nombreEntidad"
-                className={`w-full border border-gray-300 rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
+                className={`w-full border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
                 placeholder="Ej: Universidad Nacional, Instituto de Cultura..."
                 value={nuevaEntidad}
                 onChange={(e) => setNuevaEntidad(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Sitio web */}
+          <div className="space-y-2">
+            <label htmlFor="sitioWeb" className={`block text-sm font-medium ${labelColor}`}>
+              Sitio web
+            </label>
+            <div className="relative">
+              <FaGlobe
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]"
+                size={18}
+              />
+              <input
+                type="url"
+                id="sitioWeb"
+                className={`w-full border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
+                placeholder="https://www.ejemplo.com"
+                value={nuevoSitio}
+                onChange={(e) => setNuevoSitio(e.target.value)}
               />
             </div>
           </div>

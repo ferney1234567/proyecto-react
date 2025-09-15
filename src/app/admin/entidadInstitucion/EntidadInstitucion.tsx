@@ -1,10 +1,11 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Edit, Trash2, Plus } from 'lucide-react';
-import { FaBuilding } from 'react-icons/fa';
+import { FaBuilding, FaGlobe } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 import EntidadModal from './crearEntidad';
 import EditarEntidad from './editarEntidadInstitucion';
+import { getInstituciones, createInstitucion, updateInstitucion, deleteInstitucion } from '../../api/entidadInstitucion/route';
 
 interface EntidadInstitucionProps {
   modoOscuro: boolean;
@@ -13,85 +14,73 @@ interface EntidadInstitucionProps {
 interface Entidad {
   id: string;
   name: string;
+  website: string;
 }
 
 export default function EntidadInstitucion({ modoOscuro }: EntidadInstitucionProps) {
-  const [entidades, setEntidades] = useState<Entidad[]>([
-    { id: '1', name: 'Universidad Nacional' },
-    { id: '2', name: 'Ministerio de Educación' },
-  ]);
+  const [entidades, setEntidades] = useState<Entidad[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [mostrarModal, setMostrarModal] = useState(false);
   const [nuevaEntidad, setNuevaEntidad] = useState('');
-
-  // === Para editar entidad ===
+  const [nuevoSitio, setNuevoSitio] = useState('');
   const [entidadAEditar, setEntidadAEditar] = useState<Entidad | null>(null);
 
-  // === ALERTAS SWEETALERT2 ===
-  const showSuccess = (mensaje: string) => {
-    Swal.fire({
-      icon: 'success',
-      title: '¡Éxito!',
-      text: mensaje,
-      confirmButtonText: 'Aceptar',
-      confirmButtonColor: '#39A900',
-      background: modoOscuro ? '#1a0526' : '#fff',
-      color: modoOscuro ? '#fff' : '#333',
-    });
+  // === ALERTAS ===
+  const showSuccess = (mensaje: string) =>
+    Swal.fire({ icon: 'success', title: '¡Éxito!', text: mensaje, confirmButtonColor: '#39A900' });
+
+  const showWarning = (mensaje: string) =>
+    Swal.fire({ icon: 'warning', title: 'Atención', text: mensaje, confirmButtonColor: '#39A900' });
+
+  // === CARGAR ENTIDADES ===
+  const cargarEntidades = async () => {
+    try {
+      const data = await getInstituciones();
+      setEntidades(data.data || []);
+    } catch (error: any) {
+      showWarning(error.message);
+    }
   };
 
-  const showWarning = (mensaje: string) => {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Atención',
-      text: mensaje,
-      confirmButtonText: 'Aceptar',
-      confirmButtonColor: '#39A900',
-      background: modoOscuro ? '#1a0526' : '#fff',
-      color: modoOscuro ? '#fff' : '#333',
-    });
-  };
+  useEffect(() => {
+    cargarEntidades();
+  }, []);
 
-  // === MANEJADORES ===
-  const handleAddEntidad = () => setMostrarModal(true);
-
-  const cerrarModal = () => {
-    setMostrarModal(false);
-    setNuevaEntidad('');
-  };
-
-  const handleSaveEntidad = () => {
+  // === CREAR ===
+  const handleSaveEntidad = async () => {
     if (nuevaEntidad.trim() === '') {
       showWarning('El nombre de la entidad es obligatorio');
       return;
     }
-    const nueva: Entidad = { id: Date.now().toString(), name: nuevaEntidad };
-    setEntidades([...entidades, nueva]);
-    showSuccess('La entidad fue agregada correctamente');
-    cerrarModal();
+    try {
+      await createInstitucion({ name: nuevaEntidad, website: nuevoSitio });
+      showSuccess('La entidad fue agregada correctamente');
+      setMostrarModal(false);
+      setNuevaEntidad('');
+      setNuevoSitio('');
+      await cargarEntidades();
+    } catch (error: any) {
+      showWarning(error.message);
+    }
   };
 
-  // === Editar entidad con modal ===
-  const handleEditEntidad = (id: string) => {
-    const entidad = entidades.find((ent) => ent.id === id);
-    if (entidad) setEntidadAEditar(entidad);
-  };
-
-  const cerrarModalEditar = () => setEntidadAEditar(null);
-
-  const handleSaveEditEntidad = (id: string, nuevoNombre: string) => {
-    if (nuevoNombre.trim() === '') {
+  // === EDITAR ===
+  const handleSaveEditEntidad = async (id: string, newName: string, newWebsite: string) => {
+    if (newName.trim() === '') {
       showWarning('El nombre de la entidad es obligatorio');
       return;
     }
-    setEntidades(entidades.map((ent) =>
-      ent.id === id ? { ...ent, name: nuevoNombre } : ent
-    ));
-    showSuccess('La entidad fue actualizada correctamente');
-    cerrarModalEditar();
+    try {
+      await updateInstitucion(id, { name: newName, website: newWebsite });
+      showSuccess('La entidad fue actualizada correctamente');
+      setEntidadAEditar(null);
+      await cargarEntidades();
+    } catch (error: any) {
+      showWarning(error.message);
+    }
   };
 
-  // === Eliminar entidad ===
+  // === ELIMINAR ===
   const handleDeleteEntidad = (id: string) => {
     Swal.fire({
       title: '¿Eliminar esta entidad?',
@@ -102,19 +91,24 @@ export default function EntidadInstitucion({ modoOscuro }: EntidadInstitucionPro
       cancelButtonColor: '#3085d6',
       confirmButtonText: 'Eliminar',
       cancelButtonText: 'Cancelar',
-      background: modoOscuro ? '#1a0526' : '#fff',
-      color: modoOscuro ? '#fff' : '#333',
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        setEntidades(entidades.filter((ent) => ent.id !== id));
-        showSuccess('La entidad fue eliminada correctamente');
+        try {
+          await deleteInstitucion(id);
+          showSuccess('La entidad fue eliminada correctamente');
+          await cargarEntidades();
+        } catch (error: any) {
+          showWarning(error.message);
+        }
       }
     });
   };
 
-  // === Filtro de búsqueda ===
-  const filteredEntidades = entidades.filter((ent) =>
-    ent.name.toLowerCase().includes(searchTerm.toLowerCase())
+  // === FILTRO ===
+  const filteredEntidades = entidades.filter(
+    (ent) =>
+      ent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ent.website?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // === ESTILOS ===
@@ -122,30 +116,19 @@ export default function EntidadInstitucion({ modoOscuro }: EntidadInstitucionPro
   const textColor = modoOscuro ? 'text-white' : 'text-gray-900';
   const borderColor = modoOscuro ? 'border-white/20' : 'border-gray-200';
   const cardBg = modoOscuro ? 'bg-white/10' : 'bg-white';
-  const placeholderColor = modoOscuro ? 'placeholder-gray-400' : 'placeholder-gray-500';
-  const searchBg = modoOscuro ? 'bg-white/10' : 'bg-white';
-  const searchBorder = modoOscuro ? 'border-white/20' : 'border-gray-300';
-  const searchFocus = 'focus:ring-[#39A900] focus:border-[#39A900]';
-  const emptyStateBg = modoOscuro ? 'bg-gray-800/30' : 'bg-gray-50';
-  const iconBg = modoOscuro ? 'bg-[#39A900]/20' : 'bg-[#39A900]/10';
   const secondaryText = modoOscuro ? 'text-gray-300' : 'text-gray-600';
-  const titleColor = modoOscuro ? 'text-white' : 'text-gray-800';
 
   return (
     <>
-      <div
-        className={`rounded-3xl p-10 max-w-9xl mx-auto my-12 ${bgColor} ${textColor}`}
-      >
+      <div className={`rounded-3xl p-10 max-w-9xl mx-auto my-12 ${bgColor} ${textColor}`}>
         {/* Cabecera */}
         <div className="text-center mb-10">
-          <h2 className={`text-4xl font-extrabold mb-2 ${titleColor}`}>
-             <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600">
-            Entidad Institución
+          <h2 className="text-4xl font-extrabold mb-2">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600">
+              Entidad Institución
             </span>
           </h2>
-          <p className={`text-lg ${secondaryText}`}>
-            Administra las entidades disponibles
-          </p>
+          <p className={`text-lg ${secondaryText}`}>Administra las entidades disponibles</p>
         </div>
 
         {/* Buscador + botón */}
@@ -153,92 +136,70 @@ export default function EntidadInstitucion({ modoOscuro }: EntidadInstitucionPro
           <input
             type="text"
             placeholder="Buscar entidad..."
-            className={`border rounded-2xl px-5 py-3 text-lg focus:outline-none focus:ring-2 w-full sm:w-96 transition-all duration-300 hover:shadow-md ${searchBg} ${textColor} ${searchBorder} ${searchFocus} ${placeholderColor}`}
+            className="border rounded-2xl px-5 py-3 w-full sm:w-96"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           <button
-            onClick={handleAddEntidad}
-            className="flex items-center gap-2 px-6 py-3 bg-[#39A900] text-white text-lg font-medium rounded-2xl hover:bg-[#2d8500] transition-all shadow-md hover:shadow-xl transform hover:scale-105 duration-300 w-full sm:w-auto justify-center"
+            onClick={() => setMostrarModal(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-[#39A900] text-white rounded-2xl hover:bg-[#2d8500]"
           >
             <Plus size={20} />
             Agregar Nueva Entidad
           </button>
         </div>
 
-        {/* Lista de entidades */}
+        {/* Lista */}
         <div className="space-y-5">
-          {filteredEntidades.length === 0 ? (
-            <div className={`text-center py-16 rounded-2xl border ${emptyStateBg}`}>
-              <p className={`${secondaryText} text-lg`}>
-                No se encontraron entidades
-              </p>
-            </div>
-          ) : (
-            filteredEntidades.map((ent) => (
-              <div
-                key={ent.id}
-                className={`p-6 rounded-2xl border shadow-md hover:shadow-xl transition-all duration-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5 transform hover:-translate-y-1 ${cardBg} ${borderColor} ${
-                  modoOscuro
-                    ? 'hover:border-[#39A900]/50'
-                    : 'hover:border-[#39A900]'
-                }`}
-              >
-                <div className="flex items-center gap-4 w-full">
-                  <div
-                    className={`p-4 rounded-xl mt-1 transition-colors ${iconBg} text-[#39A900]`}
-                  >
-                    <FaBuilding size={24} />
-                  </div>
-                  <div className="flex-1">
-                    <h3
-                      className={`text-xl font-semibold transition-colors ${
-                        modoOscuro
-                          ? 'hover:text-[#39A900] text-white'
-                          : 'hover:text-[#39A900] text-gray-800'
-                      }`}
-                    >
-                      {ent.name}
-                    </h3>
-                  </div>
+          {filteredEntidades.map((ent) => (
+            <div
+              key={ent.id}
+              className={`p-6 rounded-2xl border flex justify-between items-center ${cardBg} ${borderColor}`}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
+                <div className="p-3 rounded-xl bg-[#39A900]/10 text-[#39A900]">
+                  <FaBuilding size={20} />
                 </div>
-                <div className="flex gap-3 self-end sm:self-auto">
-                  <button
-                    onClick={() => handleEditEntidad(ent.id)}
-                    title="Editar entidad"
-                    className={`p-3 rounded-xl transition-all transform hover:scale-110 ${
-                      modoOscuro
-                        ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50'
-                        : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-                    }`}
-                  >
-                    <Edit size={20} />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteEntidad(ent.id)}
-                    title="Eliminar entidad"
-                    className={`p-3 rounded-xl transition-all transform hover:scale-110 ${
-                      modoOscuro
-                        ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50'
-                        : 'bg-red-50 text-red-600 hover:bg-red-100'
-                    }`}
-                  >
-                    <Trash2 size={20} />
-                  </button>
+                <div>
+                  <h3 className="font-bold">{ent.name}</h3>
+                  {ent.website && (
+                    <p className="flex items-center gap-2 text-sm text-blue-500">
+                      <FaGlobe />{' '}
+                      <a href={ent.website} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                        {ent.website}
+                      </a>
+                    </p>
+                  )}
                 </div>
               </div>
-            ))
-          )}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setEntidadAEditar(ent)}
+                  className="p-2 bg-blue-50 text-blue-600 rounded-xl"
+                >
+                  <Edit size={18} />
+                </button>
+                <button
+                  onClick={() => handleDeleteEntidad(ent.id)}
+                  className="p-2 bg-red-50 text-red-600 rounded-xl"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* Modal Crear */}
       <EntidadModal
         visible={mostrarModal}
-        onClose={cerrarModal}
+        onClose={() => setMostrarModal(false)}
         onSave={handleSaveEntidad}
         nuevaEntidad={nuevaEntidad}
         setNuevaEntidad={setNuevaEntidad}
+        nuevoSitio={nuevoSitio}
+        setNuevoSitio={setNuevoSitio}
         modoOscuro={modoOscuro}
       />
 
@@ -246,7 +207,7 @@ export default function EntidadInstitucion({ modoOscuro }: EntidadInstitucionPro
       {entidadAEditar && (
         <EditarEntidad
           visible={!!entidadAEditar}
-          onClose={cerrarModalEditar}
+          onClose={() => setEntidadAEditar(null)}
           entidad={entidadAEditar}
           onSave={handleSaveEditEntidad}
           modoOscuro={modoOscuro}

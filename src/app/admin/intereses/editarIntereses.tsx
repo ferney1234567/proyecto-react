@@ -1,11 +1,12 @@
 'use client';
+
 import { useEffect, useState } from 'react';
 import { X, Save } from 'lucide-react';
 
 interface Interes {
   id: string;
-  nombre: string;
-  descripcion: string;
+  name: string;
+  description: string;
 }
 
 interface ModalInteresProps {
@@ -25,7 +26,7 @@ export default function ModalInteres({
   onClose,
   onChange,
   onGuardar,
-  modoOscuro
+  modoOscuro,
 }: ModalInteresProps) {
   const [animar, setAnimar] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -42,6 +43,7 @@ export default function ModalInteres({
 
   if (!visible) return null;
 
+  // === Estilos ===
   const modalBg = modoOscuro ? 'bg-[#1a0526] text-white' : 'bg-white text-gray-900';
   const inputBg = modoOscuro
     ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400'
@@ -85,8 +87,8 @@ export default function ModalInteres({
             </label>
             <input
               type="text"
-              value={interes.nombre}
-              onChange={(e) => onChange('nombre', e.target.value)}
+              value={interes.name}
+              onChange={(e) => onChange('name', e.target.value)}
               placeholder="Ejemplo: Tecnología"
               className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
             />
@@ -98,8 +100,8 @@ export default function ModalInteres({
               Descripción *
             </label>
             <textarea
-              value={interes.descripcion}
-              onChange={(e) => onChange('descripcion', e.target.value)}
+              value={interes.description}
+              onChange={(e) => onChange('description', e.target.value)}
               placeholder="Describe el interés..."
               rows={4}
               className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md resize-none ${inputBg}`}

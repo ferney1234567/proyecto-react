@@ -5,11 +5,11 @@ import { FaTimes, FaPenAlt, FaBookOpen, FaAlignLeft, FaSave } from 'react-icons/
 interface ModalInteresProps {
   mostrar: boolean;
   modoEdicion: boolean;
-  interes: { id: string; nombre: string; descripcion: string };
+  interes: { id: string; name: string; description: string };
   onClose: () => void;
-  onChange: (campo: 'nombre' | 'descripcion', valor: string) => void;
+  onChange: (campo: 'name' | 'description', valor: string) => void;
   onGuardar: () => void;
-  modoOscuro: boolean; // 🔹 agregado
+  modoOscuro: boolean;
 }
 
 export default function ModalInteres({
@@ -19,11 +19,11 @@ export default function ModalInteres({
   onClose,
   onChange,
   onGuardar,
-  modoOscuro
+  modoOscuro,
 }: ModalInteresProps) {
   if (!mostrar) return null;
 
-  // 🔹 estilos condicionales
+  // === Estilos condicionales ===
   const modalBg = modoOscuro ? 'bg-[#1a0526] text-white' : 'bg-white text-gray-900';
   const inputBg = modoOscuro
     ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400'
@@ -61,7 +61,7 @@ export default function ModalInteres({
         <div className="p-8 space-y-8">
           {/* Campo Nombre */}
           <div className="space-y-3">
-            <label htmlFor="nombre" className={`block text-sm font-medium ${labelColor}`}>
+            <label htmlFor="name" className={`block text-sm font-medium ${labelColor}`}>
               Nombre
             </label>
             <div className="relative">
@@ -71,28 +71,28 @@ export default function ModalInteres({
               />
               <input
                 type="text"
-                id="nombre"
-                className={`w-full border border-gray-300 rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
+                id="name"
+                className={`w-full border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
                 placeholder="Ingrese el nombre del interés"
-                value={interes.nombre}
-                onChange={(e) => onChange('nombre', e.target.value)}
+                value={interes.name}
+                onChange={(e) => onChange('name', e.target.value)}
               />
             </div>
           </div>
 
           {/* Campo Descripción */}
           <div className="space-y-3">
-            <label htmlFor="descripcion" className={`block text-sm font-medium ${labelColor}`}>
+            <label htmlFor="description" className={`block text-sm font-medium ${labelColor}`}>
               Descripción
             </label>
             <div className="relative">
               <FaAlignLeft className="absolute left-3 top-4 text-[#39A900]" size={18} />
               <textarea
-                id="descripcion"
-                className={`w-full border border-gray-300 rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md min-h-[120px] ${inputBg}`}
+                id="description"
+                className={`w-full border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md min-h-[120px] ${inputBg}`}
                 placeholder="Ingrese una descripción"
-                value={interes.descripcion}
-                onChange={(e) => onChange('descripcion', e.target.value)}
+                value={interes.description}
+                onChange={(e) => onChange('description', e.target.value)}
               ></textarea>
             </div>
           </div>
