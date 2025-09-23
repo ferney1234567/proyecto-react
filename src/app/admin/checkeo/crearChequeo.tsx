@@ -1,22 +1,40 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Check, X, ChevronDown, Save } from 'lucide-react';
-import { FaBuilding, FaClipboardCheck, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import { X, ChevronDown, Save } from 'lucide-react';
+import {
+  FaBuilding,
+  FaClipboardCheck,
+  FaCheckCircle,
+  FaTimesCircle,
+} from 'react-icons/fa';
+
+interface Empresa {
+  id: number;
+  name: string;
+}
+
+interface Requisito {
+  id: number;
+  name: string;
+}
 
 interface ModalChequeoProps {
   abierto: boolean;
   editando: boolean;
   chequeo: {
-    chequeo: number; // 0 = no aprobado, 1 = aprobado
+    id: number;
+    is_checked: boolean; // ✅ ahora es boolean
     empresa: string;
     requisito: string;
+    companyId: number;
+    requirementId: number;
   };
-  empresas?: string[];
-  requisitos?: string[];
+  empresas: Empresa[];
+  requisitos: Requisito[];
   onCerrar: () => void;
   onGuardar: () => void;
-  onChange: (field: string, value: string | number) => void;
+  onChange: (field: string, value: string | number | boolean) => void;
   modoOscuro: boolean;
 }
 
@@ -24,32 +42,17 @@ export default function ModalChequeo({
   abierto,
   editando,
   chequeo,
-  empresas = [
-    "TecnoSoluciones SAS",
-    "Innovación Digital Ltda",
-    "GlobalTech Colombia",
-    "Servicios Integrales Tech",
-    "Desarrollo Web Express"
-  ],
-  requisitos = [
-    "Documento de identidad",
-    "Certificado académico",
-    "Hoja de vida actualizada",
-    "Referencias laborales",
-    "Portafolio de proyectos",
-    "Certificación de ingresos",
-    "Antecedentes judiciales",
-    "Examen médico ocupacional"
-  ],
+  empresas,
+  requisitos,
   onCerrar,
   onGuardar,
   onChange,
-  modoOscuro
+  modoOscuro,
 }: ModalChequeoProps) {
-  const [mostrarEmpresas, setMostrarEmpresas] = useState(false);
-  const [mostrarRequisitos, setMostrarRequisitos] = useState(false);
   const [animacion, setAnimacion] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [mostrarEmpresas, setMostrarEmpresas] = useState(false);
+  const [mostrarRequisitos, setMostrarRequisitos] = useState(false);
 
   useEffect(() => {
     if (abierto) {
@@ -63,11 +66,11 @@ export default function ModalChequeo({
 
   if (!visible) return null;
 
-  // estilos condicionales
+  // 🎨 Estilos condicionales
   const modalBg = modoOscuro ? 'bg-[#1a0526] text-white' : 'bg-white text-gray-900';
   const inputBg = modoOscuro
-    ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400'
-    : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500';
+    ? 'bg-gray-800 border-gray-600 text-white'
+    : 'bg-white border-gray-300 text-gray-800';
   const dropdownBg = modoOscuro
     ? 'bg-gray-800 border-gray-600 text-gray-200'
     : 'bg-white border-gray-300 text-gray-800';
@@ -92,19 +95,18 @@ export default function ModalChequeo({
         {/* Header */}
         <div className="bg-gradient-to-r from-[#39A900] to-[#2d8500] p-6 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-white/20 rounded-full">
-              <FaCheckCircle className="text-white text-xl" />
+            <div className="p-2 bg-white/20 rounded-full flex items-center justify-center">
+              <FaClipboardCheck className="text-white text-xl" />
             </div>
             <h2 className="text-2xl font-bold text-white">
               {editando ? 'Editar Chequeo' : 'Agregar Nuevo Chequeo'}
             </h2>
           </div>
-
           <button
-            className="text-white hover:text-gray-200 transition-colors p-1 rounded-full hover:bg-white/10"
+            className="text-white hover:text-gray-200 transition-colors p-2 rounded-full hover:bg-white/10 flex items-center justify-center"
             onClick={onCerrar}
           >
-            <X size={24} />
+            <X size={22} />
           </button>
         </div>
 
@@ -114,33 +116,37 @@ export default function ModalChequeo({
           <div className="space-y-2 relative">
             <label className={`block text-sm font-medium ${labelColor}`}>Empresa *</label>
             <div
-              className={`w-full border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md flex justify-between items-center cursor-pointer ${inputBg}`}
+              className={`relative w-full border rounded-xl pl-10 pr-10 py-3 flex items-center justify-between cursor-pointer ${inputBg}`}
               onClick={() => setMostrarEmpresas(!mostrarEmpresas)}
             >
+              <FaBuilding className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" />
               <span>{chequeo.empresa || 'Seleccione una empresa'}</span>
               <ChevronDown
                 size={20}
-                className={`transition-transform ${mostrarEmpresas ? 'rotate-180' : ''}`}
+                className={`absolute right-3 top-1/2 -translate-y-1/2 transition-transform ${
+                  mostrarEmpresas ? 'rotate-180' : ''
+                }`}
               />
             </div>
 
-            {/* icono izquierdo */}
-            <FaBuilding className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" size={18} />
-
             {mostrarEmpresas && (
-              <div className={`absolute z-10 mt-1 w-full rounded-xl shadow-lg max-h-60 overflow-auto ${dropdownBg}`}>
-                {empresas.map((empresa, index) => (
+              <div
+                className={`absolute z-10 mt-1 w-full rounded-xl shadow-lg max-h-60 overflow-auto ${dropdownBg}`}
+              >
+                {empresas.map((empresa) => (
                   <div
-                    key={index}
-                    className={`px-4 py-3 cursor-pointer ${optionHover} ${
-                      chequeo.empresa === empresa ? 'bg-[#39A900]/10 text-[#39A900]' : ''
+                    key={empresa.id}
+                    className={`px-4 py-3 cursor-pointer flex items-center gap-2 ${optionHover} ${
+                      chequeo.companyId === empresa.id ? 'bg-[#39A900]/10 text-[#39A900]' : ''
                     }`}
                     onClick={() => {
-                      onChange('empresa', empresa);
+                      onChange('empresa', empresa.name);
+                      onChange('companyId', empresa.id);
                       setMostrarEmpresas(false);
                     }}
                   >
-                    {empresa}
+                    <FaBuilding className="text-[#39A900]" size={16} />
+                    {empresa.name}
                   </div>
                 ))}
               </div>
@@ -151,33 +157,37 @@ export default function ModalChequeo({
           <div className="space-y-2 relative">
             <label className={`block text-sm font-medium ${labelColor}`}>Requisito *</label>
             <div
-              className={`w-full border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md flex justify-between items-center cursor-pointer ${inputBg}`}
+              className={`relative w-full border rounded-xl pl-10 pr-10 py-3 flex items-center justify-between cursor-pointer ${inputBg}`}
               onClick={() => setMostrarRequisitos(!mostrarRequisitos)}
             >
+              <FaClipboardCheck className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" />
               <span>{chequeo.requisito || 'Seleccione un requisito'}</span>
               <ChevronDown
                 size={20}
-                className={`transition-transform ${mostrarRequisitos ? 'rotate-180' : ''}`}
+                className={`absolute right-3 top-1/2 -translate-y-1/2 transition-transform ${
+                  mostrarRequisitos ? 'rotate-180' : ''
+                }`}
               />
             </div>
 
-            {/* icono izquierdo */}
-            <FaClipboardCheck className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" size={18} />
-
             {mostrarRequisitos && (
-              <div className={`absolute z-10 mt-1 w-full rounded-xl shadow-lg max-h-60 overflow-auto ${dropdownBg}`}>
-                {requisitos.map((requisito, index) => (
+              <div
+                className={`absolute z-10 mt-1 w-full rounded-xl shadow-lg max-h-60 overflow-auto ${dropdownBg}`}
+              >
+                {requisitos.map((req) => (
                   <div
-                    key={index}
-                    className={`px-4 py-3 cursor-pointer ${optionHover} ${
-                      chequeo.requisito === requisito ? 'bg-[#39A900]/10 text-[#39A900]' : ''
+                    key={req.id}
+                    className={`px-4 py-3 cursor-pointer flex items-center gap-2 ${optionHover} ${
+                      chequeo.requirementId === req.id ? 'bg-[#39A900]/10 text-[#39A900]' : ''
                     }`}
                     onClick={() => {
-                      onChange('requisito', requisito);
+                      onChange('requisito', req.name);
+                      onChange('requirementId', req.id);
                       setMostrarRequisitos(false);
                     }}
                   >
-                    {requisito}
+                    <FaClipboardCheck className="text-[#39A900]" size={16} />
+                    {req.name}
                   </div>
                 ))}
               </div>
@@ -190,26 +200,26 @@ export default function ModalChequeo({
             <div className="flex gap-4">
               <button
                 type="button"
-                onClick={() => onChange('chequeo', 1)}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all border text-lg font-medium ${
-                  chequeo.chequeo === 1
-                    ? 'bg-[#39A900] text-white border-[#39A900] shadow-md scale-105'
-                    : `${inputBg} hover:shadow-md`
+                onClick={() => onChange('is_checked', true)}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border text-lg font-medium ${
+                  chequeo.is_checked
+                    ? 'bg-[#39A900] text-white border-[#39A900]'
+                    : `${inputBg}`
                 }`}
               >
-                <FaCheckCircle />
+                <FaCheckCircle size={18} />
                 Aprobado
               </button>
               <button
                 type="button"
-                onClick={() => onChange('chequeo', 0)}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all border text-lg font-medium ${
-                  chequeo.chequeo === 0
-                    ? 'bg-red-600 text-white border-red-600 shadow-md scale-105'
-                    : `${inputBg} hover:shadow-md`
+                onClick={() => onChange('is_checked', false)}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border text-lg font-medium ${
+                  !chequeo.is_checked
+                    ? 'bg-red-600 text-white border-red-600'
+                    : `${inputBg}`
                 }`}
               >
-                <FaTimesCircle />
+                <FaTimesCircle size={18} />
                 No Aprobado
               </button>
             </div>
@@ -220,14 +230,14 @@ export default function ModalChequeo({
         <div className={`${footerBg} px-8 py-6 flex justify-between items-center border-t`}>
           <button
             onClick={onCerrar}
-            className={`flex items-center gap-2 px-6 py-3 border rounded-xl transition-colors hover:shadow-md ${cancelBtn}`}
+            className={`flex items-center gap-2 px-6 py-3 border rounded-xl ${cancelBtn}`}
           >
             <X size={18} />
             <span>Cancelar</span>
           </button>
           <button
             onClick={onGuardar}
-            className="flex items-center gap-2 px-6 py-3 bg-[#39A900] text-white rounded-xl hover:bg-[#2d8500] transition-colors shadow-md hover:shadow-lg transform hover:scale-105 duration-200"
+            className="flex items-center gap-2 px-6 py-3 bg-[#39A900] text-white rounded-xl hover:bg-[#2d8500]"
           >
             <Save size={18} />
             <span>{editando ? 'Actualizar' : 'Guardar'}</span>

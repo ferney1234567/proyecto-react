@@ -11,14 +11,14 @@ export const metadata: Metadata = {
   description: 'Aprende Next.js construyendo una Pokédex',
 }
 
+// src/app/layout.tsx
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
-      <body className={inter.className}>
-        <ThemeProvider>
-          {children}
-        </ThemeProvider>
+    <html lang="es" suppressHydrationWarning>
+      <body>
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   )
 }
+

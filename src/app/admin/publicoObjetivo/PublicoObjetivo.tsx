@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Edit, Trash2, Plus } from 'lucide-react';
+import { Edit, Trash2, Plus, Search } from 'lucide-react';
 import { FaUsers } from 'react-icons/fa';
 import ModalPublico from './crearPublico';
 import EditarPublicoModal from './editarPublicoObjetivo';
@@ -26,18 +26,32 @@ export default function PublicoObjetivo({ modoOscuro }: PublicoObjetivoProps) {
 
   // === ALERTAS ===
   const showSuccess = (mensaje: string) =>
-    Swal.fire({ icon: 'success', title: '¡Éxito!', text: mensaje, confirmButtonColor: '#39A900',
-      background: modoOscuro ? '#1a0526' : '#fff', color: modoOscuro ? '#fff' : '#333' });
+    Swal.fire({
+      icon: 'success',
+      title: '¡Éxito!',
+      text: mensaje,
+      confirmButtonColor: '#39A900',
+      background: modoOscuro ? '#1a0526' : '#fff',
+      color: modoOscuro ? '#fff' : '#333',
+      timer: 2000,
+      timerProgressBar: true,
+    });
 
   const showWarning = (mensaje: string) =>
-    Swal.fire({ icon: 'warning', title: 'Atención', text: mensaje, confirmButtonColor: '#39A900',
-      background: modoOscuro ? '#1a0526' : '#fff', color: modoOscuro ? '#fff' : '#333' });
+    Swal.fire({
+      icon: 'warning',
+      title: 'Atención',
+      text: mensaje,
+      confirmButtonColor: '#39A900',
+      background: modoOscuro ? '#1a0526' : '#fff',
+      color: modoOscuro ? '#fff' : '#333',
+    });
 
   // === Cargar desde API ===
   const cargarPublicos = async () => {
     try {
       const data = await getPublicos();
-      setPublicos(data.data || []); // 👈 depende cómo devuelva tu backend
+      setPublicos(data.data || []);
     } catch (error: any) {
       showWarning(error.message);
     }
@@ -73,7 +87,7 @@ export default function PublicoObjetivo({ modoOscuro }: PublicoObjetivoProps) {
   const eliminarPublico = (id: string) => {
     Swal.fire({
       title: '¿Eliminar este público objetivo?',
-      text: "Esta acción no se puede deshacer",
+      text: 'Esta acción no se puede deshacer',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d33',
@@ -103,12 +117,20 @@ export default function PublicoObjetivo({ modoOscuro }: PublicoObjetivoProps) {
   };
 
   // === Crear ===
-  const abrirModal = () => { setEditandoId(null); setNuevoNombre(''); setMostrarModal(true); };
+  const abrirModal = () => {
+    setEditandoId(null);
+    setNuevoNombre('');
+    setMostrarModal(true);
+  };
 
   // === Filtrar ===
-  const filtrados = publicos.filter(p => p.name.toLowerCase().includes(busqueda.toLowerCase()));
+  const filtrados = publicos.filter((p) =>
+    p.name.toLowerCase().includes(busqueda.toLowerCase())
+  );
 
   // === Estilos ===
+  const bgColor = modoOscuro ? 'bg-[#1a0526]' : 'bg-white';
+  const textColor = modoOscuro ? 'text-white' : 'text-gray-900';
   const titleColor = modoOscuro ? 'text-white' : 'text-gray-900';
   const secondaryText = modoOscuro ? 'text-gray-300' : 'text-gray-600';
   const searchBg = modoOscuro ? 'bg-white/10' : 'bg-white';
@@ -119,7 +141,7 @@ export default function PublicoObjetivo({ modoOscuro }: PublicoObjetivoProps) {
 
   return (
     <>
-      <div className={`rounded-3xl p-10 max-w-9xl mx-auto my-12 ${modoOscuro ? 'bg-[#1a0526] text-white' : 'bg-white text-gray-900'}`}>
+      <div className={`rounded-3xl p-10 max-w-9xl mx-auto my-12 ${bgColor} ${textColor}`}>
         {/* Header */}
         <div className="text-center mb-10">
           <h2 className={`text-4xl font-extrabold mb-2 ${titleColor}`}>
@@ -127,21 +149,27 @@ export default function PublicoObjetivo({ modoOscuro }: PublicoObjetivoProps) {
               Gestión de Público Objetivo
             </span>
           </h2>
-          <p className={`text-lg ${secondaryText}`}>Administra los públicos objetivos del sistema</p>
+          <p className={`text-lg ${secondaryText}`}>
+            Administra los públicos objetivos del sistema
+          </p>
         </div>
 
         {/* Buscador + botón */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-          <input
-            type="text"
-            placeholder="Buscar público..."
-            className={`border rounded-2xl px-5 py-3 text-lg focus:outline-none focus:ring-2 w-full sm:w-96 ${searchBg} ${searchBorder}`}
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-          />
+          <div className="relative w-full sm:w-96">
+            <input
+              type="text"
+              placeholder="Buscar público..."
+              className={`border rounded-2xl px-5 py-3 text-lg pl-12 focus:outline-none focus:ring-2 w-full transition-all duration-300 hover:shadow-md ${searchBg} ${textColor} ${searchBorder}`}
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          </div>
           <button
             onClick={abrirModal}
-            className="flex items-center gap-2 px-6 py-3 bg-[#39A900] text-white text-lg font-medium rounded-2xl hover:bg-[#2d8500] transition-all shadow-md hover:shadow-xl transform hover:scale-105 duration-300 w-full sm:w-auto"
+            className="flex items-center gap-2 px-6 py-3 bg-[#39A900] text-white text-lg font-medium rounded-2xl 
+              hover:bg-[#2d8500] transition-all shadow-md hover:shadow-xl transform hover:scale-105 duration-300 w-full sm:w-auto justify-center"
           >
             <Plus size={20} /> Nuevo Público
           </button>
@@ -155,7 +183,10 @@ export default function PublicoObjetivo({ modoOscuro }: PublicoObjetivoProps) {
             </div>
           ) : (
             filtrados.map((p) => (
-              <div key={p.id} className={`p-6 rounded-2xl border shadow-md flex justify-between items-center ${cardBg} ${borderColor}`}>
+              <div
+                key={p.id}
+                className={`p-6 rounded-2xl border shadow-md hover:shadow-xl transition-all duration-300 flex justify-between items-center transform hover:-translate-y-1 ${cardBg} ${borderColor}`}
+              >
                 <div className="flex items-center gap-4">
                   <div className={`p-4 rounded-xl ${iconBg} text-[#39A900]`}>
                     <FaUsers size={24} />
@@ -163,8 +194,18 @@ export default function PublicoObjetivo({ modoOscuro }: PublicoObjetivoProps) {
                   <h3 className="text-xl font-semibold">{p.name}</h3>
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={() => editarPublico(p)} className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:scale-110 transition"><Edit size={20} /></button>
-                  <button onClick={() => eliminarPublico(p.id)} className="p-3 bg-red-50 text-red-600 rounded-xl hover:scale-110 transition"><Trash2 size={20} /></button>
+                  <button
+                    onClick={() => editarPublico(p)}
+                    className={`p-3 rounded-xl ${modoOscuro ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-50 text-blue-600'} hover:scale-110 transition`}
+                  >
+                    <Edit size={20} />
+                  </button>
+                  <button
+                    onClick={() => eliminarPublico(p.id)}
+                    className={`p-3 rounded-xl ${modoOscuro ? 'bg-red-900/30 text-red-400' : 'bg-red-50 text-red-600'} hover:scale-110 transition`}
+                  >
+                    <Trash2 size={20} />
+                  </button>
                 </div>
               </div>
             ))
@@ -173,10 +214,29 @@ export default function PublicoObjetivo({ modoOscuro }: PublicoObjetivoProps) {
       </div>
 
       {/* Modal Crear */}
-      <ModalPublico mostrar={mostrarModal} cerrar={() => setMostrarModal(false)} nombre={nuevoNombre} setNombre={setNuevoNombre} onGuardar={guardarPublico} editandoId={editandoId} modoOscuro={modoOscuro} />
+      {mostrarModal && (
+        <ModalPublico
+          mostrar={mostrarModal}
+          cerrar={() => setMostrarModal(false)}
+          nombre={nuevoNombre}
+          setNombre={setNuevoNombre}
+          onGuardar={guardarPublico}
+          editandoId={editandoId}
+          modoOscuro={modoOscuro}
+        />
+      )}
 
       {/* Modal Editar */}
-      <EditarPublicoModal mostrar={mostrarModalEditar} cerrar={() => setMostrarModalEditar(false)} nombre={nuevoNombre} setNombre={setNuevoNombre} onGuardar={guardarPublico} modoOscuro={modoOscuro} />
+      {mostrarModalEditar && (
+        <EditarPublicoModal
+          mostrar={mostrarModalEditar}
+          cerrar={() => setMostrarModalEditar(false)}
+          nombre={nuevoNombre}
+          setNombre={setNuevoNombre}
+          onGuardar={guardarPublico}
+          modoOscuro={modoOscuro}
+        />
+      )}
     </>
   );
 }

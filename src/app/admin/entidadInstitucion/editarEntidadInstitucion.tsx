@@ -54,12 +54,12 @@ export default function EditarEntidad({
       }`}
     >
       <div
-        className={`rounded-2xl w-full max-w-lg overflow-hidden transform transition-all duration-300 shadow-2xl ${
+        className={`rounded-2xl w-full max-w-2xl overflow-hidden transform transition-all duration-300 shadow-2xl ${
           animacion ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
         } ${modalBg}`}
       >
         {/* Header con gradiente e ícono */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 flex justify-between items-center">
+        <div className="bg-gradient-to-r from-[#39A900] to-[#2d8500] p-6 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/20 rounded-full">
               <FaBuilding className="text-white text-xl" />
@@ -128,7 +128,7 @@ export default function EditarEntidad({
           </button>
           <button
             onClick={() => onSave(entidad.id, nuevoNombre, nuevoSitio)}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-xl hover:scale-105 transition-colors shadow-md hover:shadow-lg transform duration-200"
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#39A900] to-[#2d8500] text-white rounded-xl hover:scale-105 transition-colors shadow-md hover:shadow-lg transform duration-200"
           >
             <FaSave size={18} />
             <span>Guardar Cambios</span>

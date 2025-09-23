@@ -1,9 +1,14 @@
-'use client';
+"use client";
 import { useState, useEffect } from 'react';
 import { Edit, Trash2, Plus } from 'lucide-react';
 import { FaClipboardCheck } from 'react-icons/fa';
 import Swal from 'sweetalert2';
-import { getRequirementGroups } from '../../api/tipoRequisitos/routes';
+import {
+  getRequirementGroups,
+  createRequirementGroup,
+  updateRequirementGroup,
+  deleteRequirementGroup,
+} from '../../api/tipoRequisitos/routes';
 import ModalCrearGrupo from './crearTipo';
 import ModalEditarGrupo from './editarTipo';
 
@@ -14,10 +19,11 @@ interface TipoProps {
 interface RequirementGroup {
   id: number;
   name: string;
-  category: {
+  categoryId: number | null;
+  category?: {
     id: number;
     name: string;
-  };
+  } | null;
 }
 
 interface Category {
@@ -27,75 +33,105 @@ interface Category {
 
 export default function Tipo({ modoOscuro }: TipoProps) {
   const [tipos, setTipos] = useState<RequirementGroup[]>([]);
-  const [categorias, setCategorias] = useState<Category[]>([]); // 👈 lista de categorías
+  const [categorias, setCategorias] = useState<Category[]>([]);
   const [tipoSearchTerm, setTipoSearchTerm] = useState('');
   const [mostrarModal, setMostrarModal] = useState(false);
   const [nuevoTipo, setNuevoTipo] = useState('');
-  const [categoriaId, setCategoriaId] = useState<number | null>(null); // 👈 categoría seleccionada
+  const [categoriaId, setCategoriaId] = useState<number | null>(null);
   const [editandoId, setEditandoId] = useState<number | null>(null);
 
   // === Cargar datos desde la API ===
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const grupos = await getRequirementGroups();
-        setTipos(grupos);
+        const categoriasRes = await fetch('http://localhost:4000/api/v1/requirementCategories');
+        if (!categoriasRes.ok) throw new Error('Error cargando categorías');
+        const categoriasData = await categoriasRes.json();
+        setCategorias(categoriasData.data || []);
 
-        // ⚡ TODO: acá deberías hacer fetch de categorías reales
-        setCategorias([
-          { id: 1, name: 'Categoría Ejemplo 1' },
-          { id: 2, name: 'Categoría Ejemplo 2' },
-        ]);
+        const gruposRes = await getRequirementGroups();
+        const gruposMapped = (gruposRes || []).map((g: any) => {
+          const categoriaEncontrada = categoriasData.data.find(
+            (c: Category) => c.id === g.categoryId
+          );
+          return {
+            id: g.id,
+            name: g.name,
+            categoryId: g.categoryId,
+            category: categoriaEncontrada || null,
+          };
+        });
+        setTipos(gruposMapped);
       } catch (error) {
         console.error(error);
-        Swal.fire('Error', 'No se pudieron cargar los grupos de requisitos', 'error');
+        Swal.fire('Error', 'No se pudieron cargar los grupos/categorías', 'error');
       }
     };
     fetchData();
   }, []);
 
   // === Crear grupo ===
-  const handleCrearGrupo = () => {
+  const handleCrearGrupo = async () => {
     if (!nuevoTipo.trim() || !categoriaId) {
       Swal.fire('Atención', 'Debes ingresar un nombre y seleccionar una categoría', 'warning');
       return;
     }
-    // ⚡ Aquí deberías llamar a la API (POST)
-    const nuevo = {
-      id: Date.now(),
-      name: nuevoTipo,
-      category: categorias.find((c) => c.id === categoriaId)!,
-    };
-    setTipos([...tipos, nuevo]);
-    setMostrarModal(false);
-    setNuevoTipo('');
-    setCategoriaId(null);
-    Swal.fire('Éxito', 'Grupo creado correctamente', 'success');
+    try {
+      const creado = await createRequirementGroup(nuevoTipo, categoriaId);
+      const categoria = categorias.find((c) => c.id === creado.categoryId) || null;
+      setTipos([...tipos, { ...creado, category: categoria }]);
+      setMostrarModal(false);
+      setNuevoTipo('');
+      setCategoriaId(null);
+      Swal.fire('Éxito', 'Grupo creado correctamente', 'success');
+    } catch (error: any) {
+      Swal.fire('Error', error.message, 'error');
+    }
   };
 
   // === Editar grupo ===
-  const handleEditarGrupo = (id: number) => {
+  const handleEditarGrupo = async (id: number) => {
     if (!nuevoTipo.trim() || !categoriaId) {
       Swal.fire('Atención', 'Debes ingresar un nombre y seleccionar una categoría', 'warning');
       return;
     }
-    // ⚡ Aquí deberías llamar a la API (PUT)
-    setTipos(
-      tipos.map((grupo) =>
-        grupo.id === id
-          ? {
-              ...grupo,
-              name: nuevoTipo,
-              category: categorias.find((c) => c.id === categoriaId)!,
-            }
-          : grupo
-      )
-    );
-    setMostrarModal(false);
-    setEditandoId(null);
-    setNuevoTipo('');
-    setCategoriaId(null);
-    Swal.fire('Éxito', 'Grupo actualizado correctamente', 'success');
+    try {
+      const actualizado = await updateRequirementGroup(id, nuevoTipo, categoriaId);
+      const categoria = categorias.find((c) => c.id === actualizado.categoryId) || null;
+      setTipos(
+        tipos.map((g) =>
+          g.id === id ? { ...actualizado, category: categoria } : g
+        )
+      );
+      setMostrarModal(false);
+      setEditandoId(null);
+      setNuevoTipo('');
+      setCategoriaId(null);
+      Swal.fire('Éxito', 'Grupo actualizado correctamente', 'success');
+    } catch (error: any) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  };
+
+  // === Eliminar grupo ===
+  const handleEliminarGrupo = async (id: number) => {
+    const confirm = await Swal.fire({
+      title: '¿Eliminar grupo?',
+      text: 'Esta acción no se puede deshacer',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+    });
+    if (!confirm.isConfirmed) return;
+
+    try {
+      await deleteRequirementGroup(id);
+      setTipos(tipos.filter((g) => g.id !== id));
+      Swal.fire('Éxito', 'Grupo eliminado correctamente', 'success');
+    } catch (error: any) {
+      Swal.fire('Error', error.message, 'error');
+    }
   };
 
   // === FILTRO ===
@@ -105,7 +141,7 @@ export default function Tipo({ modoOscuro }: TipoProps) {
       tipo.category?.name.toLowerCase().includes(tipoSearchTerm.toLowerCase())
   );
 
-  // Estilos condicionales
+  // === Estilos ===
   const bgColor = modoOscuro ? 'bg-[#1a0526]' : 'bg-white';
   const textColor = modoOscuro ? 'text-white' : 'text-gray-900';
   const borderColor = modoOscuro ? 'border-white/20' : 'border-gray-200';
@@ -134,7 +170,7 @@ export default function Tipo({ modoOscuro }: TipoProps) {
           </p>
         </div>
 
-        {/* Buscador */}
+        {/* Buscador + Botón */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
           <input
             type="text"
@@ -167,21 +203,14 @@ export default function Tipo({ modoOscuro }: TipoProps) {
             filteredTipos.map((grupo) => (
               <div
                 key={grupo.id}
-                className={`p-6 rounded-2xl border shadow-md hover:shadow-xl transition-all duration-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5 transform hover:-translate-y-1 ${cardBg} ${borderColor} ${
-                  modoOscuro ? 'hover:border-[#39A900]/50' : 'hover:border-[#39A900]'
-                }`}
+                className={`p-6 rounded-2xl border shadow-md hover:shadow-xl transition-all duration-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5 transform hover:-translate-y-1 ${cardBg} ${borderColor}`}
               >
+                {/* Icono + info */}
                 <div className="flex items-center gap-4 w-full">
-                  <div
-                    className={`p-4 rounded-xl flex items-center justify-center h-12 w-12 transition-colors ${iconBg} ${
-                      modoOscuro
-                        ? 'text-[#39A900] hover:bg-[#39A900]/30'
-                        : 'text-[#39A900] hover:bg-[#39A900]/20'
-                    }`}
-                  >
-                    <FaClipboardCheck size={24} className="flex-shrink-0" />
+                  <div className={`p-4 rounded-xl flex items-center justify-center h-12 w-12 ${iconBg} text-[#39A900]`}>
+                    <FaClipboardCheck size={22} />
                   </div>
-                  <div className="flex-1">
+                  <div>
                     <h3 className="text-xl font-semibold">{grupo.name}</h3>
                     <p className={`text-sm ${secondaryText}`}>
                       Categoría: {grupo.category?.name || 'Sin categoría'}
@@ -198,23 +227,13 @@ export default function Tipo({ modoOscuro }: TipoProps) {
                       setCategoriaId(grupo.category?.id || null);
                       setMostrarModal(true);
                     }}
-                    title="Editar grupo"
-                    className={`p-3 rounded-xl transition-all transform hover:scale-110 flex items-center justify-center h-12 w-12 ${
-                      modoOscuro
-                        ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50'
-                        : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-                    }`}
+                    className={`p-3 rounded-xl ${modoOscuro ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-50 text-blue-600'} hover:scale-110 transition`}
                   >
                     <Edit size={20} />
                   </button>
                   <button
-                    onClick={() => console.log('Eliminar', grupo.id)}
-                    title="Eliminar grupo"
-                    className={`p-3 rounded-xl transition-all transform hover:scale-110 flex items-center justify-center h-12 w-12 ${
-                      modoOscuro
-                        ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50'
-                        : 'bg-red-50 text-red-600 hover:bg-red-100'
-                    }`}
+                    onClick={() => handleEliminarGrupo(grupo.id)}
+                    className={`p-3 rounded-xl ${modoOscuro ? 'bg-red-900/30 text-red-400' : 'bg-red-50 text-red-600'} hover:scale-110 transition`}
                   >
                     <Trash2 size={20} />
                   </button>
@@ -225,7 +244,7 @@ export default function Tipo({ modoOscuro }: TipoProps) {
         </div>
       </div>
 
-      {/* 🔹 Render modales */}
+      {/* Modales */}
       {mostrarModal && !editandoId && (
         <ModalCrearGrupo
           abierto={mostrarModal}

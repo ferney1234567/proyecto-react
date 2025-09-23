@@ -1,39 +1,63 @@
-// src/app/ThemeContext.tsx
 'use client';
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 type ThemeContextType = {
   modoOscuro: boolean;
   toggleModoOscuro: () => void;
 };
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const ThemeContext = createContext<ThemeContextType>({
+  modoOscuro: false,
+  toggleModoOscuro: () => {},
+});
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [modoOscuro, setModoOscuro] = useState(false);
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [modoOscuro, setModoOscuro] = useState<boolean>(false);
+  const [isReady, setIsReady] = useState(false);
 
-  // 🔹 Cargar preferencia guardada
+  // Cargar preferencia inicial: localStorage -> prefers-color-scheme -> false
   useEffect(() => {
-    const savedTheme = localStorage.getItem("modoOscuro");
-    if (savedTheme) setModoOscuro(savedTheme === "true");
+    try {
+      const stored = localStorage.getItem('modoOscuro');
+      if (stored !== null) {
+        setModoOscuro(stored === 'true');
+      } else if (typeof window !== 'undefined' && window.matchMedia) {
+        const mql = window.matchMedia('(prefers-color-scheme: dark)');
+        setModoOscuro(mql.matches);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setIsReady(true); // ✅ solo después de cargar preferencia
+    }
   }, []);
 
-  // 🔹 Guardar cada vez que cambie
+  // Persistir y opcionalmente aplicar clase global
   useEffect(() => {
-    localStorage.setItem("modoOscuro", String(modoOscuro));
+    try {
+      localStorage.setItem('modoOscuro', String(modoOscuro));
+    } catch {
+      // ignore
+    }
+    // Si usas Tailwind con dark mode global:
+    // if (modoOscuro) document.documentElement.classList.add('dark');
+    // else document.documentElement.classList.remove('dark');
   }, [modoOscuro]);
 
-  const toggleModoOscuro = () => setModoOscuro((prev) => !prev);
+  const toggleModoOscuro = () => setModoOscuro((v) => !v);
 
-  return (
-    <ThemeContext.Provider value={{ modoOscuro, toggleModoOscuro }}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  const value = useMemo(() => ({ modoOscuro, toggleModoOscuro }), [modoOscuro]);
+
+  // 🚨 Importante: no renderizar hasta que esté listo
+  if (!isReady) {
+    return <div className="min-h-screen w-full bg-black" />; 
+    // o un loader con fondo oscuro para que nunca se vea blanco
+  }
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {
-  const context = useContext(ThemeContext);
-  if (!context) throw new Error("useTheme debe usarse dentro de ThemeProvider");
-  return context;
+  return useContext(ThemeContext);
 }

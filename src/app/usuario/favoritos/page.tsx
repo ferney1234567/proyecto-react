@@ -1,483 +1,565 @@
-"use client";
-import { useState } from "react";
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import {
-  FaTags, FaSearchLocation, FaRegBookmark, FaSearch,
+  FaTags, FaSearchLocation, FaRegBookmark, FaSearch, FaStar, FaRegStar,
   FaCheckCircle, FaCalendarAlt, FaCalendarTimes, FaMobileAlt, FaGraduationCap,
-  FaFileAlt, FaThLarge, FaList, FaStar, FaRegStar, FaRegFileAlt, FaTrashAlt
+  FaRegFileAlt, FaTrashAlt
 } from 'react-icons/fa';
-import Swal from "sweetalert2";
+import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, ListIcon, MapPin, Moon, Sun } from 'lucide-react';
+import Swal from 'sweetalert2';
 
+import ModalConvocatoria from '../../../components/detalleConvo/detalleConvo'; // ajusta si tu ruta real difiere
 
+// Tema
+import { useTheme } from '../../ThemeContext';
+import { getThemeStyles } from '../../themeStyles';
 
-import Link from "next/link";
-import ModalConvocatoria from '../../../components/detalleConvo/detalleConvo'; // Ajusta la ruta
-import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, List, MapPin, Moon, Sun } from "lucide-react";
+interface FavoritoItem {
+  id: number;
+  title: string;
+  description: string;
+  openDate?: string;
+  closeDate?: string;
+  imageUrl?: string;
+  lineId?: number; // 👈 agregado para asociar categoría
+}
 
+const imagenesEje = [
+  '/img/jove.jpg','/img/maxresdefault.jpg','/img/produ.jpg',
+  '/img/ejeq.png','/img/eco.png','/img/eco2.png',
+  '/img/ej.jpg','/img/fabricas.jpg','/img/R.jpg'
+];
 
-export default function HomePage() {
-  const [vista, setVista] = useState("tarjeta");
-  const [destacado, setDestacado] = useState(false);
-  const [modalAbierto, setModalAbierto] = useState(false);
+export default function FavoritosPage() {
+  // === Categorías ===
+  const [categorias, setCategorias] = useState<{ id: number; name: string; description: string }[]>([]);
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<number | ''>('');
 
+  // Mock de favoritos (puedes reemplazar por tu data real de API)
+  const favoritos: FavoritoItem[] = useMemo(() => (
+    Array.from({ length: 9 }, (_, i) => ({
+      id: i + 1,
+      title: `Curso / Convocatoria ${i + 1}`,
+      description: "Descripción breve de la convocatoria o curso. Compatible con 'ver más'.",
+      openDate: '2025-08-01',
+      closeDate: '2025-08-30',
+      imageUrl: imagenesEje[i % imagenesEje.length],
+      lineId: (i % 3) + 1, // 👈 simula que cada favorito pertenece a una categoría diferente
+    }))
+  ), []);
+
+  // === Filtrado por categoría ===
+  const favoritosFiltrados = useMemo(() => {
+    if (!categoriaSeleccionada) return favoritos;
+    return favoritos.filter((f) => f.lineId === categoriaSeleccionada);
+  }, [favoritos, categoriaSeleccionada]);
+
+  // === Paginación ===
   const [paginaActual, setPaginaActual] = useState(1);
+  const porPagina = 9;
+  const totalPaginas = Math.max(1, Math.ceil(favoritosFiltrados.length / porPagina));
+  const indiceInicio = (paginaActual - 1) * porPagina;
+  const indiceFin = indiceInicio + porPagina;
+  const listaPagina = favoritosFiltrados.slice(indiceInicio, indiceFin);
 
+  // === UI ===
+  const [vista, setVista] = useState<'tarjeta'|'lista'>('tarjeta');
+  const [modalAbierto, setModalAbierto] = useState(false);
+  const [destacado, setDestacado] = useState(true);
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const [itemSeleccionado, setItemSeleccionado] = useState<FavoritoItem | null>(null);
 
-  const cambiarVista = (tipo: string) => {
-    setVista(tipo);
-  };
-  const imagenesEje =
-    [
-      '/img/jove.jpg',
-      '/img/maxresdefault.jpg',
-      '/img/produ.jpg',
-      '/img/ejeq.png',
-      '/img/eco.png',
-      '/img/eco2.png',
-      '/img/ej.jpg',
-      '/img/fabricas.jpg',
-      '/img/R.jpg'
-    ];
+  // Tema
+  const { modoOscuro, toggleModoOscuro } = useTheme();
+  const styles = getThemeStyles(modoOscuro);
 
-  const [modoOscuro, setModoOscuro] = useState(false);
-
-  // Alternar entre claro y oscuro
-  const toggleModoOscuro = () => {
-    setModoOscuro((prev) => {
-      const nuevo = !prev;
-      // Guardar en localStorage
-      if (typeof window !== "undefined") {
-        localStorage.setItem("modoOscuro", nuevo.toString());
+  // === Cargar categorías desde API ===
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('http://localhost:4000/api/v1/lines');
+        const json = await res.json();
+        setCategorias(json.data || []);
+      } catch (err) {
+        console.error('Error cargando categorías:', err);
       }
-      return nuevo;
-    });
-  };
+    })();
+  }, []);
 
-
-  const handleEliminar = (id: number) => {
-    // Aquí iría tu lógica para quitar de favoritos
+  // === Acciones ===
+  const handleEliminar = (idx: number) => {
     Swal.fire({
-      toast: true,                  // tipo toast
-      position: "bottom-end",        // esquina inferior derecha
-      icon: "success",               // ícono de éxito
-      title: "Eliminada de favoritos con éxito ✅",
-      showConfirmButton: false,      // sin botón de confirmación
-      timer: 3000,                   // 3 segundos
-      timerProgressBar: true         // barra de progreso
+      toast: true,
+      position: "bottom-end",
+      icon: "success",
+      title: "Eliminada de favoritos ✅",
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true,
+      background: modoOscuro ? '#0e1626' : '#fff',
+      color: modoOscuro ? '#e5e7eb' : '#111827',
     });
   };
 
+  const clampOrFull = (text?: string, isExpanded?: boolean) => {
+    const cls = isExpanded ? '' : 'line-clamp-3';
+    return <span className={`text-sm ${cls}`}>{text}</span>;
+  };
+
+  function cambiarVista(arg0: string): void {
+    throw new Error('Function not implemented.');
+  }
 
   return (
-    <div className="min-h-[90vh] bg-white"> {/* Aumenta el alto mínimo */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 border border-solid border-gray-200 rounded-lg shadow-sm bg-white">
+    <div className={`min-h-[100vh] transition-colors duration-500 ${styles.fondo}`}>
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 rounded-2xl ${styles.card}`}>
         {/* HEADER */}
-<header className="p-4">
-  <div className="flex justify-between items-start md:items-center flex-col md:flex-row">
-    {/* CONTENEDOR LOGO + BUSCADOR */}
-    <div className="flex flex-col gap-4 w-full">
-      {/* Logo arriba del buscador */}
-      <div className="flex justify-start">
-        <img
-          src="/img/sena.png"
-          alt="Logo Izquierdo"
-          className="h-16 w-auto object-contain"
-        />
-      </div>
+        <header className="p-4">
+          <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-6">
+            {/* Logo + buscador */}
+            <div className="flex flex-col gap-6 w-full">
+              <div className="flex justify-start -mt-2">
+                <img src="/img/sena.png" alt="Logo Izquierdo" className="h-16 w-auto object-contain" />
+              </div>
+              <div className="relative w-full max-w-xl">
+                <input
+                  type="text"
+                  placeholder="Buscar en favoritos..."
+                  className={`pl-12 pr-6 py-2 rounded-full w-full focus:outline-none focus:ring-2 ${styles.input}`}
+                />
+                <FaSearch className={`absolute left-4 top-3.5 ${styles.textMuted}`} />
+              </div>
+            </div>
 
-      {/* BUSCADOR - Parte inferior */}
-      <div className="relative w-full max-w-xl">
-        <input
-          type="text"
-          placeholder="Buscar convocatorias, programas, becas..."
-          className="pl-12 pr-6 py-2 rounded-full border-2 border-gray-200 bg-white w-full focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 text-base"
-        />
-        <FaSearch className="absolute left-4 top-3.5 text-gray-500 text-xl" />
-      </div>
+            {/* Derecha: nav + modo oscuro */}
+            <div className="flex flex-col items-end space-y-3">
+              <div className="flex justify-end">
+                <img src="/img/logo.png" alt="Logo Derecho" className="h-14 w-auto object-contain" />
+              </div>
+
+              <nav className="flex items-center space-x-6 border-t pt-3">
+                <Link href="/menu" className={`flex items-center space-x-1 ${styles.nav}`}>
+                  <FaTags className="text-sm" />
+                  <span>Descubrir</span>
+                </Link>
+                <Link href="/public/explorar/" className={`flex items-center space-x-1 ${styles.nav}`}>
+                  <FaSearchLocation className="text-sm" />
+                  <span>Explorar</span>
+                </Link>
+                <Link href="/usuario/favoritos" className={`flex items-center space-x-1 ${styles.navActive}`}>
+                  <FaRegBookmark className="text-sm" />
+                  <span>Favoritos</span>
+                </Link>
+                <Link href="/usuario/perfilUser">
+                  <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold shadow-md ${modoOscuro ? "bg-gray-600 text-white" : "bg-[#8f928f] text-white"}`}>
+                    f
+                  </div>
+                </Link>
+              </nav>
+
+              <div className="fixed top-6 right-6 z-50">
+                <button
+                  onClick={toggleModoOscuro}
+                  className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
+                    ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
+                    : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
+                    }`}
+                  title="Cambiar modo"
+                >
+                  {modoOscuro ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+       {/* 🔹 SECTION FILTROS */}
+<section
+  className={`rounded-2xl p-4 mb-6 border transition-colors duration-500 ${
+    modoOscuro
+      ? "bg-[#121a2b] border-white/10"
+      : "bg-white/80 border-gray-200/80"
+  }`}
+>
+  <div className="flex flex-col md:flex-row flex-wrap gap-4 items-center justify-between">
+    {/* Filtro Categoría */}
+    <div className="flex flex-col flex-1 min-w-[220px]">
+      <label className="text-sm font-medium mb-2 flex items-center gap-2">
+        <LayoutGrid size={16} /> Categoría
+      </label>
+       <select
+                value={categoriaSeleccionada}
+                onChange={(e) => setCategoriaSeleccionada(Number(e.target.value) || '')}
+                className={`w-full rounded-xl px-4 py-3 text-sm cursor-pointer transition-all duration-200 ${styles.input}`}
+              >
+                <option value="">Todas las categorías</option>
+                {categorias.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
     </div>
 
-    {/* DERECHA: Logo + Navegación */}
-    <div className="flex flex-col items-end space-y-3 mt-4 md:mt-0">
-      {/* Logo arriba del perfil */}
-      <div className="flex justify-end">
-        <img
-          src="/img/logo.png"
-          alt="Logo Derecho"
-          className="h-14 w-auto object-contain"
-        />
-      </div>
+    {/* Filtro Ubicación */}
+    <div className="flex flex-col flex-1 min-w-[220px]">
+      <label className="text-sm font-medium mb-2 flex items-center gap-2">
+        <MapPin size={16} /> Ubicación
+      </label>
+      <select
+        className={`w-full rounded-xl px-4 py-3 text-sm cursor-pointer transition-all duration-200 ${styles.input}`}
+      >
+        <option>Todo el país</option>
+        <option>Bogotá</option>
+        <option>Medellín</option>
+        <option>Cali</option>
+      </select>
+    </div>
 
-      <nav className="flex items-center space-x-6 border-t pt-3">
-        <Link
-          href="/menu"
-          className="flex items-center space-x-1 hover:text-[#39A900] cursor-pointer transition"
-        >
-          <FaTags className="text-sm" />
-          <span>Descubrir</span>
-        </Link>
-        <Link
-          href="/public/explorar/"
-          className="flex items-center space-x-1 hover:text-[#39A900] cursor-pointer transition"
-        >
-          <FaSearchLocation className="text-sm" />
-          <span>Explorar</span>
-        </Link>
-        <Link
-          href="/usuario/favoritos"
-          className="flex items-center space-x-1 text-[#39A900] border-b-2 border-[#39A900] pb-1"
-        >
-          <FaRegBookmark className="text-sm" />
-          <span>Favoritos</span>
-        </Link>
-        <Link href="/usuario/perfilUser">
-          <div className="h-10 w-10 rounded-full bg-[#8f928f] flex items-center justify-center text-white font-bold shadow-md">
-            f
-          </div>
-        </Link>
-      </nav>
+    {/* Filtro Fecha */}
+    <div className="flex flex-col flex-1 min-w-[220px]">
+      <label className="text-sm font-medium mb-2 flex items-center gap-2">
+        <Calendar size={16} /> Fecha
+      </label>
+      <select
+        className={`w-full rounded-xl px-4 py-3 text-sm cursor-pointer transition-all duration-200 ${styles.input}`}
+      >
+        <option>Cualquier fecha</option>
+        <option>Agosto 2025</option>
+        <option>Septiembre 2025</option>
+      </select>
+    </div>
 
-      {/* Botón modo oscuro */}
-      <div className="fixed top-6 right-6 z-50">
-        <button
-          onClick={toggleModoOscuro}
-          className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
-            modoOscuro
-              ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
-              : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
-          }`}
-          title="Cambiar modo"
-        >
-          {modoOscuro ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
-        </button>
-      </div>
+    {/* Botones vista */}
+    <div
+      className={`flex items-center gap-2 p-1 rounded-full transition-colors ${
+        modoOscuro ? "bg-[#0e1626]" : "bg-gray-100"
+      }`}
+    >
+      <button
+        onClick={() => cambiarVista("tarjeta")}
+        className={`p-2.5  rounded-full transition-all duration-300 ${
+          vista === "tarjeta"
+            ? "bg-emerald-500 text-white shadow-md"
+            : "text-gray-500 hover:text-gray-800"
+        }`}
+      >
+        <LayoutGrid size={20} className="relative top-[1px]" />
+      </button>
+      <button
+        onClick={() => cambiarVista("lista")}
+        className={`p-2.5  rounded-full transition-all duration-300 ${
+          vista === "lista"
+            ? "bg-emerald-500 text-white shadow-md"
+            : "text-gray-500 hover:text-gray-800"
+        }`}
+      >
+        <ListIcon size={18} className="relative top-[1px]" />
+      </button>
     </div>
   </div>
-</header>
+</section>
 
 
 
+       {/* VISTA TARJETA */}
+{vista === 'tarjeta' && (
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+    {listaPagina.map((item, idx) => {
+      const key = `fav-card-${indiceInicio + idx}`;
+      const isExpanded = expandedKey === key;
+      return (
+        <div
+          key={item.id}
+          className={`relative rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all hover:-translate-y-2 flex flex-col ${styles.card}`}
+        >
+          {/* Eliminar */}
+          <button
+            className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md hover:bg-red-100 transition-colors z-20"
+            onClick={() => handleEliminar(idx)}
+            title="Eliminar de favoritos"
+          >
+            <FaTrashAlt className="text-red-500 text-lg" />
+          </button>
 
-        <section className="bg-white/80 backdrop-blur-sm border border-gray-200/80 shadow-sm rounded-2xl p-4 mb-6">
-          <div className="flex flex-col md:flex-row flex-wrap gap-4 items-center justify-between">
-
-            {/* --- Grupo de Filtros y Controles de Vista --- */}
-            <div className="flex flex-wrap items-end gap-x-4 gap-y-3 flex-1 w-full">
-
-              {/* --- Filtro: Categoría --- */}
-              <div className="flex flex-col flex-1 min-w-[220px]">
-                <label htmlFor="categoria" className="flex items-center text-sm font-medium mb-2 text-gray-600 gap-2">
-                  <LayoutGrid className="w-4 h-4 text-gray-400" />
-                  Categoría
-                </label>
-                <div className="relative">
-                  <select
-                    id="categoria"
-                    className="w-full appearance-none bg-white border-2 border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-400 cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md hover:border-gray-200"
-                  >
-                    <option>Todas las categorías</option>
-                    <option>Empleo</option>
-                    <option>Formación Técnica</option>
-                    <option>Formación Tecnológica</option>
-                    <option>Certificaciones</option>
-                    <option>Prácticas</option>
-                    <option>Internacional</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <svg className="w-5 h-5 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              {/* --- Filtro: Ubicación --- */}
-              <div className="flex flex-col flex-1 min-w-[220px]">
-                <label htmlFor="ubicacion" className="flex items-center text-sm font-medium mb-2 text-gray-600 gap-2">
-                  <MapPin className="w-4 h-4 text-gray-400" />
-                  Ubicación
-                </label>
-                <div className="relative">
-                  <select
-                    id="ubicacion"
-                    className="w-full appearance-none bg-white border-2 border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-400 cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md hover:border-gray-200"
-                  >
-                    <option>Todo el país</option>
-                    <option>Bogotá</option>
-                    <option>Medellín</option>
-                    <option>Cali</option>
-                    <option>Barranquilla</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <svg className="w-5 h-5 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              {/* --- Filtro: Fecha --- */}
-              <div className="flex flex-col flex-1 min-w-[220px]">
-                <label htmlFor="fecha" className="flex items-center text-sm font-medium mb-2 text-gray-600 gap-2">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  Fecha de inicio
-                </label>
-                <div className="relative">
-                  <select
-                    id="fecha"
-                    className="w-full appearance-none bg-white border-2 border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-400 cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md hover:border-gray-200"
-                  >
-                    <option>Cualquier fecha</option>
-                    <option>Julio 2025</option>
-                    <option>Agosto 2025</option>
-                    <option>Septiembre 2025</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <svg className="w-5 h-5 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              {/* --- Grupo de Controles de Vista --- */}
-              <div className="flex items-center gap-1 bg-gray-100 p-1.5 rounded-full mb-px">
-                <button
-                  onClick={() => cambiarVista("tarjeta")}
-                  className={`p-2.5 rounded-full transition-all duration-300 ${vista === "tarjeta"
-                    ? "bg-white shadow-lg text-emerald-600"
-                    : "text-gray-500 hover:text-gray-800 hover:bg-white/70"
-                    }`}
-                  title="Vista en tarjeta"
-                >
-                  <LayoutGrid size={20} />
-                </button>
-                <button
-                  onClick={() => cambiarVista("lista")}
-                  className={`p-2.5 rounded-full transition-all duration-300 ${vista === "lista"
-                    ? "bg-white shadow-lg text-emerald-600"
-                    : "text-gray-500 hover:text-gray-800 hover:bg-white/70"
-                    }`}
-                  title="Vista en lista"
-                >
-                  <List size={20} />
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {vista === "tarjeta" && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i, index) => (
-              <div
-                key={i}
-                className="relative bg-white border border-gray-200 rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 flex flex-col"
-              >
-                {/* Botón eliminar */}
-                <button
-                  className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md hover:bg-red-100 transition-colors z-20"
-                  onClick={() => handleEliminar(index)}
-                  title="Eliminar"
-                >
-                  <FaTrashAlt className="text-red-500 text-lg" />
-                </button>
-
-
-                {/* Imagen */}
-                <div className="overflow-hidden">
-                  <img
-                    onClick={() => setModalAbierto(true)}
-                    src={imagenesEje[index]}
-                    alt={`Imagen ${i}`}
-                    className="w-full h-[220px] object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
-                  />
-                </div>
-
-                {/* Contenido */}
-                <div className="p-5 flex flex-col justify-between flex-grow">
-                  <div>
-                    <h4 className="font-bold text-lg text-[#00324D] mb-3 flex items-center gap-2">
-                      <FaMobileAlt className="text-[#00324D]" />
-                      Curso de Tecnología {i}
-                    </h4>
-
-                    <p className="text-gray-600 mb-4 flex items-start gap-3">
-                      <FaGraduationCap className="text-xl text-[#00324D] mt-0.5 flex-shrink-0" />
-                      <span className="text-sm">
-                        Dirigido a estudiantes y profesionales interesados en el área.
-                      </span>
-                    </p>
-
-                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm text-gray-700 mb-4">
-                      <span className="flex items-center gap-1.5">
-                        <FaCalendarAlt className="text-[#00324D]" />
-                        <strong>Apertura:</strong> 01/08/2025
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <FaCalendarTimes className="text-[#00324D]" />
-                        <strong>Cierre:</strong> 30/08/2025
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Botones */}
-                  <div className="pt-4 mt-auto border-t border-gray-200 flex items-center gap-2">
-                    <button
-                      onClick={() => setModalAbierto(true)}
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm bg-[#00324D] text-white hover:bg-[#004267] transition-all duration-300 shadow-sm hover:shadow-md"
-                    >
-                      <FaRegFileAlt /> Detalles
-                    </button>
-
-                    <button className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm bg-[#39A900] text-white hover:bg-lime-600 transition-all duration-300 shadow-sm hover:shadow-md">
-                      <FaCheckCircle /> Inscribirse
-                    </button>
-
-
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            {/* Modal */}
-            <ModalConvocatoria
-              modalAbierto={modalAbierto}
-              cerrarModal={() => setModalAbierto(false)}
+          {/* Imagen */}
+          <div className="overflow-hidden">
+            <img
+              onClick={() => {
+                setItemSeleccionado(item);
+                setModalAbierto(true);
+              }}
+              src={item.imageUrl || "/img/default.jpg"}
+              alt={item.title}
+              className="w-full h-[220px] object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
             />
           </div>
-        )}
 
+          {/* Contenido */}
+          <div className="p-5 flex flex-col justify-between flex-grow">
+            <div>
+              {/* 🔹 Título con ícono */}
+              <h4
+                className={`font-bold text-lg mb-3 flex items-center gap-2 ${
+                  modoOscuro ? "text-white" : "text-[#00324D]"
+                }`}
+              >
+                <FaMobileAlt
+                  className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                />
+                {item.title}
+              </h4>
 
-
-        {vista === "lista" && (
-          <div className="w-full p-4 sm:p-6 lg:p-0">
-            <div className="flex flex-col gap-6">
-              {[...Array(8)].map((_, index) => (
-                <div
-                  key={index}
-                  className="relative flex flex-col md:flex-row bg-white rounded-lg border border-gray-200 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden"
-                >
-                  {/* Botón eliminar */}
-                  <button
-                    className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md hover:bg-red-100 transition-colors z-20"
-                    onClick={() => handleEliminar(index)}
-                    title="Eliminar"
-                  >
-                    <FaTrashAlt className="text-red-500 text-lg" />
-                  </button>
-
-                  {/* Contenedor de Imagen (más grande y uniforme) */}
-                  {/* Contenedor de Imagen (más grande y uniforme con enfoque a la izquierda) */}
-                  <div className="w-full md:w-[400px] h-[260px] flex-shrink-0 bg-gray-100 overflow-hidden">
-                    <img
-                      onClick={() => setModalAbierto(true)}
-                      src={imagenesEje[index]}
-                      alt={`Convocatoria ${index}`}
-                      className="w-full h-full object-cover object-[20%] cursor-pointer transition-transform duration-300 hover:scale-110"
-                    />
-                  </div>
-
-
-                  {/* Contenido */}
-                  <div className="flex flex-col flex-grow p-6">
-                    <div className="flex-grow">
-                      <h4 className="text-xl font-bold text-[#00324D] flex items-center gap-3">
-                        <FaMobileAlt className="text-[#00324D]" />
-                        Técnico en Desarrollo de Aplicaciones Web
-                      </h4>
-
-                      <div className="border-t border-gray-200 my-4"></div>
-
-                      <div className="space-y-4">
-                        {/* Párrafo con altura consistente */}
-                        <p className="text-sm text-gray-700 flex items-start gap-3 min-h-[40px]">
-                          <FaGraduationCap className="text-xl text-[#00324D] flex-shrink-0 mt-0.5" />
-                          <span className="line-clamp-2">
-                            Aprende a crear aplicaciones web modernas con las últimas tecnologías del mercado.
-                            Este texto puede ser más largo para demostrar cómo se corta automáticamente.
-                          </span>
-                        </p>
-
-                        <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-800">
-                          <span className="flex items-center gap-2">
-                            <FaCalendarAlt className="text-[#00324D]" />
-                            <strong>Apertura:</strong> 15 julio
-                          </span>
-                          <span className="flex items-center gap-2">
-                            <FaCalendarTimes className="text-[#00324D]" />
-                            <strong>Cierre:</strong> 31 julio
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Botones con línea separadora */}
-                    <div className="flex flex-wrap items-center gap-3 pt-4 mt-auto border-t border-gray-200">
-                      <button
-                        onClick={() => setModalAbierto(true)}
-                        className="flex items-center gap-2 px-5 py-2 rounded-md font-semibold text-sm bg-[#00324D] text-white hover:bg-[#004267] transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                      >
-                        <FaFileAlt /> Detalles
-                      </button>
-
-                      <button className="flex items-center gap-2 px-5 py-2 rounded-md font-semibold text-sm bg-[#39A900] text-white hover:bg-lime-600 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
-                        <FaCheckCircle /> Inscribirse
-                      </button>
-
-
-                    </div>
-                  </div>
+              {/* 🔹 Descripción con ícono */}
+              <div
+                className={`mb-2 flex items-start gap-3 ${styles.textMuted}`}
+              >
+                <FaGraduationCap
+                  className={`text-xl mt-0.5 flex-shrink-0 ${
+                    modoOscuro ? "text-white" : "text-[#00324D]"
+                  }`}
+                />
+                <div className="text-sm">
+                  {clampOrFull(item.description, isExpanded)}
+                  {item.description?.length > 100 && (
+                    <button
+                      onClick={() =>
+                        setExpandedKey(isExpanded ? null : key)
+                      }
+                      className={`block mt-1 text-sm font-semibold hover:underline ${
+                        modoOscuro
+                          ? "text-white"
+                          : "text-[#00324D]"
+                      }`}
+                    >
+                      {isExpanded ? "Ver menos ▲" : "Ver más ▼"}
+                    </button>
+                  )}
                 </div>
-              ))}
+              </div>
 
-              <ModalConvocatoria
-                modalAbierto={modalAbierto}
-                cerrarModal={() => setModalAbierto(false)}
-              />
+              {/* 🔹 Fechas con íconos */}
+              <div
+                className={`flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm mb-4 ${styles.textMuted}`}
+              >
+                <span className="flex items-center gap-1.5">
+                  <FaCalendarAlt
+                    className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                  />
+                  <strong>Apertura:</strong>{" "}
+                  {item.openDate
+                    ? new Date(item.openDate).toLocaleDateString()
+                    : "—"}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <FaCalendarTimes
+                    className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                  />
+                  <strong>Cierre:</strong>{" "}
+                  {item.closeDate
+                    ? new Date(item.closeDate).toLocaleDateString()
+                    : "—"}
+                </span>
+              </div>
+            </div>
+
+            {/* Botones → se quedan igual */}
+            <div
+              className={`pt-4 mt-auto flex items-center gap-2 border-t ${styles.divider}`}
+            >
+              <button
+                onClick={() => {
+                  setItemSeleccionado(item);
+                  setModalAbierto(true);
+                }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold text-sm ${styles.primaryButton}`}
+              >
+                <FaRegFileAlt /> Detalles
+              </button>
+              <button
+                className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold text-sm ${styles.successButton}`}
+              >
+                <FaCheckCircle /> Inscribirse
+              </button>
             </div>
           </div>
-        )}
+        </div>
+      );
+    })}
+  </div>
+)}
 
 
-        {/*-------------------------------- Paginación Moderna con Efecto Glow -----------------------------------*/}
-        <div className="flex justify-center items-center gap-3 mt-4 flex-wrap">
-          {/* Botón Anterior */}
+       {/* VISTA LISTA */}
+{vista === 'lista' && (
+  <div className="w-full">
+    <div className="flex flex-col gap-6">
+      {listaPagina.map((item, idx) => {
+        const key = `fav-list-${indiceInicio + idx}`;
+        const isExpanded = expandedKey === key;
+        return (
+          <div
+            key={item.id}
+            className={`relative flex flex-col md:flex-row rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all hover:-translate-y-2 ${styles.card}`}
+          >
+            {/* Eliminar */}
+            <button
+              className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md hover:bg-red-100 transition-colors z-20"
+              onClick={() => handleEliminar(idx)}
+              title="Eliminar de favoritos"
+            >
+              <FaTrashAlt className="text-red-500 text-lg" />
+            </button>
+
+            {/* Imagen */}
+            <div className="w-full md:w-[400px] h-[260px] flex-shrink-0 overflow-hidden">
+              <img
+                onClick={() => {
+                  setItemSeleccionado(item);
+                  setModalAbierto(true);
+                }}
+                src={item.imageUrl || "/img/default.jpg"}
+                alt={item.title}
+                className="w-full h-full object-cover object-[20%] cursor-pointer transition-transform duration-300 hover:scale-110"
+              />
+            </div>
+
+            {/* Contenido */}
+            <div className="flex flex-col flex-grow p-6">
+              <div className="flex-grow">
+                {/* 🔹 Título */}
+                <h4
+                  className={`text-xl font-bold flex items-center gap-3 ${
+                    modoOscuro ? "text-white" : "text-[#00324D]"
+                  }`}
+                >
+                  <FaMobileAlt
+                    className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                  />
+                  {item.title}
+                </h4>
+
+                <div className={`my-4 border-t ${styles.divider}`} />
+
+                {/* 🔹 Descripción */}
+                <div className="space-y-4">
+                  <div
+                    className={`text-sm flex items-start gap-3 ${styles.textMuted}`}
+                  >
+                    <FaGraduationCap
+                      className={`text-xl flex-shrink-0 mt-0.5 ${
+                        modoOscuro ? "text-white" : "text-[#00324D]"
+                      }`}
+                    />
+                    <div className="text-sm">
+                      {clampOrFull(item.description, isExpanded)}
+                      {item.description?.length > 120 && (
+                        <button
+                          onClick={() =>
+                            setExpandedKey(isExpanded ? null : key)
+                          }
+                          className={`block mt-1 text-sm font-semibold hover:underline ${
+                            modoOscuro
+                              ? "text-white"
+                              : "text-[#00324D]"
+                          }`}
+                        >
+                          {isExpanded ? "Ver menos ▲" : "Ver más ▼"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 🔹 Fechas */}
+                  <div
+                    className={`flex flex-wrap gap-x-6 gap-y-2 text-sm ${styles.textMuted}`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <FaCalendarAlt
+                        className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                      />
+                      <strong>Apertura:</strong>{" "}
+                      {item.openDate
+                        ? new Date(item.openDate).toLocaleDateString()
+                        : "—"}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <FaCalendarTimes
+                        className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                      />
+                      <strong>Cierre:</strong>{" "}
+                      {item.closeDate
+                        ? new Date(item.closeDate).toLocaleDateString()
+                        : "—"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botones → se mantienen igual */}
+              <div
+                className={`flex flex-wrap items-center gap-3 pt-4 mt-auto border-t ${styles.divider}`}
+              >
+                <button
+                  onClick={() => {
+                    setItemSeleccionado(item);
+                    setModalAbierto(true);
+                  }}
+                  className={`flex items-center gap-2 px-5 py-2 rounded-md font-semibold text-sm ${styles.primaryButton}`}
+                >
+                  <FaRegFileAlt /> Detalles
+                </button>
+                <button
+                  className={`flex items-center gap-2 px-5 py-2 rounded-md font-semibold text-sm ${styles.successButton}`}
+                >
+                  <FaCheckCircle /> Inscribirse
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+)}
+
+        {/* PAGINACIÓN */}
+        <div className="flex justify-center items-center gap-3 mt-8 flex-wrap">
           <button
-            className="flex items-center justify-center gap-2 px-4 py-2 font-semibold text-gray-700 bg-white border border-gray-200/80 rounded-xl shadow-sm transition-all duration-300 hover:bg-gray-50 hover:border-gray-300 hover:shadow-md hover:-translate-y-px disabled:opacity-50 disabled:shadow-none disabled:transform-none disabled:cursor-not-allowed"
+            className={`flex items-center justify-center gap-2 px-4 py-2 font-semibold rounded-xl shadow-sm transition-all disabled:opacity-50 ${styles.button}`}
             disabled={paginaActual === 1}
             onClick={() => setPaginaActual(paginaActual - 1)}
           >
-            <ChevronLeft size={18} strokeWidth={2.5} />
-            Anterior
+            <ChevronLeft size={18} /> Anterior
           </button>
 
-          {/* Números de página */}
-          {[1, 2, 3, 4].map((num) => (
+          {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((num) => (
             <button
               key={num}
-              className={`flex items-center justify-center w-11 h-11 font-bold rounded-xl transition-all duration-300
-      ${paginaActual === num
-                  ? "bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-lg shadow-emerald-500/40 scale-110 ring-2 ring-white/50"
-                  : "text-gray-700 bg-white border border-gray-200/80 shadow-sm hover:bg-gray-50 hover:shadow-md hover:-translate-y-px"}`}
+              className={`flex items-center justify-center w-11 h-11 font-bold rounded-xl transition-all ${paginaActual === num ? styles.primaryButton : styles.button}`}
               onClick={() => setPaginaActual(num)}
             >
               {num}
             </button>
           ))}
 
-          {/* Botón Siguiente */}
           <button
-            className="flex items-center justify-center gap-2 px-4 py-2 font-semibold text-gray-700 bg-white border border-gray-200/80 rounded-xl shadow-sm transition-all duration-300 hover:bg-gray-50 hover:border-gray-300 hover:shadow-md hover:-translate-y-px disabled:opacity-50 disabled:shadow-none disabled:transform-none disabled:cursor-not-allowed"
-            disabled={paginaActual === 4}
+            className={`flex items-center justify-center gap-2 px-4 py-2 font-semibold rounded-xl shadow-sm transition-all disabled:opacity-50 ${styles.button}`}
+            disabled={paginaActual === totalPaginas}
             onClick={() => setPaginaActual(paginaActual + 1)}
           >
-            Siguiente
-            <ChevronRight size={18} strokeWidth={2.5} />
+            Siguiente <ChevronRight size={18} />
           </button>
         </div>
-
       </div>
 
+      <ModalConvocatoria
+        modalAbierto={modalAbierto}
+        cerrarModal={() => setModalAbierto(false)}
+        convocatoria={itemSeleccionado as any}
+      />
     </div>
-
   );
 }

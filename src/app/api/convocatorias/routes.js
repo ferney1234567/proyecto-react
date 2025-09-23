@@ -20,16 +20,23 @@ export const getConvocatorias = async () => {
 };
 
 
-// Crear
 export const createConvocatoria = async (conv) => {
-  const res = await fetch(API_URL, {
+  const res = await fetch("http://localhost:4000/api/v1/calls", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(conv),
   });
-  if (!res.ok) throw new Error("Error al crear convocatoria");
-  return res.json();
+
+  const data = await res.json();
+
+  if (!res.ok || data.status === "Error") {
+    throw new Error(data.message || "Error al crear convocatoria");
+  }
+
+  return data;
 };
+
+
 
 // Actualizar
 export const updateConvocatoria = async (id, conv) => {

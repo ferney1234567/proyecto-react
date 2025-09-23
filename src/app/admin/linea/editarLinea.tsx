@@ -60,7 +60,7 @@ export default function EditarLineaModal({
       }`}
     >
       <div
-        className={`${modalBg} rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all duration-300 ${
+        className={`${modalBg} rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all duration-300 ${
           animacion ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
         }`}
       >

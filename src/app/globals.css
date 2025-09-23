@@ -163,3 +163,14 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none; /* Chrome, Safari y Opera */
 }
+html {
+  background-color: #111827; /* gris oscuro por defecto */
+}
+/* Ocultar scrollbars */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE y Edge */
+  scrollbar-width: none; /* Firefox */
+}

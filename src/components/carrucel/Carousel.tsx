@@ -11,44 +11,75 @@ import {
 } from 'react-icons/fi';
 import ModalConvocatoria from '../detalleConvo/detalleConvo'; // Ajusta la ruta
 
-const slides = [
+// Definimos la interfaz mínima para que funcione el Modal
+interface Convocatoria {
+  id?: number;
+  title: string;
+  description: string;
+  resources?: string;
+  callLink?: string;
+  openDate?: string;
+  closeDate?: string;
+  pageName?: string;
+  pageUrl?: string;
+  objective?: string;
+  notes?: string;
+  institutionId?: number;
+  lineId?: number;
+  targetAudienceId?: number;
+  interestId?: number;
+  userId?: number;
+  clickCount?: number;
+  imageUrl?: string;
+}
+
+const slides: Convocatoria[] = [
   {
+    id: 1,
     title: "Impulsa tu Talento Digital 2025",
     description: "Conviértete en un profesional destacado en el sector tecnológico con el apoyo del SENA.",
-    tags: ["Desarrollo Web", "Ciencia de Datos", "Ciberseguridad"],
-    btnText: "Inscríbete Ahora",
-    icon: <FiAward className="text-4xl text-white" />,
-    image: "/img/cienciasSalud.jpg",
+    resources: "Programa nacional de formación en tecnología",
+    imageUrl: "/img/cienciasSalud.jpg",
+    pageName: "Convocatorias SENA",
+    pageUrl: "https://ejemplo.com/talento-digital",
+    objective: "Formar talento digital en Colombia",
   },
   {
+    id: 2,
     title: "Convocatoria Nacional de Empleo",
     description: "Descubre miles de oportunidades laborales con nuestras empresas aliadas en todo el país.",
-    tags: ["Oportunidades", "Crecimiento Profesional", "Empresas Aliadas"],
-    btnText: "Aplica Ahora",
-    icon: <FiBriefcase className="text-4xl text-white" />,
-    image: "/img/R.jpg",
+    resources: "Miles de vacantes disponibles",
+    imageUrl: "/img/R.jpg",
+    pageName: "Empleo Nacional",
+    pageUrl: "https://ejemplo.com/empleo",
+    objective: "Conectar talento con empresas",
   },
   {
+    id: 3,
     title: "Industria 4.0: El Futuro es Ahora",
     description: "Capacítate en las tecnologías que están transformando la industria a nivel global.",
-    tags: ["Innovación", "Automatización", "Tecnología"],
-    btnText: "Comienza tu Formación",
-    icon: <FiAward className="text-4xl text-white" />,
-    image: "/img/fabricas.jpg",
+    resources: "Cursos especializados en automatización",
+    imageUrl: "/img/fabricas.jpg",
+    pageName: "Industria 4.0",
+    pageUrl: "https://ejemplo.com/industria",
+    objective: "Preparar profesionales para el futuro",
   },
   {
+    id: 4,
     title: "Jóvenes con Futuro Laboral",
     description: "Programas especiales para que los jóvenes inicien su carrera profesional con éxito.",
-    tags: ["Primer Empleo", "Desarrollo", "Juventud"],
-    btnText: "Inscríbete Ahora",
-    icon: <FiBriefcase className="text-4xl text-white" />,
-    image: "/img/jove.jpg",
+    resources: "Primer empleo asegurado",
+    imageUrl: "/img/jove.jpg",
+    pageName: "Juventud y Trabajo",
+    pageUrl: "https://ejemplo.com/jovenes",
+    objective: "Apoyar la inserción laboral juvenil",
   },
 ];
 
 export default function Carousel() {
   const [index, setIndex] = useState(0);
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [convocatoriaSeleccionada, setConvocatoriaSeleccionada] = useState<Convocatoria | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -67,7 +98,7 @@ export default function Carousel() {
       {/* Imagen de fondo */}
       <div className="absolute inset-0">
         <img
-          src={current.image}
+          src={current.imageUrl}
           alt="slide"
           className="w-full h-full object-cover transition-transform duration-1000 transform scale-105"
         />
@@ -79,7 +110,7 @@ export default function Carousel() {
         <div className="p-8 md:p-12 flex flex-col justify-center space-y-4 h-full backdrop-blur-md">
           {/* Encabezado */}
           <div className="flex items-center gap-4">
-            {current.icon}
+            <FiAward className="text-4xl text-white" />
             <span className="text-xs font-semibold px-4 py-1.5 rounded-full bg-white/20">
               ⚡ Convocatorias Destacadas
             </span>
@@ -89,25 +120,18 @@ export default function Carousel() {
           <h2 className="text-4xl font-extrabold tracking-tight">{current.title}</h2>
           <p className="text-base opacity-90">{current.description}</p>
 
-          {/* Etiquetas */}
-          <div className="flex flex-wrap gap-2">
-            {current.tags.map((tag, i) => (
-              <span
-                key={i}
-                className="text-xs px-3 py-1 border border-white/30 bg-white/10 rounded-full"
-              >
-                #{tag}
-              </span>
-            ))}
-          </div>
-
-          {/* Botones (más arriba) */}
+          {/* Botones */}
           <div className="flex gap-4 pt-2">
-            <button className="px-7 py-3 bg-gradient-to-r from-emerald-400 to-cyan-400 text-black font-bold rounded-full flex items-center gap-2 text-sm hover:shadow-lg hover:shadow-cyan-400/20 transition-all duration-300">
-              <FiCheckCircle /> {current.btnText}
+            <button
+              className="px-7 py-3 bg-gradient-to-r from-emerald-400 to-cyan-400 text-black font-bold rounded-full flex items-center gap-2 text-sm hover:shadow-lg hover:shadow-cyan-400/20 transition-all duration-300"
+            >
+              <FiCheckCircle /> Inscríbete Ahora
             </button>
             <button
-              onClick={() => setModalAbierto(true)}
+              onClick={() => {
+                setConvocatoriaSeleccionada(current);
+                setModalAbierto(true);
+              }}
               className="border-2 border-white/50 text-white px-7 py-3 text-sm font-bold rounded-full hover:bg-white hover:text-black transition-colors duration-300 flex items-center gap-2"
             >
               <FiEye /> Ver Detalles
@@ -120,20 +144,19 @@ export default function Carousel() {
       </div>
 
       {/* Controles */}
-    <button
-  onClick={prevSlide}
-  className="absolute top-1/2 -translate-y-1/2 left-0 p-3 bg-white/20 hover:bg-white/40 rounded-full text-white z-20 transition-colors duration-300 backdrop-blur-sm"
->
-  <FiChevronLeft size={20} />
-</button>
+      <button
+        onClick={prevSlide}
+        className="absolute top-1/2 -translate-y-1/2 left-0 p-3 bg-white/20 hover:bg-white/40 rounded-full text-white z-20 transition-colors duration-300 backdrop-blur-sm"
+      >
+        <FiChevronLeft size={20} />
+      </button>
 
-<button
-  onClick={nextSlide}
-  className="absolute top-1/2 -translate-y-1/2 right-4 p-3 bg-white/20 hover:bg-white/40 rounded-full text-white z-20 transition-colors duration-300 backdrop-blur-sm"
->
-  <FiChevronRight size={20} />
-</button>
-
+      <button
+        onClick={nextSlide}
+        className="absolute top-1/2 -translate-y-1/2 right-4 p-3 bg-white/20 hover:bg-white/40 rounded-full text-white z-20 transition-colors duration-300 backdrop-blur-sm"
+      >
+        <FiChevronRight size={20} />
+      </button>
 
       {/* Indicadores */}
       <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2.5 z-20">
@@ -153,6 +176,7 @@ export default function Carousel() {
       <ModalConvocatoria
         modalAbierto={modalAbierto}
         cerrarModal={() => setModalAbierto(false)}
+        convocatoria={convocatoriaSeleccionada}
       />
     </div>
   );

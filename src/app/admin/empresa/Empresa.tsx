@@ -1,13 +1,18 @@
-'use client';
-
-import { useState } from 'react';
+"use client";
+import { useState, useEffect } from "react";
 import {
-  Plus, Edit, Trash2, Briefcase, Building2, Hash, MapPin, Globe, Phone, Users, Factory,
-  Clock, UserCheck, Scale, Mail, Smartphone, FileBadge
-} from 'lucide-react';
-import EmpresaModal from './crearEmpresa';
-import EditarEmpresa from './editarEmpresa';
-import Swal from 'sweetalert2';
+  Plus, Edit, Trash2, Briefcase, Hash, MapPin, Globe, Phone,
+  Users, Clock, Mail, Smartphone, FileBadge, UserCheck, Factory
+} from "lucide-react";
+import EmpresaModal from "./crearEmpresa";
+import EditarEmpresa from "./editarEmpresa";
+import Swal from "sweetalert2";
+import {
+  getEmpresas,
+  createEmpresa,
+  updateEmpresa,
+  deleteEmpresa,
+} from "../../api/empresa/route";
 
 interface EmpresaProps {
   modoOscuro: boolean;
@@ -23,7 +28,7 @@ interface Empresa {
   telefono: string;
   empleados: string;
   sector: string;
-  tiempo: string;
+  tiempo: number;
   descripcion: string;
   documentoLegal: string;
   nombreLegal: string;
@@ -33,247 +38,300 @@ interface Empresa {
   email: string;
   cargoLegal: string;
   ciudad: string;
+  cityId: string;
 }
 
-const emptyEmpresa: Empresa = {
-  id: '', nombre: '', nit: '', direccion: '', razonSocial: '', paginaWeb: '', telefono: '', empleados: '',
-  sector: '', tiempo: '', descripcion: '', documentoLegal: '', nombreLegal: '', apellidoLegal: '', telefonoFijo: '',
-  celular: '', email: '', cargoLegal: '', ciudad: '',
-};
-
 export default function Empresa({ modoOscuro }: EmpresaProps) {
-  const [empresas, setEmpresas] = useState<Empresa[]>([
-    {
-      id: '1', nombre: 'Tech Solutions S.A.', nit: '800123456-7', direccion: 'Calle 100 # 25-50',
-      razonSocial: 'Servicios Tecnológicos', paginaWeb: 'https://techsolutions.com', telefono: '1234567',
-      empleados: '50', sector: 'Tecnología', tiempo: '5 años',
-      descripcion: 'Empresa dedicada al desarrollo de software empresarial.',
-      documentoLegal: 'Certificado Cámara de Comercio', nombreLegal: 'Carlos', apellidoLegal: 'Gómez',
-      telefonoFijo: '1234567', celular: '3216549870', email: 'contacto@techsolutions.com',
-      cargoLegal: 'Representante Legal', ciudad: 'Bogotá',
-    },
-    {
-      id: '2', nombre: 'AgroVerde Ltda.', nit: '900987654-3', direccion: 'Carrera 12 # 45-67',
-      razonSocial: 'Agroindustria Sostenible', paginaWeb: 'https://agroverde.co', telefono: '604123456',
-      empleados: '120', sector: 'Agroindustria', tiempo: '10 años',
-      descripcion: 'Empresa enfocada en el desarrollo de soluciones sostenibles para el sector agrícola.',
-      documentoLegal: 'Certificado Cámara de Comercio', nombreLegal: 'Luisa', apellidoLegal: 'Martínez',
-      telefonoFijo: '604123456', celular: '3109876543', email: 'contacto@agroverde.co',
-      cargoLegal: 'Gerente General', ciudad: 'Medellín',
-    },
-  ]);
-
-  const [buscar, setBuscar] = useState('');
+  const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [buscar, setBuscar] = useState("");
   const [mostrarModal, setMostrarModal] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
-  const [empresaActual, setEmpresaActual] = useState<Empresa>(emptyEmpresa);
+  const [empresaActual, setEmpresaActual] = useState<Partial<Empresa>>({});
 
-  const empresasFiltradas = empresas.filter((e) =>
-    e.nombre.toLowerCase().includes(buscar.toLowerCase()) ||
-    e.nit.toLowerCase().includes(buscar.toLowerCase())
-  );
+  // === ALERTAS ===
+  const showSuccess = (mensaje: string) =>
+    Swal.fire({
+      icon: "success",
+      title: "¡Éxito!",
+      text: mensaje,
+      confirmButtonColor: "#39A900",
+    });
 
+  const showWarning = (mensaje: string) =>
+    Swal.fire({
+      icon: "warning",
+      title: "Atención",
+      text: mensaje,
+      confirmButtonColor: "#39A900",
+    });
+
+  // === CARGAR EMPRESAS ===
+  const cargarEmpresas = async () => {
+    try {
+      const data = await getEmpresas();
+      const items = (data.data || []).map((e: any) => ({
+        id: String(e.id),
+        nombre: e.name,
+        nit: e.taxId,
+        direccion: e.address,
+        razonSocial: e.legalName,
+        paginaWeb: e.website,
+        telefono: e.phone,
+        empleados: String(e.employeeCount),
+        sector: e.economicSector,
+        tiempo: e.existenceYears || 0,
+        descripcion: e.description,
+        documentoLegal: e.legalDocument,
+        nombreLegal: e.legalFirstName,
+        apellidoLegal: e.legalLastName,
+        telefonoFijo: e.landline,
+        celular: e.legalMobile,
+        email: e.email,
+        cargoLegal: e.legalPosition,
+        ciudad: e.city?.name || "Sin ciudad",
+        cityId: e.city?.id ? String(e.city.id) : "",
+      }));
+      setEmpresas(items);
+    } catch (err: any) {
+      showWarning(err.message);
+    }
+  };
+
+  useEffect(() => {
+    cargarEmpresas();
+  }, []);
+
+  // === CREAR / EDITAR ===
+  const handleSave = async () => {
+    if (!empresaActual.nombre || !empresaActual.nit) {
+      showWarning("El nombre y el NIT son obligatorios");
+      return;
+    }
+
+    const payload = {
+      ...empresaActual,
+      empleados: empresaActual.empleados || "0",
+      tiempo: Number(empresaActual.tiempo) || 0,
+      cityId: empresaActual.cityId ? Number(empresaActual.cityId) : null,
+    };
+
+    try {
+      if (editandoId) {
+        await updateEmpresa(editandoId, payload);
+        showSuccess("Empresa actualizada correctamente");
+      } else {
+        await createEmpresa(payload);
+        showSuccess("Empresa creada exitosamente");
+      }
+      setMostrarModal(false);
+      setEditandoId(null);
+      setEmpresaActual({});
+      await cargarEmpresas();
+    } catch (err: any) {
+      showWarning(err.message || "Error al guardar empresa");
+    }
+  };
+
+  // === ELIMINAR ===
+  const handleEliminar = (id: string) => {
+    Swal.fire({
+      title: "¿Eliminar esta empresa?",
+      text: "Esta acción no se puede deshacer",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await deleteEmpresa(id);
+          showSuccess("Empresa eliminada");
+          await cargarEmpresas();
+        } catch (err: any) {
+          showWarning(err.message);
+        }
+      }
+    });
+  };
+
+  // === ABRIR / CERRAR MODAL ===
   const abrirModal = (empresa?: Empresa) => {
     if (empresa) {
       setEditandoId(empresa.id);
-      setEmpresaActual(empresa);
+      setEmpresaActual({ ...empresa });
     } else {
       setEditandoId(null);
-      setEmpresaActual(emptyEmpresa);
+      setEmpresaActual({});
     }
     setMostrarModal(true);
   };
 
   const cerrarModal = () => {
-    setEditandoId(null);
-    setEmpresaActual(emptyEmpresa);
     setMostrarModal(false);
+    setEditandoId(null);
+    setEmpresaActual({});
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setEmpresaActual({ ...empresaActual, [e.target.name]: e.target.value });
-  };
+  // === FILTRO ===
+  const empresasFiltradas = empresas.filter(
+    (e) =>
+      e.nombre.toLowerCase().includes(buscar.toLowerCase()) ||
+      e.nit.toLowerCase().includes(buscar.toLowerCase())
+  );
 
-  const showSuccess = (mensaje: string) => {
-    Swal.fire({
-      icon: 'success', title: '¡Éxito!', text: mensaje,
-      confirmButtonText: 'Aceptar', confirmButtonColor: '#39A900',
-      background: modoOscuro ? '#1a0526' : '#fff', color: modoOscuro ? '#fff' : '#333',
-      timer: 2000, timerProgressBar: true,
-    });
-  };
-
-  const showWarning = (mensaje: string) => {
-    Swal.fire({
-      icon: 'warning', title: 'Atención', text: mensaje,
-      confirmButtonText: 'Aceptar', confirmButtonColor: '#39A900',
-      background: modoOscuro ? '#1a0526' : '#fff', color: modoOscuro ? '#fff' : '#333',
-    });
-  };
-
-  const handleSave = () => {
-    if (!empresaActual.nombre.trim() || !empresaActual.nit.trim()) {
-      showWarning('El nombre y el NIT de la empresa son campos obligatorios.');
-      return;
-    }
-
-    if (editandoId) {
-      setEmpresas(empresas.map((e) => (e.id === editandoId ? empresaActual : e)));
-      showSuccess('Empresa actualizada correctamente.');
-    } else {
-      const nueva = { ...empresaActual, id: Date.now().toString() };
-      setEmpresas([...empresas, nueva]);
-      showSuccess('Empresa creada exitosamente.');
-    }
-    cerrarModal();
-  };
-
-  const handleEliminar = (id: string) => {
-    Swal.fire({
-      title: '¿Estás seguro de eliminar esta empresa?',
-      text: "Esta acción no se puede deshacer.", icon: 'warning',
-      showCancelButton: true, confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6', confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar', background: modoOscuro ? '#1a0526' : '#fff',
-      color: modoOscuro ? '#fff' : '#333',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setEmpresas(empresas.filter((e) => e.id !== id));
-        showSuccess('La empresa ha sido eliminada.');
-      }
-    });
-  };
-
-  // Estilos condicionales
-  const bgColor = modoOscuro ? 'bg-[#1a0526]' : 'bg-white';
-  const textColor = modoOscuro ? 'text-white' : 'text-gray-900';
-  const borderColor = modoOscuro ? 'border-white/20' : 'border-gray-200';
-  const cardBg = modoOscuro ? 'bg-white/10' : 'bg-white';
-  const placeholderColor = modoOscuro ? 'placeholder-gray-400' : 'placeholder-gray-500';
-  const searchBg = modoOscuro ? 'bg-white/10' : 'bg-white';
-  const searchBorder = modoOscuro ? 'border-white/20' : 'border-gray-300';
-  const searchFocus = modoOscuro ? 'focus:ring-[#39A900] focus:border-[#39A900]' : 'focus:ring-[#39A900] focus:border-[#39A900]';
-  const emptyStateBg = modoOscuro ? 'bg-gray-800/30' : 'bg-gray-50/50';
-  const emptyStateBorder = modoOscuro ? 'border-gray-700' : 'border-dashed border-gray-200';
-  const secondaryText = modoOscuro ? 'text-gray-300' : 'text-gray-600';
-  const titleColor = modoOscuro ? 'text-white' : 'text-gray-800';
-  const detailText = modoOscuro ? 'text-gray-400' : 'text-gray-600';
-  const borderLight = modoOscuro ? 'border-gray-700' : 'border-gray-200';
-  const iconColor = modoOscuro ? 'text-[#39A900]' : 'text-[#39A900]';
-  const iconBg = modoOscuro ? 'bg-[#39A900]/20' : 'bg-[#39A900]/10';
-  const linkColor = modoOscuro ? 'text-[#39A900] hover:text-[#2d8500]' : 'text-[#39A900] hover:text-[#2d8500]';
+  // === ESTILOS ===
+  const bgColor = modoOscuro ? "bg-[#1a0526]" : "bg-white";
+  const textColor = modoOscuro ? "text-white" : "text-gray-900";
+  const borderColor = modoOscuro ? "border-white/20" : "border-gray-200";
+  const cardBg = modoOscuro ? "bg-white/10" : "bg-white";
+  const secondaryText = modoOscuro ? "text-gray-300" : "text-gray-600";
+  const titleColor = modoOscuro ? "text-white" : "text-gray-800";
+  const detailText = modoOscuro ? "text-gray-400" : "text-gray-600";
 
   return (
     <>
-      <div className={`rounded-3xl  p-10 max-w-9xl mx-auto my-12  ${bgColor} ${textColor} ${borderColor}`}>
-        {/* Título principal */}
+      <div
+        className={`rounded-3xl p-10 max-w-9xl mx-auto my-12 ${bgColor} ${textColor}`}
+      >
+        {/* Header */}
         <div className="text-center mb-10">
           <h2 className={`text-4xl font-extrabold mb-2 ${titleColor}`}>
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600">
-            Gestión de Empresas
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600">
+              Gestión de Empresas
             </span>
           </h2>
           <p className={`text-lg ${secondaryText}`}>
-            Administra la información de las empresas registradas
+            Administra las empresas registradas en el sistema
           </p>
         </div>
 
         {/* Buscador + botón */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-          <input
-            type="text"
-            placeholder="Buscar empresa por nombre o NIT..."
-            className={`border rounded-2xl px-5 py-3 text-lg focus:outline-none focus:ring-2 w-full sm:w-96 transition-all duration-300 hover:shadow-md ${searchBg} ${textColor} ${searchBorder} ${searchFocus} ${placeholderColor}`}
-            value={buscar}
-            onChange={(e) => setBuscar(e.target.value)}
-          />
+          <div className="relative w-full sm:w-96">
+            <input
+              type="text"
+              placeholder="Buscar empresa..."
+              className={`border rounded-2xl px-5 py-3 text-lg pl-4 focus:outline-none focus:ring-2 w-full transition-all duration-300 hover:shadow-md ${textColor} ${borderColor}`}
+              value={buscar}
+              onChange={(e) => setBuscar(e.target.value)}
+            />
+          </div>
           <button
-            className="flex items-center gap-2 px-6 py-3 bg-[#39A900] text-white text-lg font-medium rounded-2xl 
-                 hover:bg-[#2d8500] transition-all shadow-md hover:shadow-xl transform hover:scale-105 
-                 duration-300 w-full sm:w-auto justify-center"
             onClick={() => abrirModal()}
+            className="flex items-center gap-2 px-6 py-3 bg-[#39A900] text-white text-lg font-medium rounded-2xl hover:bg-[#2d8500] transition-all shadow-md hover:shadow-xl transform hover:scale-105 duration-300"
           >
-            <Plus size={20} />
-            Agregar Empresa
+            <Plus size={20} /> Agregar Empresa
           </button>
         </div>
 
-        {/* Lista de empresas */}
-        <div className="space-y-6">
+        {/* Lista */}
+        <div className="space-y-5">
           {empresasFiltradas.length === 0 ? (
-            <div className={`text-center py-20 rounded-2xl border ${emptyStateBg} ${emptyStateBorder}`}>
+            <div className="text-center py-16 rounded-2xl border">
               <p className={`${secondaryText} text-lg`}>
-                {buscar
-                  ? `No se encontraron empresas que coincidan con "${buscar}"`
-                  : 'Aún no hay empresas registradas'}
+                No hay empresas registradas
               </p>
             </div>
           ) : (
             empresasFiltradas.map((empresa) => (
               <div
                 key={empresa.id}
-                className={`p-6 rounded-2xl border shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col sm:flex-row items-start gap-6 ${cardBg} ${borderColor} ${modoOscuro ? 'hover:border-[#39A900]/50' : 'hover:border-[#39A900]'}`}
+                className={`p-6 rounded-2xl border shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col gap-4 ${cardBg} ${borderColor}`}
               >
-                {/* Contenido principal de la tarjeta */}
-                <div className="flex-1 space-y-4">
-                  {/* Encabezado de la tarjeta */}
-                  <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-xl transition-colors ${iconBg}`}>
-                      <Briefcase size={28} className={iconColor} />
-                    </div>
-                    <div>
-                      <h3 className={`text-2xl font-bold transition-colors ${titleColor}`}>
-                        {empresa.nombre}
-                      </h3>
-                      <p className={`text-sm ${secondaryText}`}>{empresa.razonSocial}</p>
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h3
+                      className={`text-2xl font-semibold ${titleColor}`}
+                    >
+                      {empresa.nombre}
+                    </h3>
+                    <p className={secondaryText}>
+                      <Hash className="inline mr-2 h-4 w-4" /> NIT:{" "}
+                      {empresa.nit}
+                    </p>
+                    <p className={secondaryText}>
+                      <Briefcase className="inline mr-2 h-4 w-4" /> Razón
+                      Social: {empresa.razonSocial}
+                    </p>
+                    <p className={secondaryText}>
+                      <Factory className="inline mr-2 h-4 w-4" /> Sector:{" "}
+                      {empresa.sector}
+                    </p>
+                    <p className={secondaryText}>
+                      <Clock className="inline mr-2 h-4 w-4" /> Tiempo:{" "}
+                      {empresa.tiempo} años
+                    </p>
                   </div>
-                  {/* Descripción */}
-                  <p className={`text-md ${detailText} pl-3 border-l-4 ${borderLight}`}>
-                    {empresa.descripcion || 'No hay una descripción disponible.'}
-                  </p>
-
-                  {/* Detalles de la empresa */}
-                  <div className={`pt-4 border-t ${borderColor}`}>
-                    <h4 className={`font-semibold mb-3 text-sm tracking-wider uppercase ${secondaryText}`}>Detalles de la Empresa</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3 text-sm">
-                      <p className="flex items-center gap-3"><Hash size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>NIT:</span> {empresa.nit}</p>
-                      <p className="flex items-center gap-3"><Factory size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>Sector:</span> {empresa.sector}</p>
-                      <p className="flex items-center gap-3"><Users size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>Empleados:</span> {empresa.empleados}</p>
-                      <p className="flex items-center gap-3"><MapPin size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>Dirección:</span> {empresa.direccion}</p>
-                      <p className="flex items-center gap-3"><Building2 size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>Ciudad:</span> {empresa.ciudad}</p>
-                      <p className="flex items-center gap-3"><Clock size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>Antigüedad:</span> {empresa.tiempo}</p>
-                    </div>
+                  <div>
+                    <p className={secondaryText}>
+                      <MapPin className="inline mr-2 h-4 w-4" /> Dirección:{" "}
+                      {empresa.direccion}, {empresa.ciudad}
+                    </p>
+                    {empresa.paginaWeb && (
+                      <p className="text-blue-500 flex items-center gap-2">
+                        <Globe className="h-4 w-4" />{" "}
+                        <a
+                          href={empresa.paginaWeb}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="hover:underline"
+                        >
+                          {empresa.paginaWeb}
+                        </a>
+                      </p>
+                    )}
+                    <p className={secondaryText}>
+                      <Phone className="inline mr-2 h-4 w-4" /> Tel:{" "}
+                      {empresa.telefono} |{" "}
+                      <Smartphone className="inline mr-2 h-4 w-4" /> Cel:{" "}
+                      {empresa.celular}
+                    </p>
+                    <p className={secondaryText}>
+                      <Mail className="inline mr-2 h-4 w-4" /> Email:{" "}
+                      {empresa.email}
+                    </p>
+                    <p className={secondaryText}>
+                      <Users className="inline mr-2 h-4 w-4" /> Empleados:{" "}
+                      {empresa.empleados}
+                    </p>
                   </div>
-
-                  {/* Contacto y Representante Legal */}
-                  <div className={`pt-4 border-t ${borderColor}`}>
-                    <h4 className={`font-semibold mb-3 text-sm tracking-wider uppercase ${secondaryText}`}>Contacto y Representante Legal</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3 text-sm">
-                      <p className="flex items-center gap-3"><UserCheck size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>Rep. Legal:</span> {empresa.nombreLegal} {empresa.apellidoLegal}</p>
-                      <p className="flex items-center gap-3"><Scale size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>Cargo:</span> {empresa.cargoLegal}</p>
-                      <p className="flex items-center gap-3"><FileBadge size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>Doc. Legal:</span> {empresa.documentoLegal}</p>
-                      <p className="flex items-center gap-3"><Mail size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>Email:</span> {empresa.email}</p>
-                      <p className="flex items-center gap-3"><Smartphone size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>Celular:</span> {empresa.celular}</p>
-                      <p className="flex items-center gap-3"><Phone size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>Teléfono:</span> {empresa.telefonoFijo || empresa.telefono}</p>
-                      <p className="flex items-center gap-3 col-span-full"><Globe size={16} className={iconColor} /> <span className={`font-semibold ${textColor}`}>Página Web:</span> <a href={empresa.paginaWeb} target="_blank" rel="noopener noreferrer" className={`${linkColor} hover:underline`}>{empresa.paginaWeb}</a></p>
-                    </div>
+                  <div className="col-span-2">
+                    <p className={secondaryText}>
+                      <UserCheck className="inline mr-2 h-4 w-4" />{" "}
+                      Representante: {empresa.nombreLegal}{" "}
+                      {empresa.apellidoLegal} ({empresa.cargoLegal})
+                    </p>
+                    <p className={secondaryText}>
+                      <FileBadge className="inline mr-2 h-4 w-4" /> Documento:{" "}
+                      {empresa.documentoLegal}
+                    </p>
+                    {empresa.descripcion && (
+                      <p className={detailText}>
+                        <strong>Descripción:</strong> {empresa.descripcion}
+                      </p>
+                    )}
                   </div>
                 </div>
 
-                {/* Botones de acción */}
-                <div className="flex flex-col gap-3 self-start sm:self-center">
+                {/* Acciones */}
+                <div className="flex justify-end gap-3">
                   <button
                     onClick={() => abrirModal(empresa)}
-                    title="Editar empresa"
-                    className={`p-3 rounded-xl transition-all transform hover:scale-110 flex items-center justify-center h-12 w-12 ${modoOscuro ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
+                    className={`p-3 rounded-xl ${
+                      modoOscuro
+                        ? "bg-blue-900/30 text-blue-400"
+                        : "bg-blue-50 text-blue-600"
+                    } hover:scale-110 transition`}
                   >
                     <Edit size={20} />
                   </button>
                   <button
                     onClick={() => handleEliminar(empresa.id)}
-                    title="Eliminar empresa"
-                    className={`p-3 rounded-xl transition-all transform hover:scale-110 flex items-center justify-center h-12 w-12 ${modoOscuro ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50' : 'bg-red-50 text-red-600 hover:bg-red-100'}`}
+                    className={`p-3 rounded-xl ${
+                      modoOscuro
+                        ? "bg-red-900/30 text-red-400"
+                        : "bg-red-50 text-red-600"
+                    } hover:scale-110 transition`}
                   >
                     <Trash2 size={20} />
                   </button>
@@ -284,29 +342,38 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
         </div>
       </div>
 
-     {mostrarModal && !editandoId && (
-  <EmpresaModal
-    isOpen={mostrarModal}
-    onClose={cerrarModal}
-    onSave={handleSave}
-    empresa={empresaActual}
-    onChange={handleChange}
-    modoOscuro={modoOscuro}
-  />
-)}
+      {/* Modales */}
+      {mostrarModal && !editandoId && (
+        <EmpresaModal
+          isOpen={mostrarModal}
+          onClose={cerrarModal}
+          onSave={handleSave}
+          empresa={empresaActual}
+          onChange={(e: any) =>
+            setEmpresaActual({
+              ...empresaActual,
+              [e.target.name]: e.target.value,
+            })
+          }
+          modoOscuro={modoOscuro}
+        />
+      )}
 
-{mostrarModal && editandoId && (
-  <EditarEmpresa
-    isOpen={mostrarModal}
-    onClose={cerrarModal}
-    onSave={handleSave}
-    empresa={empresaActual}
-    onChange={handleChange}
-    modoOscuro={modoOscuro}
-  />
-)}
-
-
+      {mostrarModal && editandoId && (
+        <EditarEmpresa
+          isOpen={mostrarModal}
+          onClose={cerrarModal}
+          onSave={handleSave}
+          empresa={empresaActual}
+          onChange={(e: any) =>
+            setEmpresaActual({
+              ...empresaActual,
+              [e.target.name]: e.target.value,
+            })
+          }
+          modoOscuro={modoOscuro}
+        />
+      )}
     </>
   );
 }

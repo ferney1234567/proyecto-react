@@ -1,324 +1,322 @@
-'use client';
-import { useState } from 'react';
-import { Edit, Trash2, Plus } from 'lucide-react';
-import { AiOutlineUser } from 'react-icons/ai';
-import ModalRequisito from './crearRequisito';
-import ModalEditarRequisito from './editarRequisitos';
-import Swal from 'sweetalert2';
+"use client";
+import { useState, useEffect } from "react";
+import { Edit, Trash2, Plus, Search, Loader2, FileText, Building2, FolderGit2, StickyNote } from "lucide-react";
+import Swal from "sweetalert2";
+
+// API
+import {
+  getRequisitos,
+  createRequisito,
+  updateRequisito,
+  deleteRequisito,
+} from "../../api/requisitos/routes";
+import { getInstituciones } from "../../api/entidadInstitucion/route";
+import { getRequirementGroups } from "../../api/tipoRequisitos/routes";
+
+// Modales
+import ModalRequisito from "./crearRequisito";
+import ModalEditarRequisito from "./editarRequisitos";
 
 interface RequisitosProps {
   modoOscuro: boolean;
 }
 
 interface Requisito {
-  id: string;
+  id: number | string;
   nombre: string;
   observacion: string;
   entidad: string;
   tipo: string;
+  entidadId?: number;
+  tipoId?: number;
 }
 
 export default function Requisitos({ modoOscuro }: RequisitosProps) {
-  const [requisitos, setRequisitos] = useState<Requisito[]>([
-    {
-      id: '1',
-      nombre: 'Ser mayor de edad',
-      observacion: 'Debe tener 18 años cumplidos al momento de postular.',
-      entidad: 'Ministerio de Educación',
-      tipo: 'General',
-    },
-    {
-      id: '2',
-      nombre: 'Carta de intención',
-      observacion: 'Firmada por el postulante y dirigida a la autoridad competente.',
-      entidad: 'Agencia Nacional de Proyectos',
-      tipo: 'Educativo',
-    },
-  ]);
-
-  const [buscar, setBuscar] = useState('');
+  const [requisitos, setRequisitos] = useState<Requisito[]>([]);
+  const [buscar, setBuscar] = useState("");
   const [mostrarModal, setMostrarModal] = useState(false);
   const [mostrarEditar, setMostrarEditar] = useState(false);
+
+  const [instituciones, setInstituciones] = useState<any[]>([]);
+  const [grupos, setGrupos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const [nuevoRequisito, setNuevoRequisito] = useState<Requisito>({
-    id: '',
-    nombre: '',
-    observacion: '',
-    entidad: '',
-    tipo: '',
+    id: 0,
+    nombre: "",
+    observacion: "",
+    entidad: "",
+    tipo: "",
   });
+
   const [requisitoSeleccionado, setRequisitoSeleccionado] = useState<Requisito | null>(null);
 
-  // === ALERTAS SWEETALERT2 ===
-  const showSuccess = (mensaje: string) => {
-    Swal.fire({
-      icon: 'success',
-      title: '¡Éxito!',
-      text: mensaje,
-      confirmButtonText: 'Aceptar',
-      confirmButtonColor: '#39A900',
-      background: modoOscuro ? '#1a0526' : '#fff',
-      color: modoOscuro ? '#fff' : '#333',
-    });
+  // === CARGAR DATOS ===
+  const cargarRequisitos = async () => {
+    setLoading(true);
+    const data = await getRequisitos();
+    const arr = Array.isArray(data) ? data : data?.data || [];
+
+    const mapped = arr.map((r: any) => ({
+      id: r.id,
+      nombre: r.name,
+      observacion: r.notes || "Sin observación",
+      entidad: r.institution?.name || "Sin institución",
+      tipo: r.requirementGroup?.name || "Sin grupo",
+      entidadId: r.institution?.id,
+      tipoId: r.requirementGroup?.id,
+    }));
+
+    setRequisitos(mapped);
+    setLoading(false);
   };
 
-  const showWarning = (mensaje: string) => {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Atención',
-      text: mensaje,
-      confirmButtonText: 'Aceptar',
-      confirmButtonColor: '#39A900',
-      background: modoOscuro ? '#1a0526' : '#fff',
-      color: modoOscuro ? '#fff' : '#333',
-    });
+  const cargarCatalogos = async () => {
+    try {
+      const [inst, grp] = await Promise.all([getInstituciones(), getRequirementGroups()]);
+      setInstituciones(inst?.data || inst || []);
+      setGrupos(grp?.data || grp || []);
+    } catch (err) {
+      console.error("❌ Error cargando catálogos:", err);
+    }
   };
 
-  // === ELIMINAR REQUISITO CON CONFIRMACIÓN SWEETALERT2 ===
-  const eliminarRequisito = (id: string) => {
+  useEffect(() => {
+    cargarRequisitos();
+    cargarCatalogos();
+  }, []);
+
+  // === ALERTAS ===
+  const showSuccess = (mensaje: string) =>
     Swal.fire({
-      title: '¿Eliminar este requisito?',
-      text: 'Esta acción no se puede deshacer',
-      icon: 'warning',
+      icon: "success",
+      title: "¡Éxito!",
+      text: mensaje,
+      confirmButtonColor: "#39A900",
+      background: modoOscuro ? "#1a0526" : "#fff",
+      color: modoOscuro ? "#fff" : "#333",
+    });
+
+  // === ELIMINAR ===
+  const eliminarRequisito = async (id: number | string) => {
+    Swal.fire({
+      title: "¿Eliminar este requisito?",
+      text: "Esta acción no se puede deshacer",
+      icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Eliminar',
-      cancelButtonText: 'Cancelar',
-      background: modoOscuro ? '#1a0526' : '#fff',
-      color: modoOscuro ? '#fff' : '#333',
-    }).then((result) => {
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Eliminar",
+      cancelButtonText: "Cancelar",
+      background: modoOscuro ? "#1a0526" : "#fff",
+      color: modoOscuro ? "#fff" : "#333",
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        setRequisitos(requisitos.filter((r) => r.id !== id));
-        showSuccess('El requisito fue eliminado correctamente');
+        try {
+          await deleteRequisito(id);
+          setRequisitos(requisitos.filter((r) => r.id !== id));
+          showSuccess("El requisito fue eliminado correctamente");
+        } catch {
+          Swal.fire("Error", "No se pudo eliminar", "error");
+        }
       }
     });
   };
 
-  // === MODAL CREAR ===
+  // === CREAR ===
   const abrirModal = () => {
-    setNuevoRequisito({ id: '', nombre: '', observacion: '', entidad: '', tipo: '' });
+    setNuevoRequisito({ id: 0, nombre: "", observacion: "", entidad: "", tipo: "" });
     setMostrarModal(true);
   };
 
-  const cerrarModal = () => {
-    setMostrarModal(false);
-    setNuevoRequisito({ id: '', nombre: '', observacion: '', entidad: '', tipo: '' });
-  };
+  const cerrarModal = () => setMostrarModal(false);
 
-  // === GUARDAR REQUISITO ===
-  const guardarRequisito = () => {
-    if (!nuevoRequisito.nombre.trim()) {
-      showWarning('El campo "Nombre" es obligatorio');
-      return;
-    }
-    if (!nuevoRequisito.entidad.trim()) {
-      showWarning('El campo "Entidad" es obligatorio');
-      return;
-    }
+  const guardarRequisito = async () => {
+    try {
+      await createRequisito({
+        name: nuevoRequisito.nombre,
+        notes: nuevoRequisito.observacion || "Sin observación",
+        institutionId: Number(nuevoRequisito.entidad),
+        groupId: Number(nuevoRequisito.tipo),
+      });
 
-    const requisitoNuevo = { ...nuevoRequisito, id: Date.now().toString() };
-    setRequisitos([...requisitos, requisitoNuevo]);
-    cerrarModal();
-    showSuccess('El requisito fue agregado correctamente');
-  };
-
-  // === EDITAR REQUISITO ===
-  const editarRequisito = (id: string) => {
-    const seleccionado = requisitos.find((r) => r.id === id);
-    if (seleccionado) {
-      setRequisitoSeleccionado(seleccionado);
-      setMostrarEditar(true);
+      await cargarRequisitos();
+      cerrarModal();
+      showSuccess("El requisito fue agregado correctamente");
+    } catch (error) {
+      Swal.fire("Error", "No se pudo guardar el requisito", "error");
     }
   };
 
-  const guardarCambiosRequisito = () => {
+  // === EDITAR ===
+  const editarRequisito = (req: Requisito) => {
+    setRequisitoSeleccionado(req);
+    setMostrarEditar(true);
+  };
+
+  const guardarCambiosRequisito = async () => {
     if (!requisitoSeleccionado) return;
+    try {
+      await updateRequisito(requisitoSeleccionado.id, {
+        name: requisitoSeleccionado.nombre,
+        notes: requisitoSeleccionado.observacion || "Sin observación",
+        institutionId: Number(requisitoSeleccionado.entidadId),
+        groupId: Number(requisitoSeleccionado.tipoId),
+      });
 
-    setRequisitos((prev) =>
-      prev.map((r) => (r.id === requisitoSeleccionado.id ? requisitoSeleccionado : r))
-    );
-    setMostrarEditar(false);
-    setRequisitoSeleccionado(null);
-    showSuccess('El requisito fue actualizado correctamente');
+      const inst = instituciones.find((i) => i.id === requisitoSeleccionado.entidadId);
+      const grp = grupos.find((g) => g.id === requisitoSeleccionado.tipoId);
+
+      setRequisitos((prev) =>
+        prev.map((r) =>
+          r.id === requisitoSeleccionado.id
+            ? {
+                ...requisitoSeleccionado,
+                observacion: requisitoSeleccionado.observacion || "Sin observación",
+                entidad: inst?.name || "Sin institución",
+                tipo: grp?.name || "Sin grupo",
+              }
+            : r
+        )
+      );
+
+      setMostrarEditar(false);
+      setRequisitoSeleccionado(null);
+      showSuccess("El requisito fue actualizado correctamente");
+    } catch {
+      Swal.fire("Error", "No se pudo actualizar", "error");
+    }
   };
 
-  // === FILTRO DE BÚSQUEDA ===
-  const filtrados = requisitos.filter((r) =>
-    r.nombre.toLowerCase().includes(buscar.toLowerCase())
+  // === FILTRO ===
+  const term = (buscar || "").toLowerCase();
+  const filtrados = requisitos.filter(
+    (r) =>
+      (r.nombre || "").toLowerCase().includes(term) ||
+      (r.observacion || "").toLowerCase().includes(term)
   );
 
-  // Estilos condicionales
-  const bgColor = modoOscuro ? 'bg-[#1a0526]' : 'bg-white';
-  const textColor = modoOscuro ? 'text-white' : 'text-gray-900';
-  const borderColor = modoOscuro ? 'border-white/20' : 'border-gray-200';
-  const cardBg = modoOscuro ? 'bg-white/10' : 'bg-white';
-  const placeholderColor = modoOscuro ? 'placeholder-gray-400' : 'placeholder-gray-500';
-  const searchBg = modoOscuro ? 'bg-white/10' : 'bg-white';
-  const searchBorder = modoOscuro ? 'border-white/20' : 'border-gray-300';
-  const searchFocus = 'focus:ring-[#39A900] focus:border-[#39A900]';
-  const emptyStateBg = modoOscuro ? 'bg-gray-800/30' : 'bg-gray-50';
-  const iconBg = modoOscuro ? 'bg-[#39A900]/20' : 'bg-[#39A900]/10';
-  const secondaryText = modoOscuro ? 'text-gray-300' : 'text-gray-600';
-  const titleColor = modoOscuro ? 'text-white' : 'text-gray-800';
-  const detailText = modoOscuro ? 'text-gray-400' : 'text-gray-600';
+  // === ESTILOS ===
+  const bgColor = modoOscuro ? "bg-[#1a0526]" : "bg-white";
+  const textColor = modoOscuro ? "text-white" : "text-gray-900";
+  const borderColor = modoOscuro ? "border-white/20" : "border-gray-200";
+  const cardBg = modoOscuro ? "bg-white/10" : "bg-white";
+  const placeholderColor = modoOscuro ? "placeholder-gray-400" : "placeholder-gray-500";
+  const searchBg = modoOscuro ? "bg-white/10" : "bg-white";
+  const searchBorder = modoOscuro ? "border-white/20" : "border-gray-300";
+  const searchFocus = "focus:ring-[#39A900] focus:border-[#39A900]";
+  const emptyStateBg = modoOscuro ? "bg-gray-800/30" : "bg-gray-50";
+  const secondaryText = modoOscuro ? "text-gray-300" : "text-gray-600";
+  const titleColor = modoOscuro ? "text-white" : "text-gray-800";
 
   return (
-    <div
-      className={`rounded-3xl p-10 max-w-9xl mx-auto my-12  
-      ${modoOscuro
-          ? 'bg-[#1a0526] text-white'
-          : 'bg-white-50 text-gray-900' // Blanco más suave
-        }`}
-    >
-      {/* Efectos de fondo decorativos */}
-      {!modoOscuro && (
-        <>
-          <div className="absolute -top-20 -left-20 w-64 h-64 bg-green-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-          <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-        </>
-      )}
-
-      {/* Cabecera */}
+    <div className={`rounded-3xl p-10 max-w-9xl mx-auto my-12 ${bgColor} ${textColor}`}>
+      {/* Header */}
       <div className="text-center mb-10">
         <h2 className={`text-4xl font-extrabold mb-2 ${titleColor}`}>
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600">
             Gestión de Requisitos
           </span>
         </h2>
-        <p className={`text-lg ${secondaryText}`}>
-          Administra los requisitos disponibles
-        </p>
+        <p className={`text-lg ${secondaryText}`}>Administra los requisitos desde la API</p>
       </div>
 
-      {/* Buscador y botón */}
+      {/* Buscar + Botón */}
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-        <input
-          type="text"
-          placeholder="Buscar requisitos..."
-          className={`border rounded-2xl px-5 py-3 text-lg focus:outline-none focus:ring-2 w-full sm:w-96 transition-all duration-300 hover:shadow-md ${searchBg} ${textColor} ${searchBorder} ${searchFocus} ${placeholderColor}`}
-          value={buscar}
-          onChange={(e) => setBuscar(e.target.value)}
-        />
+        <div className="relative w-full sm:w-96">
+          <input
+            type="text"
+            placeholder="Buscar requisitos..."
+            className={`border rounded-2xl px-5 py-3 text-lg pl-12 focus:outline-none focus:ring-2 w-full transition-all duration-300 hover:shadow-md ${searchBg} ${textColor} ${searchBorder} ${searchFocus} ${placeholderColor}`}
+            value={buscar}
+            onChange={(e) => setBuscar(e.target.value)}
+          />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+        </div>
         <button
           onClick={abrirModal}
           className="flex items-center gap-2 px-6 py-3 bg-[#39A900] text-white text-lg font-medium rounded-2xl hover:bg-[#2d8500] transition-all shadow-md hover:shadow-xl transform hover:scale-105 duration-300 w-full sm:w-auto justify-center"
         >
-          <Plus size={20} />
-          Agregar Requisito
+          <Plus size={20} /> Nuevo Requisito
         </button>
       </div>
 
-      {/* Lista */}
-      <div className="space-y-5">
-        {filtrados.length === 0 ? (
-          <div className={`text-center py-16 rounded-2xl ${emptyStateBg}`}>
-            <p className={`${secondaryText} text-lg`}>
-              No se encontraron requisitos
-            </p>
-          </div>
-        ) : (
-          filtrados.map((req) => (
-            <div
-              key={req.id}
-              className={`p-6 rounded-2xl border shadow-md hover:shadow-xl transition-all duration-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5 transform hover:-translate-y-1 ${cardBg} ${borderColor} ${modoOscuro ? 'hover:border-[#39A900]/50' : 'hover:border-[#39A900]'
-                }`}
-            >
-              <div className="flex items-start gap-4 w-full">
-                <div
-                  className={`p-4 rounded-xl mt-1 transition-colors ${iconBg} text-[#39A900]`}
-                >
-                  <AiOutlineUser size={24} />
-                </div>
-                <div className="flex-1 space-y-3">
-                  <p
-                    className={`text-md ${modoOscuro
-                        ? 'hover:text-[#39A900] text-white'
-                        : 'hover:text-[#39A900] text-gray-800'
-                      }`}
-                  >
-                    Nombre: {req.nombre}
-                  </p>
-                  <p className={`text-md ${detailText}`}>
-                    <span
-                      className={`font-medium ${modoOscuro ? 'text-gray-300' : 'text-gray-700'
-                        }`}
-                    >
-                      Observaciones:
-                    </span>{' '}
-                    {req.observacion}
-                  </p>
-                  <p className={`text-md ${detailText}`}>
-                    <span
-                      className={`font-medium ${modoOscuro ? 'text-gray-300' : 'text-gray-700'
-                        }`}
-                    >
-                      Entidad:
-                    </span>{' '}
-                    {req.entidad}
-                  </p>
-                  <p className={`text-md ${detailText}`}>
-                    <span
-                      className={`font-medium ${modoOscuro ? 'text-gray-300' : 'text-gray-700'
-                        }`}
-                    >
-                      Requisito de Selección:
-                    </span>{' '}
-                    {req.tipo}
-                  </p>
-                </div>
-              </div>
-
-              {/* Botones */}
-              <div className="flex gap-3 self-end sm:self-auto">
-                <button
-                  onClick={() => editarRequisito(req.id)}
-                  title="Editar requisito"
-                  className={`p-3 rounded-xl transition-all transform hover:scale-110 ${modoOscuro
-                      ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50'
-                      : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-                    }`}
-                >
-                  <Edit size={20} />
-                </button>
-                <button
-                  onClick={() => eliminarRequisito(req.id)}
-                  title="Eliminar requisito"
-                  className={`p-3 rounded-xl transition-all transform hover:scale-110 ${modoOscuro
-                      ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50'
-                      : 'bg-red-50 text-red-600 hover:bg-red-100'
-                    }`}
-                >
-                  <Trash2 size={20} />
-                </button>
-              </div>
+      {/* Loader */}
+      {loading ? (
+        <div className="flex justify-center items-center py-20">
+          <Loader2 className="animate-spin h-10 w-10 text-green-600" />
+        </div>
+      ) : (
+        <div className="space-y-5">
+          {filtrados.length === 0 ? (
+            <div className={`text-center py-16 rounded-2xl border ${emptyStateBg}`}>
+              <p className={`${secondaryText} text-lg`}>No se encontraron requisitos</p>
             </div>
-          ))
-        )}
-      </div>
+          ) : (
+            filtrados.map((req) => (
+              <div
+                key={req.id}
+                className={`p-6 rounded-2xl border shadow-md hover:shadow-xl transition-all duration-300 flex flex-col sm:flex-row justify-between items-center gap-5 transform hover:-translate-y-1 ${cardBg} ${borderColor}`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`p-3 rounded-xl ${modoOscuro ? "bg-[#39A900]/20" : "bg-[#39A900]/10"} text-[#39A900]`}>
+                    <FileText size={22} />
+                  </div>
+                  <div>
+                    <h3 className={`text-xl font-semibold ${titleColor}`}>{req.nombre}</h3>
+                    <p className={`text-sm ${secondaryText} flex items-center gap-1`}>
+                      <StickyNote size={14} /> {req.observacion}
+                    </p>
+                    <p className={`text-sm ${secondaryText} flex items-center gap-1`}>
+                      <Building2 size={14} /> {req.entidad}
+                    </p>
+                    <p className={`text-sm ${secondaryText} flex items-center gap-1`}>
+                      <FolderGit2 size={14} /> {req.tipo}
+                    </p>
+                  </div>
+                </div>
 
-      {/* Modal */}
-      <>
-        {mostrarModal && (
-          <ModalRequisito
-            requisito={nuevoRequisito}
-            setRequisito={setNuevoRequisito}
-            onClose={cerrarModal}
-            onSave={guardarRequisito}
-            modoOscuro={modoOscuro}
-          />
-        )}
+                <div className="flex gap-3 self-end sm:self-auto">
+                  <button
+                    onClick={() => editarRequisito(req)}
+                    className={`p-3 rounded-xl ${modoOscuro ? "bg-blue-900/30 text-blue-400" : "bg-blue-50 text-blue-600"} hover:scale-110 transition`}
+                  >
+                    <Edit size={20} />
+                  </button>
+                  <button
+                    onClick={() => eliminarRequisito(req.id)}
+                    className={`p-3 rounded-xl ${modoOscuro ? "bg-red-900/30 text-red-400" : "bg-red-50 text-red-600"} hover:scale-110 transition`}
+                  >
+                    <Trash2 size={20} />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
 
-        {mostrarEditar && requisitoSeleccionado && (
-          <ModalEditarRequisito
-            visible={mostrarEditar}
-            onClose={() => setMostrarEditar(false)}
-            onSave={guardarCambiosRequisito}
-            requisito={requisitoSeleccionado}
-            setRequisito={setRequisitoSeleccionado}
-            modoOscuro={modoOscuro}
-          />
-        )}
-      </>
+      {/* Modales */}
+      {mostrarModal && (
+        <ModalRequisito
+          requisito={nuevoRequisito}
+          setRequisito={setNuevoRequisito}
+          onClose={cerrarModal}
+          onSave={guardarRequisito}
+          modoOscuro={modoOscuro}
+        />
+      )}
+
+      {mostrarEditar && requisitoSeleccionado && (
+        <ModalEditarRequisito
+          visible={mostrarEditar}
+          onClose={() => setMostrarEditar(false)}
+          onSave={guardarCambiosRequisito}
+          requisito={requisitoSeleccionado}
+          setRequisito={setRequisitoSeleccionado}
+          modoOscuro={modoOscuro}
+        />
+      )}
     </div>
   );
 }

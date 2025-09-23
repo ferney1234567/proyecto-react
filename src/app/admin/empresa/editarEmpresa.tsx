@@ -1,8 +1,17 @@
-// components/editarEmpresaModal.tsx
 'use client';
 
-import { X, Save, Building, Hash, MapPin, Globe, Phone, Users, Clock, FileText, User, Mail, Briefcase } from 'lucide-react';
+import {
+  FaBuilding, FaChevronDown, FaAlignLeft, FaSave, FaArrowLeft, FaFileAlt,
+  FaIdCard, FaMapMarkerAlt, FaCity, FaBriefcase, FaGlobe, FaPhone, FaUsers,
+  FaIndustry, FaClock, FaFileContract, FaUserTie, FaUser, FaPhoneAlt,
+  FaMobileAlt, FaEnvelope, FaTimes
+} from 'react-icons/fa';
 import { useState, useEffect } from 'react';
+
+interface Ciudad {
+  id: number;
+  name: string;
+}
 
 interface Empresa {
   id: string;
@@ -23,56 +32,60 @@ interface Empresa {
   celular: string;
   email: string;
   cargoLegal: string;
-  ciudad: string;
+  ciudad: string; // nombre
+  cityId: string; // id real
 }
 
-interface EditarEmpresaModalProps {
+interface EditarEmpresaProps {
   isOpen: boolean;
   onClose: () => void;
-  empresa: Empresa;
   onSave: () => void;
-  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  empresa: Partial<Empresa>;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   modoOscuro: boolean;
 }
 
-export default function EditarEmpresaModal({
+export default function EditarEmpresa({
   isOpen,
   onClose,
-  empresa,
   onSave,
+  empresa,
   onChange,
-  modoOscuro
-}: EditarEmpresaModalProps) {
-  const [formData, setFormData] = useState<Empresa>(empresa);
-  const [animacion, setAnimacion] = useState(false);
+  modoOscuro,
+}: EditarEmpresaProps) {
   const [visible, setVisible] = useState(false);
+  const [animacion, setAnimacion] = useState(false);
+  const [ciudades, setCiudades] = useState<Ciudad[]>([]);
 
   useEffect(() => {
     if (isOpen) {
       setVisible(true);
-      setTimeout(() => setAnimacion(true), 10);
+      setTimeout(() => setAnimacion(true), 50);
+
+      // 🔹 Cargar ciudades desde la API
+      fetch("http://localhost:4000/api/v1/cities")
+        .then((res) => res.json())
+        .then((data) => setCiudades(data.data || data || []))
+        .catch((err) => {
+          console.error("❌ Error cargando ciudades:", err);
+          setCiudades([]);
+        });
     } else {
       setAnimacion(false);
-      setTimeout(() => setVisible(false), 300);
+      setTimeout(() => setVisible(false), 200);
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    setFormData(empresa);
-  }, [empresa]);
-
-  // 🔹 estilos dinámicos
-  const modalBg = modoOscuro ? 'bg-[#1a0526] text-white' : 'bg-white text-gray-900';
-  const inputBg = modoOscuro
-    ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400'
-    : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500';
-  const footerBg = modoOscuro ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200';
-  const cancelBtn = modoOscuro
-    ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
-    : 'border-gray-300 text-gray-700 hover:bg-gray-100';
-  const labelColor = modoOscuro ? 'text-gray-300' : 'text-gray-700';
-
   if (!visible) return null;
+
+  // 🎨 Estilos
+  const modalBg = modoOscuro ? 'bg-[#1a0526] text-white' : 'bg-white text-gray-900';
+  const inputBg = modoOscuro ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500';
+  const footerBg = modoOscuro ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200';
+  const cancelBtn = modoOscuro ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-100';
+  const labelColor = modoOscuro ? 'text-gray-200' : 'text-gray-700';
+  const selectBg = modoOscuro ? 'bg-gray-800 text-white' : 'bg-white text-gray-800';
+  const iconColor = 'text-[#39A900]';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,265 +93,237 @@ export default function EditarEmpresaModal({
   };
 
   return (
-    <div
-      className={`fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-all duration-300 ${animacion ? 'opacity-100' : 'opacity-0'
-        }`}
-    >
-      <div
-        className={`${modalBg} rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden transform transition-all duration-300 max-h-[90vh] overflow-y-auto ${animacion ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
-          }`}
-      >
-        {/* Header con gradiente e icono */}
-        <div className="bg-gradient-to-r from-[#39A900] to-[#2d8500] p-6 flex justify-between items-center">
+    <div className={`fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-all ${animacion ? 'opacity-100' : 'opacity-0'}`}>
+      <div className={`${modalBg} rounded-2xl shadow-2xl w-full max-w-7xl max-h-[95vh] overflow-y-auto transform transition-all ${animacion ? 'scale-100' : 'scale-95'}`}>
+        {/* Header */}
+        <div className="bg-gradient-to-r from-[#39A900] to-[#2d8500] p-6 flex justify-between items-center sticky top-0 z-10">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/20 rounded-full">
-              <Building className="text-white text-xl" />
+              <FaBuilding className="text-white text-xl" />
             </div>
             <h2 className="text-2xl font-bold text-white">Editar Empresa</h2>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-full hover:bg-white/10 transition-colors text-white"
-          >
-            <X size={24} />
+          <button onClick={onClose} className="text-white hover:text-gray-200 transition-colors p-1 rounded-full hover:bg-white/10">
+            <FaTimes size={24} />
           </button>
         </div>
 
         {/* Formulario */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Columna izquierda - Información básica */}
-            <div className="space-y-4">
-              <h3 className={`text-lg font-semibold ${labelColor} border-b pb-2`}>Información Básica</h3>
-
+        <form onSubmit={handleSubmit}>
+          <div className="p-6 space-y-6 max-h-[65vh] overflow-y-auto">
+            {/* === Fila 1 === */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Nombre */}
               <div className="space-y-2">
-                <label className={`block text-sm font-medium ${labelColor}`}>
-                  Nombre *
-                </label>
+                <label className={labelColor}>Nombre*</label>
                 <div className="relative">
-                  <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" size={18} />
-                  <input
-                    type="text"
-                    name="nombre"
-                    value={formData.nombre}
-                    onChange={onChange}
-                    className={`w-full border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] transition-all hover:shadow-md ${inputBg}`}
-                    placeholder="Nombre de la empresa"
-                    required
-                  />
+                  <FaFileAlt className={`absolute left-3 top-3 ${iconColor}`} />
+                  <input type="text" name="nombre" value={empresa.nombre || ''} onChange={onChange}
+                    placeholder="Nombre de la empresa" required className={`w-full border rounded-xl pl-10 pr-4 py-3 ${inputBg}`} />
                 </div>
               </div>
-
+              {/* NIT */}
               <div className="space-y-2">
-                <label className={`block text-sm font-medium ${labelColor}`}>
-                  NIT *
-                </label>
+                <label className={labelColor}>NIT*</label>
                 <div className="relative">
-                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" size={18} />
-                  <input
-                    type="text"
-                    name="nit"
-                    value={formData.nit}
-                    onChange={onChange}
-                    className={`w-full border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] transition-all hover:shadow-md ${inputBg}`}
-                    placeholder="Número de identificación tributaria"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className={`block text-sm font-medium ${labelColor}`}>
-                  Razón Social
-                </label>
-                <div className="relative">
-                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" size={18} />
-                  <input
-                    type="text"
-                    name="razonSocial"
-                    value={formData.razonSocial}
-                    onChange={onChange}
-                    className={`w-full border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] transition-all hover:shadow-md ${inputBg}`}
-                    placeholder="Razón social"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className={`block text-sm font-medium ${labelColor}`}>
-                  Sector
-                </label>
-                <div className="relative">
-                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" size={18} />
-                  <input
-                    type="text"
-                    name="sector"
-                    value={formData.sector}
-                    onChange={onChange}
-                    className={`w-full border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] transition-all hover:shadow-md ${inputBg}`}
-                    placeholder="Sector empresarial"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className={`block text-sm font-medium ${labelColor}`}>
-                  Tiempo de operación
-                </label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" size={18} />
-                  <input
-                    type="text"
-                    name="tiempo"
-                    value={formData.tiempo}
-                    onChange={onChange}
-                    className={`w-full border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] transition-all hover:shadow-md ${inputBg}`}
-                    placeholder="Años de operación"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className={`block text-sm font-medium ${labelColor}`}>
-                  Número de empleados
-                </label>
-                <div className="relative">
-                  <Users className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" size={18} />
-                  <input
-                    type="text"
-                    name="empleados"
-                    value={formData.empleados}
-                    onChange={onChange}
-                    className={`w-full border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] transition-all hover:shadow-md ${inputBg}`}
-                    placeholder="Cantidad de empleados"
-                  />
+                  <FaIdCard className={`absolute left-3 top-3 ${iconColor}`} />
+                  <input type="text" name="nit" value={empresa.nit || ''} onChange={onChange}
+                    placeholder="NIT" required className={`w-full border rounded-xl pl-10 pr-4 py-3 ${inputBg}`} />
                 </div>
               </div>
             </div>
 
-            {/* Columna derecha - Información de contacto */}
-            <div className="space-y-4">
-              <h3 className={`text-lg font-semibold ${labelColor} border-b pb-2`}>Información de Contacto</h3>
+            {/* === Descripción === */}
+            <div className="space-y-2">
+              <label className={labelColor}>Descripción</label>
+              <div className="relative">
+                <FaAlignLeft className={`absolute top-3 left-3 ${iconColor}`} />
+                <textarea name="descripcion" value={empresa.descripcion || ''} onChange={onChange}
+                  placeholder="Descripción de la empresa" className={`w-full border rounded-xl pl-10 pr-4 py-3 min-h-[100px] ${inputBg}`} />
+              </div>
+            </div>
 
+            {/* === Fila 2 === */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Dirección */}
               <div className="space-y-2">
-                <label className={`block text-sm font-medium ${labelColor}`}>
-                  Dirección
-                </label>
+                <label className={labelColor}>Dirección*</label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" size={18} />
-                  <input
-                    type="text"
-                    name="direccion"
-                    value={formData.direccion}
-                    onChange={onChange}
-                    className={`w-full border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] transition-all hover:shadow-md ${inputBg}`}
-                    placeholder="Dirección completa"
-                  />
+                  <FaMapMarkerAlt className={`absolute left-3 top-3 ${iconColor}`} />
+                  <input type="text" name="direccion" value={empresa.direccion || ''} onChange={onChange}
+                    placeholder="Dirección" required className={`w-full border rounded-xl pl-10 pr-4 py-3 ${inputBg}`} />
                 </div>
               </div>
-
+              {/* Ciudad */}
               <div className="space-y-2">
-                <label className={`block text-sm font-medium ${labelColor}`}>
-                  Ciudad
-                </label>
+                <label className={labelColor}>Ciudad*</label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" size={18} />
-                  <input
-                    type="text"
-                    name="ciudad"
-                    value={formData.ciudad}
-                    onChange={onChange}
-                    className={`w-full border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] transition-all hover:shadow-md ${inputBg}`}
-                    placeholder="Ciudad"
-                  />
+                  <FaCity className={`absolute left-3 top-3 ${iconColor}`} />
+                  <select name="cityId" value={empresa.cityId || ''} onChange={onChange}
+                    required className={`w-full border rounded-xl pl-10 pr-10 py-3 appearance-none ${selectBg}`}>
+                    <option value="">Seleccione una ciudad</option>
+                    {ciudades.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                  <FaChevronDown className="absolute right-3 top-3 text-gray-400" />
                 </div>
               </div>
+            </div>
 
+            {/* === Fila 3 === */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Razón Social */}
               <div className="space-y-2">
-                <label className={`block text-sm font-medium ${labelColor}`}>
-                  Página Web
-                </label>
+                <label className={labelColor}>Razón Social</label>
                 <div className="relative">
-                  <Globe className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" size={18} />
-                  <input
-                    type="url"
-                    name="paginaWeb"
-                    value={formData.paginaWeb}
-                    onChange={onChange}
-                    className={`w-full border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] transition-all hover:shadow-md ${inputBg}`}
-                    placeholder="https://..."
-                  />
+                  <FaBriefcase className={`absolute left-3 top-3 ${iconColor}`} />
+                  <input type="text" name="razonSocial" value={empresa.razonSocial || ''} onChange={onChange}
+                    placeholder="Razón social" className={`w-full border rounded-xl pl-10 pr-4 py-3 ${inputBg}`} />
                 </div>
               </div>
-
+              {/* Página Web */}
               <div className="space-y-2">
-                <label className={`block text-sm font-medium ${labelColor}`}>
-                  Teléfono
-                </label>
+                <label className={labelColor}>Página Web</label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" size={18} />
-                  <input
-                    type="text"
-                    name="telefono"
-                    value={formData.telefono}
-                    onChange={onChange}
-                    className={`w-full border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] transition-all hover:shadow-md ${inputBg}`}
-                    placeholder="Teléfono principal"
-                  />
+                  <FaGlobe className={`absolute left-3 top-3 ${iconColor}`} />
+                  <input type="url" name="paginaWeb" value={empresa.paginaWeb || ''} onChange={onChange}
+                    placeholder="https://ejemplo.com" className={`w-full border rounded-xl pl-10 pr-4 py-3 ${inputBg}`} />
                 </div>
               </div>
+            </div>
 
+            {/* === Fila 4 === */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Teléfono */}
               <div className="space-y-2">
-                <label className={`block text-sm font-medium ${labelColor}`}>
-                  Email
-                </label>
+                <label className={labelColor}>Teléfono*</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" size={18} />
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={onChange}
-                    className={`w-full border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] transition-all hover:shadow-md ${inputBg}`}
-                    placeholder="correo@empresa.com"
-                  />
+                  <FaPhone className={`absolute left-3 top-3 ${iconColor}`} />
+                  <input type="tel" name="telefono" value={empresa.telefono || ''} onChange={onChange}
+                    placeholder="Teléfono" required className={`w-full border rounded-xl pl-10 pr-4 py-3 ${inputBg}`} />
                 </div>
               </div>
-
+              {/* Empleados */}
               <div className="space-y-2">
-                <label className={`block text-sm font-medium ${labelColor}`}>
-                  Descripción
-                </label>
+                <label className={labelColor}>N° Empleados</label>
                 <div className="relative">
-                  <FileText className="absolute left-3 top-4 text-[#39A900]" size={18} />
-                  <textarea
-                    name="descripcion"
-                    value={formData.descripcion}
-                    onChange={onChange}
-                    rows={3}
-                    className={`w-full border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] transition-all resize-none hover:shadow-md ${inputBg}`}
-                    placeholder="Descripción de la empresa"
-                  />
+                  <FaUsers className={`absolute left-3 top-3 ${iconColor}`} />
+                  <input type="number" name="empleados" value={empresa.empleados || ''} onChange={onChange}
+                    placeholder="Número de empleados" className={`w-full border rounded-xl pl-10 pr-4 py-3 ${inputBg}`} />
                 </div>
+              </div>
+            </div>
+
+            {/* === Fila 5 === */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Sector */}
+              <div className="space-y-2">
+                <label className={labelColor}>Sector*</label>
+                <div className="relative">
+                  <FaIndustry className={`absolute left-3 top-3 ${iconColor}`} />
+                  <input type="text" name="sector" value={empresa.sector || ''} onChange={onChange}
+                    placeholder="Sector económico" required className={`w-full border rounded-xl pl-10 pr-4 py-3 ${inputBg}`} />
+                </div>
+              </div>
+              {/* Antigüedad */}
+              <div className="space-y-2">
+                <label className={labelColor}>Tiempo Operando</label>
+                <div className="relative">
+                  <FaClock className={`absolute left-3 top-3 ${iconColor}`} />
+                  <input type="text" name="tiempo" value={empresa.tiempo || ''} onChange={onChange}
+                    placeholder="Ej: 5 años" className={`w-full border rounded-xl pl-10 pr-4 py-3 ${inputBg}`} />
+                </div>
+              </div>
+            </div>
+
+            {/* === Representante === */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Nombre */}
+              <div className="space-y-2">
+                <label className={labelColor}>Nombre Representante*</label>
+                <div className="relative">
+                  <FaUser className={`absolute left-3 top-3 ${iconColor}`} />
+                  <input type="text" name="nombreLegal" value={empresa.nombreLegal || ''} onChange={onChange}
+                    placeholder="Nombre" required className={`w-full border rounded-xl pl-10 pr-4 py-3 ${inputBg}`} />
+                </div>
+              </div>
+              {/* Apellido */}
+              <div className="space-y-2">
+                <label className={labelColor}>Apellido Representante*</label>
+                <div className="relative">
+                  <FaUser className={`absolute left-3 top-3 ${iconColor}`} />
+                  <input type="text" name="apellidoLegal" value={empresa.apellidoLegal || ''} onChange={onChange}
+                    placeholder="Apellido" required className={`w-full border rounded-xl pl-10 pr-4 py-3 ${inputBg}`} />
+                </div>
+              </div>
+            </div>
+
+            {/* === Contacto Representante === */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Documento Legal */}
+              <div className="space-y-2">
+                <label className={labelColor}>Documento Legal</label>
+                <div className="relative">
+                  <FaFileContract className={`absolute left-3 top-3 ${iconColor}`} />
+                  <input type="text" name="documentoLegal" value={empresa.documentoLegal || ''} onChange={onChange}
+                    placeholder="Documento legal" className={`w-full border rounded-xl pl-10 pr-4 py-3 ${inputBg}`} />
+                </div>
+              </div>
+              {/* Cargo */}
+              <div className="space-y-2">
+                <label className={labelColor}>Cargo Representante</label>
+                <div className="relative">
+                  <FaUserTie className={`absolute left-3 top-3 ${iconColor}`} />
+                  <input type="text" name="cargoLegal" value={empresa.cargoLegal || ''} onChange={onChange}
+                    placeholder="Cargo" className={`w-full border rounded-xl pl-10 pr-4 py-3 ${inputBg}`} />
+                </div>
+              </div>
+            </div>
+
+            {/* === Teléfonos === */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Teléfono fijo */}
+              <div className="space-y-2">
+                <label className={labelColor}>Teléfono Fijo</label>
+                <div className="relative">
+                  <FaPhoneAlt className={`absolute left-3 top-3 ${iconColor}`} />
+                  <input type="tel" name="telefonoFijo" value={empresa.telefonoFijo || ''} onChange={onChange}
+                    placeholder="Teléfono fijo" className={`w-full border rounded-xl pl-10 pr-4 py-3 ${inputBg}`} />
+                </div>
+              </div>
+              {/* Celular */}
+              <div className="space-y-2">
+                <label className={labelColor}>Celular*</label>
+                <div className="relative">
+                  <FaMobileAlt className={`absolute left-3 top-3 ${iconColor}`} />
+                  <input type="tel" name="celular" value={empresa.celular || ''} onChange={onChange}
+                    placeholder="Celular" required className={`w-full border rounded-xl pl-10 pr-4 py-3 ${inputBg}`} />
+                </div>
+              </div>
+            </div>
+
+            {/* === Email === */}
+            <div className="space-y-2">
+              <label className={labelColor}>Email*</label>
+              <div className="relative">
+                <FaEnvelope className={`absolute left-3 top-3 ${iconColor}`} />
+                <input type="email" name="email" value={empresa.email || ''} onChange={onChange}
+                  placeholder="Correo electrónico" required className={`w-full border rounded-xl pl-10 pr-4 py-3 ${inputBg}`} />
               </div>
             </div>
           </div>
 
-          {/* Footer estilizado */}
-          <div className={`${footerBg} px-6 py-4 flex justify-between items-center border-t mt-6`}>
-            <button
-              type="button"
-              onClick={onClose}
-              className={`flex items-center gap-2 px-6 py-3 border rounded-xl transition-colors hover:shadow-md ${cancelBtn}`}
-            >
-              <X size={18} />
+          {/* Footer */}
+          <div className={`${footerBg} px-8 py-4 flex justify-between items-center border-t`}>
+            <button type="button" onClick={onClose}
+              className={`flex items-center gap-2 px-6 py-3 border rounded-xl ${cancelBtn}`}>
+              <FaArrowLeft size={16} />
               <span>Cancelar</span>
             </button>
-            <button
-              type="submit"
-              className="flex items-center gap-2 px-6 py-3 bg-[#39A900] text-white font-medium rounded-xl hover:bg-[#2d8500] transition-colors shadow-md hover:shadow-lg transform hover:scale-105 duration-200"
-            >
-              <Save size={18} />
+            <button type="submit"
+              className="flex items-center gap-2 px-6 py-3 bg-[#39A900] text-white rounded-xl hover:bg-[#2d8500]">
+              <FaSave size={16} />
               <span>Guardar Cambios</span>
             </button>
           </div>

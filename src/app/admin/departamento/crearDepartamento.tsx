@@ -9,7 +9,7 @@ interface ModalDepartamentoProps {
   setNombre: (value: string) => void;
   onGuardar: () => void;
   editandoId: string | null;
-  modoOscuro: boolean; // 🔹 agregado
+  modoOscuro: boolean;
 }
 
 export default function ModalDepartamento({
@@ -71,7 +71,7 @@ export default function ModalDepartamento({
               <input
                 type="text"
                 id="nombreDepartamento"
-                className={`w-full border border-gray-300 rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
+                className={`w-full border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
                 placeholder="Ej. Cundinamarca"
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}

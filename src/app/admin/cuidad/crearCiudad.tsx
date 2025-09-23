@@ -1,5 +1,13 @@
 'use client';
-import { FaCity, FaTimes, FaMapMarkerAlt, FaMapMarked, FaSave } from 'react-icons/fa';
+
+import { useEffect, useState } from 'react';
+import {
+  FaCity,
+  FaTimes,
+  FaMapMarkerAlt,
+  FaMapMarked,
+  FaSave,
+} from 'react-icons/fa';
 
 interface CiudadModalProps {
   mostrar: boolean;
@@ -8,9 +16,14 @@ interface CiudadModalProps {
   editandoId: string | null;
   nombreCiudad: string;
   setNombreCiudad: (value: string) => void;
-  nombreDepartamento: string;
+  nombreDepartamento: string; // aquí se guarda el ID
   setNombreDepartamento: (value: string) => void;
-  modoOscuro: boolean; // 🔹 agregado
+  modoOscuro: boolean;
+}
+
+interface Departamento {
+  id: number;
+  name: string;
 }
 
 export default function CiudadModal({
@@ -24,6 +37,26 @@ export default function CiudadModal({
   setNombreDepartamento,
   modoOscuro,
 }: CiudadModalProps) {
+  const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
+
+  // 🔹 cargar departamentos de la API
+  useEffect(() => {
+    if (mostrar) {
+      const fetchDepartamentos = async () => {
+        try {
+          const res = await fetch('http://localhost:4000/api/v1/departments');
+          if (!res.ok) throw new Error('Error al obtener departamentos');
+          const json = await res.json();
+          setDepartamentos(json.data || []);
+        } catch (error) {
+          console.error('❌ Error cargando departamentos:', error);
+          setDepartamentos([]);
+        }
+      };
+      fetchDepartamentos();
+    }
+  }, [mostrar]);
+
   if (!mostrar) return null;
 
   // 🔹 estilos condicionales
@@ -64,7 +97,10 @@ export default function CiudadModal({
         <div className="p-8 space-y-6">
           {/* Ciudad */}
           <div className="space-y-2">
-            <label htmlFor="nombreCiudad" className={`block text-sm font-medium ${labelColor}`}>
+            <label
+              htmlFor="nombreCiudad"
+              className={`block text-sm font-medium ${labelColor}`}
+            >
               Ciudad
             </label>
             <div className="relative">
@@ -75,7 +111,7 @@ export default function CiudadModal({
               <input
                 type="text"
                 id="nombreCiudad"
-                className={`w-full border border-gray-300 rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
+                className={`w-full border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
                 placeholder="Ingrese una ciudad"
                 value={nombreCiudad}
                 onChange={(e) => setNombreCiudad(e.target.value)}
@@ -85,7 +121,10 @@ export default function CiudadModal({
 
           {/* Departamento */}
           <div className="space-y-2">
-            <label htmlFor="nombreDepartamento" className={`block text-sm font-medium ${labelColor}`}>
+            <label
+              htmlFor="nombreDepartamento"
+              className={`block text-sm font-medium ${labelColor}`}
+            >
               Departamento
             </label>
             <div className="relative">
@@ -95,20 +134,16 @@ export default function CiudadModal({
               />
               <select
                 id="nombreDepartamento"
-                className={`w-full border border-gray-300 rounded-xl pl-10 pr-8 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md appearance-none ${inputBg}`}
+                className={`w-full border rounded-xl pl-10 pr-8 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md appearance-none ${inputBg}`}
                 value={nombreDepartamento}
                 onChange={(e) => setNombreDepartamento(e.target.value)}
               >
                 <option value="">Seleccione un departamento</option>
-                <option value="Antioquia">Antioquia</option>
-                <option value="Atlántico">Atlántico</option>
-                <option value="Bogotá D.C.">Bogotá D.C.</option>
-                <option value="Bolívar">Bolívar</option>
-                <option value="Boyacá">Boyacá</option>
-                <option value="Caldas">Caldas</option>
-                <option value="Caquetá">Caquetá</option>
-                <option value="Cauca">Cauca</option>
-                <option value="Nariño">Nariño</option>
+                {departamentos.map((dep) => (
+                  <option key={dep.id} value={dep.id}>
+                    {dep.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>

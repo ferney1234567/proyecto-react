@@ -72,7 +72,6 @@ export default function EditarDepartamento({
 
         {/* Body */}
         <div className="p-8 space-y-6">
-          {/* Nombre */}
           <div className="space-y-2">
             <label className={`block text-sm font-medium ${labelColor}`}>
               Nombre del Departamento *
