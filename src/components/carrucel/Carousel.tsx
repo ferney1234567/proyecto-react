@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import {
-  FiBriefcase,
   FiAward,
   FiCheckCircle,
   FiChevronLeft,
@@ -11,9 +10,9 @@ import {
 } from 'react-icons/fi';
 import ModalConvocatoria from '../detalleConvo/detalleConvo'; // Ajusta la ruta
 
-// Definimos la interfaz mínima para que funcione el Modal
+// Interfaz Convocatoria (basada en tu tabla Calls)
 interface Convocatoria {
-  id?: number;
+  id: number;
   title: string;
   description: string;
   resources?: string;
@@ -33,73 +32,60 @@ interface Convocatoria {
   imageUrl?: string;
 }
 
-const slides: Convocatoria[] = [
-  {
-    id: 1,
-    title: "Impulsa tu Talento Digital 2025",
-    description: "Conviértete en un profesional destacado en el sector tecnológico con el apoyo del SENA.",
-    resources: "Programa nacional de formación en tecnología",
-    imageUrl: "/img/cienciasSalud.jpg",
-    pageName: "Convocatorias SENA",
-    pageUrl: "https://ejemplo.com/talento-digital",
-    objective: "Formar talento digital en Colombia",
-  },
-  {
-    id: 2,
-    title: "Convocatoria Nacional de Empleo",
-    description: "Descubre miles de oportunidades laborales con nuestras empresas aliadas en todo el país.",
-    resources: "Miles de vacantes disponibles",
-    imageUrl: "/img/R.jpg",
-    pageName: "Empleo Nacional",
-    pageUrl: "https://ejemplo.com/empleo",
-    objective: "Conectar talento con empresas",
-  },
-  {
-    id: 3,
-    title: "Industria 4.0: El Futuro es Ahora",
-    description: "Capacítate en las tecnologías que están transformando la industria a nivel global.",
-    resources: "Cursos especializados en automatización",
-    imageUrl: "/img/fabricas.jpg",
-    pageName: "Industria 4.0",
-    pageUrl: "https://ejemplo.com/industria",
-    objective: "Preparar profesionales para el futuro",
-  },
-  {
-    id: 4,
-    title: "Jóvenes con Futuro Laboral",
-    description: "Programas especiales para que los jóvenes inicien su carrera profesional con éxito.",
-    resources: "Primer empleo asegurado",
-    imageUrl: "/img/jove.jpg",
-    pageName: "Juventud y Trabajo",
-    pageUrl: "https://ejemplo.com/jovenes",
-    objective: "Apoyar la inserción laboral juvenil",
-  },
-];
-
 export default function Carousel() {
+  const [convocatorias, setConvocatorias] = useState<Convocatoria[]>([]);
   const [index, setIndex] = useState(0);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [convocatoriaSeleccionada, setConvocatoriaSeleccionada] = useState<Convocatoria | null>(null);
 
+  // Traer convocatorias desde la API
   useEffect(() => {
-    const timer = setInterval(() => {
-      setIndex((prev) => (prev + 1) % slides.length);
-    }, 7000);
-    return () => clearInterval(timer);
+    const fetchData = async () => {
+      try {
+        const res = await fetch("http://localhost:4000/api/v1/calls");
+        const data = await res.json();
+        if (data.status === "Ok" && Array.isArray(data.data)) {
+          setConvocatorias(data.data);
+        }
+      } catch (error) {
+        console.error("❌ Error al traer convocatorias:", error);
+      }
+    };
+    fetchData();
   }, []);
 
-  const prevSlide = () => setIndex((prev) => (prev - 1 + slides.length) % slides.length);
-  const nextSlide = () => setIndex((prev) => (prev + 1) % slides.length);
+  // Rotación automática cada 7s
+  useEffect(() => {
+    if (convocatorias.length > 0) {
+      const timer = setInterval(() => {
+        setIndex((prev) => (prev + 1) % convocatorias.length);
+      }, 7000);
+      return () => clearInterval(timer);
+    }
+  }, [convocatorias]);
 
-  const current = slides[index];
+  if (convocatorias.length === 0) {
+    return (
+      <div className="w-full h-[300px] flex items-center justify-center text-gray-500">
+        Cargando convocatorias...
+      </div>
+    );
+  }
+
+  const prevSlide = () =>
+    setIndex((prev) => (prev - 1 + convocatorias.length) % convocatorias.length);
+  const nextSlide = () =>
+    setIndex((prev) => (prev + 1) % convocatorias.length);
+
+  const current = convocatorias[index];
 
   return (
     <div className="relative h-[380px] overflow-hidden rounded-2xl shadow-2xl transition-all duration-700">
       {/* Imagen de fondo */}
       <div className="absolute inset-0">
         <img
-          src={current.imageUrl}
-          alt="slide"
+          src={current.imageUrl || "/img/default.jpg"}
+          alt={current.title}
           className="w-full h-full object-cover transition-transform duration-1000 transform scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/60 to-transparent"></div>
@@ -117,16 +103,21 @@ export default function Carousel() {
           </div>
 
           {/* Título y descripción */}
-          <h2 className="text-4xl font-extrabold tracking-tight">{current.title}</h2>
-          <p className="text-base opacity-90">{current.description}</p>
+         {/* Título y descripción */}
+<h2 className="text-4xl font-extrabold tracking-tight">{current.title}</h2>
+<p className="text-base opacity-90 line-clamp-2">{current.description}</p>
+
 
           {/* Botones */}
           <div className="flex gap-4 pt-2">
-            <button
+            <a
+              href={current.callLink || "#"}
+              target="_blank"
+              rel="noopener noreferrer"
               className="px-7 py-3 bg-gradient-to-r from-emerald-400 to-cyan-400 text-black font-bold rounded-full flex items-center gap-2 text-sm hover:shadow-lg hover:shadow-cyan-400/20 transition-all duration-300"
             >
               <FiCheckCircle /> Inscríbete Ahora
-            </button>
+            </a>
             <button
               onClick={() => {
                 setConvocatoriaSeleccionada(current);
@@ -138,9 +129,6 @@ export default function Carousel() {
             </button>
           </div>
         </div>
-
-        {/* Lado derecho vacío */}
-        <div className="hidden md:block" />
       </div>
 
       {/* Controles */}
@@ -160,7 +148,7 @@ export default function Carousel() {
 
       {/* Indicadores */}
       <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2.5 z-20">
-        {slides.map((_, i) => (
+        {convocatorias.map((_, i) => (
           <button
             key={i}
             className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${

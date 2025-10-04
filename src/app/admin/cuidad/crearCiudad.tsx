@@ -1,23 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-  FaCity,
-  FaTimes,
-  FaMapMarkerAlt,
-  FaMapMarked,
-  FaSave,
-} from 'react-icons/fa';
+import { FaCity, FaTimes, FaMapMarkerAlt, FaMapMarked, FaSave } from 'react-icons/fa';
 
 interface CiudadModalProps {
   mostrar: boolean;
   onClose: () => void;
-  onSave: () => void;
+  onSave: (data: { nombreCiudad: string; departamentoId: string }) => void;
   editandoId: string | null;
   nombreCiudad: string;
   setNombreCiudad: (value: string) => void;
-  nombreDepartamento: string; // aquí se guarda el ID
-  setNombreDepartamento: (value: string) => void;
+  departamentoId: string;
+  setDepartamentoId: (value: string) => void;
   modoOscuro: boolean;
 }
 
@@ -33,13 +27,13 @@ export default function CiudadModal({
   editandoId,
   nombreCiudad,
   setNombreCiudad,
-  nombreDepartamento,
-  setNombreDepartamento,
+  departamentoId,
+  setDepartamentoId,
   modoOscuro,
 }: CiudadModalProps) {
   const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
 
-  // 🔹 cargar departamentos de la API
+  // 🔹 Cargar departamentos desde la API
   useEffect(() => {
     if (mostrar) {
       const fetchDepartamentos = async () => {
@@ -59,7 +53,6 @@ export default function CiudadModal({
 
   if (!mostrar) return null;
 
-  // 🔹 estilos condicionales
   const modalBg = modoOscuro ? 'bg-[#1a0526] text-white' : 'bg-white text-gray-900';
   const inputBg = modoOscuro
     ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400'
@@ -69,6 +62,14 @@ export default function CiudadModal({
     ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
     : 'border-gray-300 text-gray-700 hover:bg-gray-100';
   const labelColor = modoOscuro ? 'text-gray-300' : 'text-gray-700';
+
+  const handleSave = () => {
+    if (!nombreCiudad.trim() || !departamentoId) {
+      alert('Por favor, complete todos los campos antes de guardar.');
+      return;
+    }
+    onSave({ nombreCiudad, departamentoId });
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
@@ -97,10 +98,7 @@ export default function CiudadModal({
         <div className="p-8 space-y-6">
           {/* Ciudad */}
           <div className="space-y-2">
-            <label
-              htmlFor="nombreCiudad"
-              className={`block text-sm font-medium ${labelColor}`}
-            >
+            <label htmlFor="nombreCiudad" className={`block text-sm font-medium ${labelColor}`}>
               Ciudad
             </label>
             <div className="relative">
@@ -111,7 +109,7 @@ export default function CiudadModal({
               <input
                 type="text"
                 id="nombreCiudad"
-                className={`w-full border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
+                className={`w-full border rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] text-lg transition-all hover:shadow-md ${inputBg}`}
                 placeholder="Ingrese una ciudad"
                 value={nombreCiudad}
                 onChange={(e) => setNombreCiudad(e.target.value)}
@@ -121,10 +119,7 @@ export default function CiudadModal({
 
           {/* Departamento */}
           <div className="space-y-2">
-            <label
-              htmlFor="nombreDepartamento"
-              className={`block text-sm font-medium ${labelColor}`}
-            >
+            <label htmlFor="departamentoId" className={`block text-sm font-medium ${labelColor}`}>
               Departamento
             </label>
             <div className="relative">
@@ -133,10 +128,10 @@ export default function CiudadModal({
                 size={18}
               />
               <select
-                id="nombreDepartamento"
-                className={`w-full border rounded-xl pl-10 pr-8 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900] text-lg transition-all hover:shadow-md appearance-none ${inputBg}`}
-                value={nombreDepartamento}
-                onChange={(e) => setNombreDepartamento(e.target.value)}
+                id="departamentoId"
+                className={`w-full border rounded-xl pl-10 pr-8 py-3 focus:outline-none focus:ring-2 focus:ring-[#39A900] text-lg transition-all hover:shadow-md appearance-none ${inputBg}`}
+                value={departamentoId}
+                onChange={(e) => setDepartamentoId(e.target.value)}
               >
                 <option value="">Seleccione un departamento</option>
                 {departamentos.map((dep) => (
@@ -160,7 +155,7 @@ export default function CiudadModal({
           </button>
           <button
             className="flex items-center gap-2 px-6 py-3 bg-[#39A900] text-white rounded-xl hover:bg-[#2d8500] transition-colors shadow-md hover:shadow-lg transform hover:scale-105 duration-200"
-            onClick={onSave}
+            onClick={handleSave}
           >
             <FaSave size={18} />
             <span>{editandoId ? 'Actualizar' : 'Guardar Ciudad'}</span>

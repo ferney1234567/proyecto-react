@@ -1,6 +1,6 @@
 const API_URL = "http://localhost:4000/api/v1/users";
 
-// Obtener todos los usuarios
+// 🔹 Obtener todos los usuarios
 export const getUsers = async () => {
   const res = await fetch(API_URL, { cache: "no-store" });
   const data = await res.json();
@@ -8,7 +8,7 @@ export const getUsers = async () => {
   throw new Error(data.message || "Error al cargar usuarios");
 };
 
-// Crear usuario (solo name, email, password)
+// 🔹 Crear usuario
 export const createUser = async (usuario) => {
   const res = await fetch(API_URL, {
     method: "POST",
@@ -20,7 +20,7 @@ export const createUser = async (usuario) => {
   throw new Error(data.message || "Error al crear usuario");
 };
 
-// Actualizar usuario
+// 🔹 Actualizar usuario
 export const updateUser = async (id, usuario) => {
   const res = await fetch(`${API_URL}/${id}`, {
     method: "PUT",
@@ -32,7 +32,7 @@ export const updateUser = async (id, usuario) => {
   throw new Error(data.message || "Error al actualizar usuario");
 };
 
-// Eliminar usuario
+// 🔹 Eliminar usuario
 export const deleteUser = async (id) => {
   const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
   const data = await res.json();

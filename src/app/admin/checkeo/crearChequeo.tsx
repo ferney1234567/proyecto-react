@@ -7,6 +7,7 @@ import {
   FaClipboardCheck,
   FaCheckCircle,
   FaTimesCircle,
+  FaUser,
 } from 'react-icons/fa';
 
 interface Empresa {
@@ -19,19 +20,28 @@ interface Requisito {
   name: string;
 }
 
+interface Usuario {
+  id: number;
+  name: string;
+  email: string;
+}
+
 interface ModalChequeoProps {
   abierto: boolean;
   editando: boolean;
   chequeo: {
     id: number;
-    is_checked: boolean; // ✅ ahora es boolean
+    is_checked: boolean;
     empresa: string;
     requisito: string;
     companyId: number;
     requirementId: number;
+    usuario?: string;
+    userId?: number;
   };
   empresas: Empresa[];
   requisitos: Requisito[];
+  usuarios: Usuario[]; // 👈 nuevo
   onCerrar: () => void;
   onGuardar: () => void;
   onChange: (field: string, value: string | number | boolean) => void;
@@ -44,6 +54,7 @@ export default function ModalChequeo({
   chequeo,
   empresas,
   requisitos,
+  usuarios,
   onCerrar,
   onGuardar,
   onChange,
@@ -53,6 +64,7 @@ export default function ModalChequeo({
   const [visible, setVisible] = useState(false);
   const [mostrarEmpresas, setMostrarEmpresas] = useState(false);
   const [mostrarRequisitos, setMostrarRequisitos] = useState(false);
+  const [mostrarUsuarios, setMostrarUsuarios] = useState(false); // 👈 nuevo
 
   useEffect(() => {
     if (abierto) {
@@ -112,7 +124,7 @@ export default function ModalChequeo({
 
         {/* Body */}
         <div className="p-8 space-y-6">
-          {/* Empresa */}
+          {/* Empresa (obligatoria) */}
           <div className="space-y-2 relative">
             <label className={`block text-sm font-medium ${labelColor}`}>Empresa *</label>
             <div
@@ -153,7 +165,7 @@ export default function ModalChequeo({
             )}
           </div>
 
-          {/* Requisito */}
+          {/* Requisito (obligatorio) */}
           <div className="space-y-2 relative">
             <label className={`block text-sm font-medium ${labelColor}`}>Requisito *</label>
             <div
@@ -188,6 +200,47 @@ export default function ModalChequeo({
                   >
                     <FaClipboardCheck className="text-[#39A900]" size={16} />
                     {req.name}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Usuario (opcional) */}
+          <div className="space-y-2 relative">
+            <label className={`block text-sm font-medium ${labelColor}`}>Usuario (opcional)</label>
+            <div
+              className={`relative w-full border rounded-xl pl-10 pr-10 py-3 flex items-center justify-between cursor-pointer ${inputBg}`}
+              onClick={() => setMostrarUsuarios(!mostrarUsuarios)}
+            >
+              <FaUser className="absolute left-3 top-1/2 -translate-y-1/2 text-[#39A900]" />
+              <span>{chequeo.usuario || 'Seleccione un usuario (opcional)'}</span>
+              <ChevronDown
+                size={20}
+                className={`absolute right-3 top-1/2 -translate-y-1/2 transition-transform ${
+                  mostrarUsuarios ? 'rotate-180' : ''
+                }`}
+              />
+            </div>
+
+            {mostrarUsuarios && (
+              <div
+                className={`absolute z-10 mt-1 w-full rounded-xl shadow-lg max-h-60 overflow-auto ${dropdownBg}`}
+              >
+                {usuarios.map((user) => (
+                  <div
+                    key={user.id}
+                    className={`px-4 py-3 cursor-pointer flex items-center gap-2 ${optionHover} ${
+                      chequeo.userId === user.id ? 'bg-[#39A900]/10 text-[#39A900]' : ''
+                    }`}
+                    onClick={() => {
+                      onChange('usuario', user.name);
+                      onChange('userId', user.id);
+                      setMostrarUsuarios(false);
+                    }}
+                  >
+                    <FaUser className="text-[#39A900]" size={16} />
+                    {user.name} ({user.email})
                   </div>
                 ))}
               </div>

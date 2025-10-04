@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import { useEffect, useState } from "react";
 import { Edit, Trash2, Plus, Search } from "lucide-react";
 import { FaCity } from "react-icons/fa";
@@ -66,9 +66,7 @@ export default function Ciudad({ modoOscuro }: CiudadProps) {
       try {
         const data = await fetchCiudades();
 
-        const resDeps = await fetch(
-          "http://localhost:4000/api/v1/departments"
-        );
+        const resDeps = await fetch("http://localhost:4000/api/v1/departments");
         const jsonDeps = await resDeps.json();
         const departamentos = jsonDeps.data || [];
 
@@ -82,9 +80,7 @@ export default function Ciudad({ modoOscuro }: CiudadProps) {
             id: String(c.id),
             nombreCiudad: c.name,
             departamentoNombre: depName,
-            departamentoId: String(
-              c.departmentId || c.department?.id || ""
-            ),
+            departamentoId: String(c.departmentId || c.department?.id || ""),
           };
         });
 
@@ -97,8 +93,11 @@ export default function Ciudad({ modoOscuro }: CiudadProps) {
   }, []);
 
   // === GUARDAR ===
-  const handleGuardar = async () => {
-    if (!nombreCiudad.trim() || !departamentoId.trim()) {
+  const handleGuardar = async (data?: { nombreCiudad: string; departamentoId: string }) => {
+    const ciudadNombre = data?.nombreCiudad ?? nombreCiudad;
+    const depId = data?.departamentoId ?? departamentoId;
+
+    if (!ciudadNombre.trim() || !depId.trim()) {
       showWarning("Debes ingresar ciudad y departamento.");
       return;
     }
@@ -106,8 +105,8 @@ export default function Ciudad({ modoOscuro }: CiudadProps) {
     try {
       if (editandoId) {
         const res = await editarCiudad(editandoId, {
-          name: nombreCiudad,
-          departmentId: Number(departamentoId),
+          name: ciudadNombre,
+          departmentId: Number(depId),
         });
         const actualizado = res.data || res;
 
@@ -128,8 +127,8 @@ export default function Ciudad({ modoOscuro }: CiudadProps) {
         setMostrarModalEditar(false);
       } else {
         const res = await crearCiudad({
-          name: nombreCiudad,
-          departmentId: Number(departamentoId),
+          name: ciudadNombre,
+          departmentId: Number(depId),
         });
         const nuevo = res.data || res;
 
@@ -215,9 +214,7 @@ export default function Ciudad({ modoOscuro }: CiudadProps) {
 
   return (
     <>
-      <div
-        className={`rounded-3xl p-10 max-w-9xl mx-auto my-12 ${bgColor} ${textColor}`}
-      >
+      <div className={`rounded-3xl p-10 max-w-9xl mx-auto my-12 ${bgColor} ${textColor}`}>
         {/* Header */}
         <div className="text-center mb-10">
           <h2 className={`text-4xl font-extrabold mb-2 ${titleColor}`}>
@@ -254,9 +251,7 @@ export default function Ciudad({ modoOscuro }: CiudadProps) {
         {/* Lista */}
         <div className="space-y-5">
           {ciudadesFiltradas.length === 0 ? (
-            <div
-              className={`text-center py-16 rounded-2xl border ${emptyStateBg}`}
-            >
+            <div className={`text-center py-16 rounded-2xl border ${emptyStateBg}`}>
               <p className={`${secondaryText} text-lg`}>
                 No se encontraron ciudades
               </p>
@@ -268,15 +263,11 @@ export default function Ciudad({ modoOscuro }: CiudadProps) {
                 className={`p-6 rounded-2xl border shadow-md hover:shadow-xl transition-all duration-300 flex flex-col sm:flex-row justify-between items-center gap-5 transform hover:-translate-y-1 ${cardBg} ${borderColor}`}
               >
                 <div className="flex items-center gap-3 w-full">
-                  <div
-                    className={`p-4 rounded-xl transition-colors ${iconBg} text-[#39A900]`}
-                  >
+                  <div className={`p-4 rounded-xl transition-colors ${iconBg} text-[#39A900]`}>
                     <FaCity size={24} />
                   </div>
                   <div>
-                    <h3
-                      className={`text-xl font-semibold ${modoOscuro ? "text-white hover:text-[#39A900]" : "text-gray-800 hover:text-[#39A900]"}`}
-                    >
+                    <h3 className={`text-xl font-semibold ${modoOscuro ? "text-white hover:text-[#39A900]" : "text-gray-800 hover:text-[#39A900]"}`}>
                       {c.nombreCiudad}
                     </h3>
                     <p className={`text-sm ${secondaryText}`}>
@@ -312,8 +303,8 @@ export default function Ciudad({ modoOscuro }: CiudadProps) {
           onSave={handleGuardar}
           nombreCiudad={nombreCiudad}
           setNombreCiudad={setNombreCiudad}
-          nombreDepartamento={departamentoId}
-          setNombreDepartamento={setDepartamentoId}
+          departamentoId={departamentoId} // ✅ Nombre corregido
+          setDepartamentoId={setDepartamentoId} // ✅ Nombre corregido
           modoOscuro={modoOscuro}
           editandoId={null}
         />
@@ -327,8 +318,8 @@ export default function Ciudad({ modoOscuro }: CiudadProps) {
           editandoId={editandoId}
           nombreCiudad={nombreCiudad}
           setNombreCiudad={setNombreCiudad}
-          nombreDepartamento={departamentoId}
-          setNombreDepartamento={setDepartamentoId}
+          departamentoId={departamentoId} // ✅ Nombre corregido
+          setDepartamentoId={setDepartamentoId} // ✅ Nombre corregido
           modoOscuro={modoOscuro}
         />
       )}

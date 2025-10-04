@@ -2,35 +2,31 @@
 
 import { useEffect, useState } from 'react';
 import {
-  FaUsers, FaFileAlt, FaMoneyBill, FaCheckCircle, FaTimes, FaSearch, FaFilter, FaHourglassHalf, FaList
+  FaFileAlt, FaCheckCircle, FaTimes, FaSearch, FaFilter,
+  FaHourglassHalf, FaList, FaMoon, FaSun
 } from 'react-icons/fa';
-
-// Tema
+import { ZoomIn, ZoomOut, RefreshCcw } from 'lucide-react';
+import Swal from "sweetalert2";
 import { useTheme } from '../ThemeContext';
 import { getThemeStyles } from '../themeStyles';
 
-// Interfaces
-interface Categoria {
-  id: number;
-  name: string;
-}
-interface Grupo {
-  id: number;
-  name: string;
-  categoryId: number;
-}
+interface Categoria { id: number; name: string; }
+interface Grupo { id: number; name: string; categoryId: number; }
 interface Requisito {
   id: number;
   name: string;
   groupId: number;
   completo?: boolean;
+  checkId?: number;
+  userName?: string | null;
 }
 
 export default function GestionRequisitos() {
   const { modoOscuro, toggleModoOscuro } = useTheme();
   const styles = getThemeStyles(modoOscuro);
 
-  // Estados
+  const [usuario, setUsuario] = useState<any>(null);
+  const [empresa, setEmpresa] = useState<any>(null);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [grupos, setGrupos] = useState<Grupo[]>([]);
   const [requisitos, setRequisitos] = useState<Requisito[]>([]);
@@ -40,105 +36,262 @@ export default function GestionRequisitos() {
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState<'todos' | 'completados' | 'pendientes'>('todos');
 
-  // === CARGAR DATOS DE API ===
+  // === ZOOM ===
+  const [mostrarZoom, setMostrarZoom] = useState(false);
+  const [fontSize, setFontSize] = useState(16);
+
+  const toggleZoomMenu = () => setMostrarZoom(!mostrarZoom);
+  const aumentarTexto = () => setFontSize((prev) => prev + 2);
+  const disminuirTexto = () => setFontSize((prev) => Math.max(10, prev - 2));
+  const resetTexto = () => setFontSize(16);
+
+  // === Helper ===
+  const getEntityId = (entidad: any) =>
+    entidad?.id ?? entidad?.userId ?? entidad?.uid ?? entidad?.uId ?? null;
+
+  // === Cargar usuario y empresa ===
   useEffect(() => {
+    const u = localStorage.getItem('usuario');
+    if (u) setUsuario(JSON.parse(u));
+    const e = localStorage.getItem('empresa');
+    if (e) setEmpresa(JSON.parse(e));
+  }, []);
+
+  // === Cargar datos ===
+  useEffect(() => {
+    const entidad = empresa || usuario;
+    if (!entidad) return;
+
     const fetchData = async () => {
       try {
-        const [catsRes, groupsRes, reqsRes] = await Promise.all([
+        const uid = getEntityId(entidad);
+        if (!uid) return;
+
+        const [catsRes, groupsRes, reqsRes, checksRes] = await Promise.all([
           fetch("http://localhost:4000/api/v1/requirementCategories").then(r => r.json()),
           fetch("http://localhost:4000/api/v1/requirementGroups").then(r => r.json()),
           fetch("http://localhost:4000/api/v1/requirements").then(r => r.json()),
+          fetch("http://localhost:4000/api/v1/requirementChecks").then(r => r.json())
         ]);
+
+        const checks = (checksRes.data || []).filter((c: any) =>
+          empresa
+            ? Number(c.companyId) === Number(uid)
+            : Number(c.userId ?? c.user?.id) === Number(uid)
+        );
+
+        // Recuperar copia local
+        const localBackup = localStorage.getItem(`requisitos_${uid}`);
+        let localChecks: Record<number, boolean> = {};
+        if (localBackup) localChecks = JSON.parse(localBackup);
+
+        setRequisitos((reqsRes.data || []).map((r: Requisito) => {
+          const check = checks.find((c: any) => c.requirementId === r.id);
+          const estado =
+            localChecks[r.id] !== undefined
+              ? localChecks[r.id]
+              : (check ? (check.isChecked ?? check.is_checked) : false);
+
+          return {
+            ...r,
+            completo: estado,
+            checkId: check ? check.id : undefined,
+            userName: check?.company?.name || check?.user?.name || null,
+          };
+        }));
 
         setCategorias(catsRes.data || []);
         setGrupos(groupsRes.data || []);
-        setRequisitos((reqsRes.data || []).map((r: Requisito) => ({ ...r, completo: false })));
-
-        if (catsRes.data && catsRes.data.length > 0) {
-          setCategoriaActiva(catsRes.data[0].id);
-        }
+        if (catsRes.data?.length) setCategoriaActiva(catsRes.data[0].id);
       } catch (err) {
         console.error("❌ Error cargando datos:", err);
       }
     };
     fetchData();
-  }, []);
+  }, [empresa, usuario]);
 
-  // Filtrar grupos y requisitos por categoría
+  // === Progreso ===
   const gruposCategoria = grupos.filter(g => g.categoryId === categoriaActiva);
-  const requisitosCategoria = requisitos.filter(r =>
-    gruposCategoria.some(g => g.id === r.groupId)
-  );
-
+  const requisitosCategoria = requisitos.filter(r => gruposCategoria.some(g => g.id === r.groupId));
   const totalRequisitos = requisitosCategoria.length;
   const completados = requisitosCategoria.filter(r => r.completo).length;
   const progreso = totalRequisitos ? Math.round((completados / totalRequisitos) * 100) : 0;
 
-  // === HANDLERS ===
-  const toggleAcordeon = (groupId: number) => {
+  // === Acordeón ===
+  const toggleAcordeon = (groupId: number) =>
     setAcordeonesAbiertos(prev => ({ ...prev, [groupId]: !prev[groupId] }));
+
+  // === Marcar requisito ===
+  const toggleCheck = (reqId: number) => {
+    setRequisitos(prev => {
+      const entidad = empresa || usuario;
+      const nombre = entidad?.name || entidad?.legalName || entidad?.nombre;
+      const updated = prev.map(r =>
+        r.id === reqId ? { ...r, completo: !r.completo, userName: nombre } : r
+      );
+
+      const uid = getEntityId(entidad);
+      if (uid) {
+        const backup: Record<number, boolean> = {};
+        updated.forEach(r => { backup[r.id] = !!r.completo; });
+        localStorage.setItem(`requisitos_${uid}`, JSON.stringify(backup));
+      }
+
+      return updated;
+    });
   };
 
-  const toggleCheck = (reqId: number) => {
-    setRequisitos(prev =>
-      prev.map(r => r.id === reqId ? { ...r, completo: !r.completo } : r)
-    );
+  // === Guardar cambios ===
+  const guardarCambios = async () => {
+    const entidad = empresa || usuario;
+    if (!entidad) return;
+
+    try {
+      const uid = getEntityId(entidad);
+      const nombre = entidad?.name || entidad?.legalName || entidad?.nombre;
+
+      for (const req of requisitos) {
+        if (req.checkId) {
+          await fetch(`http://localhost:4000/api/v1/requirementChecks/${req.checkId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              requirementId: req.id,
+              isChecked: req.completo,
+              ...(empresa
+                ? { companyId: uid, companyName: nombre }
+                : { userId: uid, userName: nombre })
+            })
+          });
+        } else {
+          const res = await fetch("http://localhost:4000/api/v1/requirementChecks", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              requirementId: req.id,
+              isChecked: req.completo,
+              ...(empresa
+                ? { companyId: uid, companyName: nombre }
+                : { userId: uid, userName: nombre })
+            })
+          });
+          const data = await res.json();
+          setRequisitos(prev => prev.map(r =>
+            r.id === req.id ? { ...r, checkId: data?.data?.id } : r
+          ));
+        }
+      }
+
+      Swal.fire({
+        icon: "success",
+        title: "¡Cambios guardados!",
+        text: "Los requisitos se guardaron correctamente.",
+        confirmButtonColor: "#00324D"
+      });
+    } catch (err) {
+      Swal.fire("Error", "No se pudieron guardar los cambios.", "error");
+    }
   };
 
   const filtrarRequisitos = (items: Requisito[]) =>
-    items.filter(item => {
-      const coincideBusqueda = item.name.toLowerCase().includes(busqueda.toLowerCase());
-      const coincideEstado =
-        filtroEstado === 'todos' ||
+    items.filter(item =>
+      item.name.toLowerCase().includes(busqueda.toLowerCase()) &&
+      (filtroEstado === 'todos' ||
         (filtroEstado === 'completados' && item.completo) ||
-        (filtroEstado === 'pendientes' && !item.completo);
-      return coincideBusqueda && coincideEstado;
-    });
+        (filtroEstado === 'pendientes' && !item.completo))
+    );
 
   return (
-    <div className={`min-h-screen ${styles.fondo} transition-colors duration-500`}>
+    <div
+      className={`min-h-screen ${styles.fondo} transition-colors duration-500`}
+      style={{ fontSize: `${fontSize}px` }}
+    >
       <div className={`max-w-6xl mx-auto p-8 rounded-xl shadow-2xl space-y-8 border ${styles.divider} ${styles.card}`}>
 
-        {/* Toggle tema */}
-        <div className="fixed top-6 right-6 z-50">
+        {/* 🔹 Botones flotantes (modo oscuro + zoom) */}
+        <div className="fixed top-6 right-6 z-50 flex flex-col space-y-3 items-end">
+          {/* Modo oscuro */}
           <button
             onClick={toggleModoOscuro}
-            className={`p-3 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro ? 'bg-gray-700 text-yellow-300 hover:bg-gray-600' : 'bg-white text-gray-700 hover:bg-gray-100 shadow-md'}`}
+            className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
+              ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
+              : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
+              }`}
             title="Cambiar modo"
           >
-            {modoOscuro ? '☀️' : '🌙'}
+            {modoOscuro ? <FaSun /> : <FaMoon />}
           </button>
+
+          {/* Zoom */}
+          <button
+            onClick={toggleZoomMenu}
+            className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
+              ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
+              : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
+              }`}
+            title="Opciones de texto"
+          >
+            <ZoomIn />
+          </button>
+
+          {mostrarZoom && (
+            <div className="flex flex-col space-y-3 mt-2 animate-fade-in">
+              <button
+                onClick={aumentarTexto}
+                className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
+                  ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
+                  : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
+                  }`}
+                title="Aumentar texto"
+              >
+                <ZoomIn />
+              </button>
+
+              <button
+                onClick={resetTexto}
+                className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
+                  ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
+                  : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
+                  }`}
+                title="Restablecer tamaño"
+              >
+                <RefreshCcw />
+              </button>
+
+              <button
+                onClick={disminuirTexto}
+                className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
+                  ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
+                  : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
+                  }`}
+                title="Disminuir texto"
+              >
+                <ZoomOut />
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Encabezado */}
-        <div className={`relative -mx-8 -mt-8 px-8 py-6 ${modoOscuro ? 'bg-gradient-to-r from-[#0b1220] to-[#0a0f1a]' : 'bg-gradient-to-r from-[#00324D] to-[#005b8c]'} text-white rounded-t-xl overflow-hidden`}>
-          <div className="flex justify-between items-center relative z-10">
+        {/* === ENCABEZADO === */}
+        <div className={`relative -mx-8 -mt-8 px-8 py-6 ${modoOscuro
+          ? 'bg-gradient-to-r from-[#0b1220] to-[#0a0f1a]'
+          : 'bg-gradient-to-r from-[#00324D] to-[#005b8c]'
+          } text-white rounded-t-xl`}>
+          <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-white/10 rounded-lg backdrop-blur-sm">
-                <FaFileAlt className="text-white" size={28} />
-              </div>
+              <FaFileAlt size={28} />
               <div>
                 <h1 className="text-2xl font-bold">Gestión de Requisitos</h1>
-                <p className="text-white/80 text-sm">Administra los requisitos necesarios</p>
+                <p className="text-white/80 text-sm">Los requisitos se guardan y gestionan por empresa registrada.</p>
               </div>
             </div>
             <div className="flex flex-col items-center">
               <div className="relative w-16 h-16">
                 <svg className="w-full h-full" viewBox="0 0 36 36">
-                  <path
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    fill="none"
-                    stroke="#ffffff40"
-                    strokeWidth="3"
-                    strokeDasharray="100, 100"
-                  />
-                  <path
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    fill="none"
-                    stroke="white"
-                    strokeWidth="3"
-                    strokeDasharray={`${progreso}, 100`}
-                  />
+                  <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none" stroke="#ffffff40" strokeWidth="3" strokeDasharray="100, 100" />
+                  <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none" stroke="white" strokeWidth="3" strokeDasharray={`${progreso}, 100`} />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg">
                   {progreso}%
@@ -149,149 +302,102 @@ export default function GestionRequisitos() {
           </div>
         </div>
 
-        {/* Tabs categorías */}
+        {/* === CATEGORÍAS === */}
         <div className={`flex gap-1 p-1 rounded-lg ${modoOscuro ? 'bg-white/5' : 'bg-gray-100'}`}>
-          {categorias.map((cat) => (
+          {categorias.map(cat => (
             <button
               key={cat.id}
               onClick={() => setCategoriaActiva(cat.id)}
-              className={`px-6 py-3 text-sm font-semibold rounded-md transition-all flex-1 text-center ${
-                categoriaActiva === cat.id
-                  ? `${modoOscuro ? 'bg-white/10 text-white shadow-md' : 'bg-white text-[#00324D] shadow-md'}`
-                  : `${modoOscuro ? 'text-white/70 hover:bg-white/5' : 'text-gray-500 hover:bg-white/50'}`
-              }`}
+              className={`px-6 py-3 text-sm font-semibold rounded-md flex-1 ${categoriaActiva === cat.id
+                ? `${modoOscuro ? 'bg-white/10 text-white' : 'bg-white text-[#00324D]'}`
+                : `${modoOscuro ? 'text-white/70' : 'text-gray-500'}`
+                }`}
             >
               {cat.name}
             </button>
           ))}
         </div>
 
-        {/* Buscador + Filtros */}
+        {/* === BUSCADOR === */}
         <div className="flex flex-col md:flex-row justify-between gap-4 items-center">
-          <div className={`flex items-center rounded-lg px-4 py-2 w-full md:w-1/2 focus-within:ring-2 transition-all ${styles.input}`}>
-            <FaSearch className={`${styles.textMuted} mr-3`} size={18} />
+          <div className={`flex items-center rounded-lg px-4 py-2 w-full md:w-1/2 ${styles.input}`}>
+            <FaSearch className="mr-3" />
             <input
               type="text"
               placeholder="Buscar requisitos..."
-              className="w-full outline-none bg-transparent placeholder-current/50"
+              className="w-full bg-transparent outline-none"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
             />
           </div>
           <button
             onClick={() => setMostrarFiltros(!mostrarFiltros)}
-            className={`flex items-center gap-2 text-sm px-5 py-2.5 rounded-lg transition-all ${styles.button} ${mostrarFiltros ? '!bg-emerald-600 !text-white' : ''}`}
+            className={`flex items-center gap-2 text-sm px-5 py-2.5 rounded-full font-semibold transition-all duration-300 ${modoOscuro
+              ? 'bg-[#1e293b] hover:bg-[#334155] text-white'
+              : 'bg-[#00324D] hover:bg-[#005b8c] text-white'}`}
           >
-            <FaFilter size={14} />
-            Filtros
+            <FaFilter /> Filtros
           </button>
         </div>
 
-        {/* Panel de Filtros */}
+        {/* === FILTROS === */}
         {mostrarFiltros && (
-          <div className={`p-6 rounded-2xl space-y-4 shadow-sm border ${styles.divider} ${styles.card}`}>
-            <h4 className={`font-semibold flex items-center gap-2 ${styles.text}`}>
-              <FaFilter /> Estado del requisito
-            </h4>
-            <div className="flex flex-wrap gap-4">
-              {[
-                { value: 'todos', label: 'Todos', icon: <FaList /> },
-                { value: 'completados', label: 'Completados', icon: <FaCheckCircle /> },
-                { value: 'pendientes', label: 'Pendientes', icon: <FaHourglassHalf /> },
-              ].map((estado) => (
+          <div className="p-6 rounded-2xl space-y-4 shadow-sm border">
+            <h4 className="font-semibold flex items-center gap-2"><FaFilter /> Estado</h4>
+            <div className="flex gap-4">
+              {[{ value: 'todos', label: 'Todos', icon: <FaList /> },
+              { value: 'completados', label: 'Completados', icon: <FaCheckCircle /> },
+              { value: 'pendientes', label: 'Pendientes', icon: <FaHourglassHalf /> }].map(estado => (
                 <button
                   key={estado.value}
                   onClick={() => setFiltroEstado(estado.value as any)}
-                  className={`flex items-center gap-3 px-5 py-3 rounded-xl border transition-all flex-1 ${
-                    filtroEstado === estado.value
-                      ? 'bg-emerald-600 text-white shadow-lg border-emerald-700'
-                      : `${modoOscuro ? 'bg-white/5 border-white/20 text-gray-300 hover:bg-white/10' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'}`
-                  }`}
+                  className={`flex items-center gap-2 px-5 py-2 rounded-full font-medium transition-all duration-300 ${filtroEstado === estado.value
+                    ? (modoOscuro ? 'bg-[#005b8c] text-white' : 'bg-[#00324D] text-white')
+                    : (modoOscuro ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')}`}
                 >
-                  {estado.icon}
-                  <span className="font-medium">{estado.label}</span>
+                  {estado.icon} {estado.label}
                 </button>
               ))}
             </div>
           </div>
         )}
 
-        {/* Listado dinámico de grupos y requisitos */}
+        {/* === LISTADO === */}
         <div className="space-y-4">
-          {gruposCategoria.map((grupo) => {
+          {gruposCategoria.map(grupo => {
             const items = filtrarRequisitos(requisitos.filter(r => r.groupId === grupo.id));
-            const icono =
-              grupo.name.toLowerCase().includes('admin') ? (
-                <FaUsers className={styles.text} />
-              ) : grupo.name.toLowerCase().includes('doc') ? (
-                <FaFileAlt className={styles.text} />
-              ) : (
-                <FaMoneyBill className={styles.text} />
-              );
-
             return (
-              <div key={grupo.id} className={`rounded-xl overflow-hidden border ${styles.divider}`}>
+              <div key={grupo.id} className={`rounded-xl border transition-colors duration-300 ${modoOscuro ? 'bg-[#121826] border-gray-700' : 'bg-white border-gray-200'}`}>
                 <button
                   onClick={() => toggleAcordeon(grupo.id)}
-                  className={`w-full px-5 py-4 flex justify-between items-center font-semibold transition-all ${modoOscuro ? 'bg-white/5 hover:bg-white/10' : 'bg-gray-50 hover:bg-gray-100'}`}
+                  className={`w-full px-5 py-4 flex justify-between items-center font-semibold rounded-t-xl transition-colors ${modoOscuro
+                    ? 'bg-[#1e293b] text-white hover:bg-[#334155]'
+                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100'}`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${modoOscuro ? 'bg-white/10' : 'bg-[#00324D]/10'}`}>{icono}</div>
-                    <span className={`${styles.text}`}>{grupo.name}</span>
-                    {items.length > 0 && (
-                      <span className={`text-xs px-2 py-1 rounded-full ${modoOscuro ? 'bg-white/10 text-white' : 'bg-[#00324D] text-white'}`}>
-                        {items.length}
-                      </span>
-                    )}
-                  </div>
-                  <span className={`${styles.textMuted} transform transition-transform`}>
-                    {acordeonesAbiertos[grupo.id] ? '▲' : '▼'}
-                  </span>
+                  <span>{grupo.name}</span>
+                  <span>{acordeonesAbiertos[grupo.id] ? '▲' : '▼'}</span>
                 </button>
-
                 {acordeonesAbiertos[grupo.id] && (
-                  <div className={`${styles.card} divide-y`}>
-                    {items.length === 0 ? (
-                      <div className="px-5 py-4 text-center opacity-70">
-                        No se encontraron requisitos
-                      </div>
-                    ) : (
-                      items.map((item) => (
-                        <div
-                          key={item.id}
-                          className={`px-5 py-3 flex items-center transition-colors ${modoOscuro ? 'hover:bg-white/5' : 'hover:bg-gray-50'}`}
-                        >
-                          <label className="flex items-center gap-3 w-full cursor-pointer">
-                            <div
-                              className={`relative w-5 h-5 rounded border-2 ${item.completo ? (modoOscuro ? 'bg-emerald-500 border-emerald-500' : 'bg-[#00324D] border-[#00324D]') : (modoOscuro ? 'border-white/30' : 'border-gray-300')}`}
-                            >
-                              {item.completo && (
-                                <svg
-                                  className="absolute inset-0 m-auto text-white"
-                                  width="12"
-                                  height="12"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fill="currentColor"
-                                    d="M7.629,14.566c0.125,0.125,0.291,0.188,0.456,0.188c0.164,0,0.329-0.062,0.456-0.188l8.219-8.221c0.252-0.252,0.252-0.659,0-0.911c-0.252-0.252-0.659-0.252-0.911,0l-7.764,7.763L4.152,9.267c-0.252-0.251-0.66-0.251-0.911,0c-0.252,0.252-0.252,0.66,0,0.911L7.629,14.566z"
-                                  />
-                                </svg>
-                              )}
-                            </div>
-                            <span className={`${item.completo ? 'line-through opacity-60' : ''} ${styles.text}`}>
-                              {item.name}
+                  <div className="animate-fadeIn">
+                    {items.map(item => (
+                      <div key={item.id} className={`px-5 py-3 flex items-center border-t ${modoOscuro ? 'border-gray-700' : 'border-gray-200'}`}>
+                        <label className="flex items-center gap-3 w-full cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={!!item.completo}
+                            onChange={() => toggleCheck(item.id)}
+                          />
+                          <span className={`${item.completo ? 'line-through text-gray-400' : ''}`}>
+                            {item.name}
+                          </span>
+                          {item.userName && (
+                            <span className="ml-2 text-xs text-gray-500">
+                              (marcado por {item.userName})
                             </span>
-                            <input
-                              type="checkbox"
-                              checked={!!item.completo}
-                              onChange={() => toggleCheck(item.id)}
-                              className="sr-only"
-                            />
-                          </label>
-                        </div>
-                      ))
-                    )}
+                          )}
+                        </label>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -299,18 +405,26 @@ export default function GestionRequisitos() {
           })}
         </div>
 
-        {/* Botones finales */}
-        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
+        {/* === BOTONES === */}
+        <div className="flex justify-end gap-3 pt-4">
           <a
             href="/usuario/perfilUser"
-            className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg transition-colors ${styles.button}`}
+            className={`px-6 py-3 text-lg rounded-full flex items-center gap-2 font-semibold transition-all duration-300 ${modoOscuro
+              ? 'bg-gray-600 hover:bg-gray-500 text-white'
+              : 'bg-gray-300 hover:bg-gray-400 text-gray-800'}`}
           >
             <FaTimes /> Cancelar
           </a>
-          <button className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg transition-colors ${styles.primaryButton}`}>
+          <button
+            onClick={guardarCambios}
+            className={`px-6 py-3 text-lg rounded-full flex items-center gap-2 font-semibold transition-all duration-300 ${modoOscuro
+              ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+              : 'bg-[#00324D] hover:bg-[#005b8c] text-white'}`}
+          >
             <FaCheckCircle /> Guardar Cambios
           </button>
         </div>
+
       </div>
     </div>
   );

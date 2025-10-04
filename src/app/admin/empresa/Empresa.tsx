@@ -2,7 +2,8 @@
 import { useState, useEffect } from "react";
 import {
   Plus, Edit, Trash2, Briefcase, Hash, MapPin, Globe, Phone,
-  Users, Clock, Mail, Smartphone, FileBadge, UserCheck, Factory
+  Users, Clock, Mail, Smartphone, FileBadge, UserCheck, Factory,
+  FileText, User, Building, CirclePlay
 } from "lucide-react";
 import EmpresaModal from "./crearEmpresa";
 import EditarEmpresa from "./editarEmpresa";
@@ -38,7 +39,6 @@ interface Empresa {
   email: string;
   cargoLegal: string;
   ciudad: string;
-  cityId: string;
 }
 
 export default function Empresa({ modoOscuro }: EmpresaProps) {
@@ -55,6 +55,8 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
       title: "¡Éxito!",
       text: mensaje,
       confirmButtonColor: "#39A900",
+      background: modoOscuro ? "#1a0526" : "#fff",
+      color: modoOscuro ? "#fff" : "#333",
     });
 
   const showWarning = (mensaje: string) =>
@@ -63,6 +65,8 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
       title: "Atención",
       text: mensaje,
       confirmButtonColor: "#39A900",
+      background: modoOscuro ? "#1a0526" : "#fff",
+      color: modoOscuro ? "#fff" : "#333",
     });
 
   // === CARGAR EMPRESAS ===
@@ -70,26 +74,25 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
     try {
       const data = await getEmpresas();
       const items = (data.data || []).map((e: any) => ({
-        id: String(e.id),
-        nombre: e.name,
-        nit: e.taxId,
-        direccion: e.address,
-        razonSocial: e.legalName,
-        paginaWeb: e.website,
-        telefono: e.phone,
-        empleados: String(e.employeeCount),
-        sector: e.economicSector,
-        tiempo: e.existenceYears || 0,
-        descripcion: e.description,
-        documentoLegal: e.legalDocument,
-        nombreLegal: e.legalFirstName,
-        apellidoLegal: e.legalLastName,
-        telefonoFijo: e.landline,
-        celular: e.legalMobile,
-        email: e.email,
-        cargoLegal: e.legalPosition,
-        ciudad: e.city?.name || "Sin ciudad",
-        cityId: e.city?.id ? String(e.city.id) : "",
+        id: e.id ? String(e.id) : "",
+        nombre: e.name ?? "",
+        nit: e.taxId ?? "",
+        direccion: e.address ?? "",
+        razonSocial: e.legalName ?? "",
+        paginaWeb: e.website ?? "",
+        telefono: e.phone ?? "",
+        empleados: e.employeeCount != null ? String(e.employeeCount) : "0",
+        sector: e.economicSector ?? "",
+        tiempo: e.existenceYears ?? 0,
+        descripcion: e.description ?? "",
+        documentoLegal: e.legalDocument ?? "",
+        nombreLegal: e.legalFirstName ?? "",
+        apellidoLegal: e.legalLastName ?? "",
+        telefonoFijo: e.landline ?? "",
+        celular: e.legalMobile ?? "",
+        email: e.email ?? "",
+        cargoLegal: e.legalPosition ?? "",
+        ciudad: e.city?.name ?? "", // 👈 ahora sí toma la ciudad como string
       }));
       setEmpresas(items);
     } catch (err: any) {
@@ -112,7 +115,7 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
       ...empresaActual,
       empleados: empresaActual.empleados || "0",
       tiempo: Number(empresaActual.tiempo) || 0,
-      cityId: empresaActual.cityId ? Number(empresaActual.cityId) : null,
+      ciudad: empresaActual.ciudad || "", // 👈 se guarda la ciudad escrita
     };
 
     try {
@@ -141,6 +144,8 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
       showCancelButton: true,
       confirmButtonText: "Sí, eliminar",
       cancelButtonText: "Cancelar",
+      background: modoOscuro ? "#1a0526" : "#fff",
+      color: modoOscuro ? "#fff" : "#333",
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
@@ -154,7 +159,7 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
     });
   };
 
-  // === ABRIR / CERRAR MODAL ===
+  // === MODALES ===
   const abrirModal = (empresa?: Empresa) => {
     if (empresa) {
       setEditandoId(empresa.id);
@@ -175,8 +180,8 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
   // === FILTRO ===
   const empresasFiltradas = empresas.filter(
     (e) =>
-      e.nombre.toLowerCase().includes(buscar.toLowerCase()) ||
-      e.nit.toLowerCase().includes(buscar.toLowerCase())
+      (e.nombre ?? "").toLowerCase().includes(buscar.toLowerCase()) ||
+      (e.nit ?? "").toLowerCase().includes(buscar.toLowerCase())
   );
 
   // === ESTILOS ===
@@ -186,13 +191,13 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
   const cardBg = modoOscuro ? "bg-white/10" : "bg-white";
   const secondaryText = modoOscuro ? "text-gray-300" : "text-gray-600";
   const titleColor = modoOscuro ? "text-white" : "text-gray-800";
-  const detailText = modoOscuro ? "text-gray-400" : "text-gray-600";
+
+  const iconWrapper = "p-2 rounded-full bg-green-100 text-green-600 shadow-md flex items-center justify-center";
+  const iconWrapperDark = "p-2 rounded-full bg-green-900/40 text-green-400 shadow-md flex items-center justify-center";
 
   return (
     <>
-      <div
-        className={`rounded-3xl p-10 max-w-9xl mx-auto my-12 ${bgColor} ${textColor}`}
-      >
+      <div className={`rounded-3xl p-10 max-w-9xl mx-auto my-12 ${bgColor} ${textColor}`}>
         {/* Header */}
         <div className="text-center mb-10">
           <h2 className={`text-4xl font-extrabold mb-2 ${titleColor}`}>
@@ -211,7 +216,7 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
             <input
               type="text"
               placeholder="Buscar empresa..."
-              className={`border rounded-2xl px-5 py-3 text-lg pl-4 focus:outline-none focus:ring-2 w-full transition-all duration-300 hover:shadow-md ${textColor} ${borderColor}`}
+              className={`border rounded-2xl px-5 py-3 text-lg pl-4 focus:outline-none focus:ring-2 w-full transition-all duration-300 hover:shadow-md ${textColor}`}
               value={buscar}
               onChange={(e) => setBuscar(e.target.value)}
             />
@@ -225,7 +230,7 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
         </div>
 
         {/* Lista */}
-        <div className="space-y-5">
+        <div className="space-y-6">
           {empresasFiltradas.length === 0 ? (
             <div className="text-center py-16 rounded-2xl border">
               <p className={`${secondaryText} text-lg`}>
@@ -236,105 +241,219 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
             empresasFiltradas.map((empresa) => (
               <div
                 key={empresa.id}
-                className={`p-6 rounded-2xl border shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col gap-4 ${cardBg} ${borderColor}`}
+                className={`p-8 rounded-2xl border shadow-md hover:shadow-xl transition-all duration-500 transform hover:-translate-y-1 ${cardBg} ${borderColor}`}
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3
-                      className={`text-2xl font-semibold ${titleColor}`}
-                    >
-                      {empresa.nombre}
-                    </h3>
-                    <p className={secondaryText}>
-                      <Hash className="inline mr-2 h-4 w-4" /> NIT:{" "}
-                      {empresa.nit}
-                    </p>
-                    <p className={secondaryText}>
-                      <Briefcase className="inline mr-2 h-4 w-4" /> Razón
-                      Social: {empresa.razonSocial}
-                    </p>
-                    <p className={secondaryText}>
-                      <Factory className="inline mr-2 h-4 w-4" /> Sector:{" "}
-                      {empresa.sector}
-                    </p>
-                    <p className={secondaryText}>
-                      <Clock className="inline mr-2 h-4 w-4" /> Tiempo:{" "}
-                      {empresa.tiempo} años
-                    </p>
-                  </div>
-                  <div>
-                    <p className={secondaryText}>
-                      <MapPin className="inline mr-2 h-4 w-4" /> Dirección:{" "}
-                      {empresa.direccion}, {empresa.ciudad}
-                    </p>
-                    {empresa.paginaWeb && (
-                      <p className="text-blue-500 flex items-center gap-2">
-                        <Globe className="h-4 w-4" />{" "}
-                        <a
-                          href={empresa.paginaWeb}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="hover:underline"
-                        >
-                          {empresa.paginaWeb}
-                        </a>
-                      </p>
-                    )}
-                    <p className={secondaryText}>
-                      <Phone className="inline mr-2 h-4 w-4" /> Tel:{" "}
-                      {empresa.telefono} |{" "}
-                      <Smartphone className="inline mr-2 h-4 w-4" /> Cel:{" "}
-                      {empresa.celular}
-                    </p>
-                    <p className={secondaryText}>
-                      <Mail className="inline mr-2 h-4 w-4" /> Email:{" "}
-                      {empresa.email}
-                    </p>
-                    <p className={secondaryText}>
-                      <Users className="inline mr-2 h-4 w-4" /> Empleados:{" "}
-                      {empresa.empleados}
-                    </p>
-                  </div>
-                  <div className="col-span-2">
-                    <p className={secondaryText}>
-                      <UserCheck className="inline mr-2 h-4 w-4" />{" "}
-                      Representante: {empresa.nombreLegal}{" "}
-                      {empresa.apellidoLegal} ({empresa.cargoLegal})
-                    </p>
-                    <p className={secondaryText}>
-                      <FileBadge className="inline mr-2 h-4 w-4" /> Documento:{" "}
-                      {empresa.documentoLegal}
-                    </p>
-                    {empresa.descripcion && (
-                      <p className={detailText}>
-                        <strong>Descripción:</strong> {empresa.descripcion}
-                      </p>
-                    )}
-                  </div>
-                </div>
+                <div className="flex flex-col lg:flex-row gap-6">
+                  {/* Información principal */}
+                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {/* Columna 1 */}
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-3 mb-4">
+                        <div className={modoOscuro ? iconWrapperDark : iconWrapper}>
+                          <Briefcase size={22} />
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-bold mb-1">{empresa.nombre}</h3>
+                          {empresa.descripcion && (
+                            <p className={`text-sm ${secondaryText}`}>{empresa.descripcion}</p>
+                          )}
+                        </div>
+                      </div>
 
-                {/* Acciones */}
-                <div className="flex justify-end gap-3">
-                  <button
-                    onClick={() => abrirModal(empresa)}
-                    className={`p-3 rounded-xl ${
-                      modoOscuro
-                        ? "bg-blue-900/30 text-blue-400"
-                        : "bg-blue-50 text-blue-600"
-                    } hover:scale-110 transition`}
-                  >
-                    <Edit size={20} />
-                  </button>
-                  <button
-                    onClick={() => handleEliminar(empresa.id)}
-                    className={`p-3 rounded-xl ${
-                      modoOscuro
-                        ? "bg-red-900/30 text-red-400"
-                        : "bg-red-50 text-red-600"
-                    } hover:scale-110 transition`}
-                  >
-                    <Trash2 size={20} />
-                  </button>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div className={modoOscuro ? iconWrapperDark : iconWrapper}>
+                            <Factory size={16} />
+                          </div>
+                          <div>
+                            <p className={`text-xs font-medium ${textColor}`}>Razón Social</p>
+                            <p className={`text-sm ${secondaryText}`}>{empresa.razonSocial}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className={modoOscuro ? iconWrapperDark : iconWrapper}>
+                            <Hash size={16} />
+                          </div>
+                          <div>
+                            <p className={`text-xs font-medium ${textColor}`}>NIT</p>
+                            <p className={`text-sm ${secondaryText}`}>{empresa.nit}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className={modoOscuro ? iconWrapperDark : iconWrapper}>
+                            <Building size={16} />
+                          </div>
+                          <div>
+                            <p className={`text-xs font-medium ${textColor}`}>Sector Económico</p>
+                            <p className={`text-sm ${secondaryText}`}>{empresa.sector}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Columna 2 */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className={modoOscuro ? iconWrapperDark : iconWrapper}>
+                          <MapPin size={16} />
+                        </div>
+                        <div>
+                          <p className={`text-xs font-medium ${textColor}`}>Ubicación</p>
+                          <p className={`text-sm ${secondaryText}`}>
+                            {empresa.direccion}, {empresa.ciudad}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        {empresa.paginaWeb && (
+                          <div className="flex items-center gap-3">
+                            <div className={modoOscuro ? iconWrapperDark : iconWrapper}>
+                              <Globe size={16} />
+                            </div>
+                            <div>
+                              <p className={`text-xs font-medium ${textColor}`}>Sitio Web</p>
+                              <a
+                                href={empresa.paginaWeb}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-blue-500 hover:underline text-sm"
+                              >
+                                {empresa.paginaWeb}
+                              </a>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-3">
+                          <div className={modoOscuro ? iconWrapperDark : iconWrapper}>
+                            <Phone size={16} />
+                          </div>
+                          <div>
+                            <p className={`text-xs font-medium ${textColor}`}>Teléfono Fijo</p>
+                            <p className={`text-sm ${secondaryText}`}>{empresa.telefono}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className={modoOscuro ? iconWrapperDark : iconWrapper}>
+                            <CirclePlay size={16} />
+                          </div>
+                          <div>
+                            <p className={`text-xs font-medium ${textColor}`}>Ciudad</p>
+                            <p className={`text-sm ${secondaryText}`}>{empresa.ciudad}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className={modoOscuro ? iconWrapperDark : iconWrapper}>
+                            <Smartphone size={16} />
+                          </div>
+                          <div>
+                            <p className={`text-xs font-medium ${textColor}`}>Teléfono Móvil</p>
+                            <p className={`text-sm ${secondaryText}`}>{empresa.celular}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className={modoOscuro ? iconWrapperDark : iconWrapper}>
+                            <Mail size={16} />
+                          </div>
+                          <div>
+                            <p className={`text-xs font-medium ${textColor}`}>Email</p>
+                            <p className={`text-sm ${secondaryText}`}>{empresa.email}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Columna 3 */}
+                    <div className="space-y-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div className={modoOscuro ? iconWrapperDark : iconWrapper}>
+                            <UserCheck size={16} />
+                          </div>
+                          <div>
+                            <p className={`text-xs font-medium ${textColor}`}>Representante Legal</p>
+                            <p className={`text-sm ${secondaryText}`}>
+                              {empresa.nombreLegal} {empresa.apellidoLegal}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className={modoOscuro ? iconWrapperDark : iconWrapper}>
+                            <User size={16} />
+                          </div>
+                          <div>
+                            <p className={`text-xs font-medium ${textColor}`}>Cargo</p>
+                            <p className={`text-sm ${secondaryText}`}>{empresa.cargoLegal}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className={modoOscuro ? iconWrapperDark : iconWrapper}>
+                            <FileText size={16} />
+                          </div>
+                          <div>
+                            <p className={`text-xs font-medium ${textColor}`}>Documento Legal</p>
+                            <p className={`text-sm ${secondaryText}`}>{empresa.documentoLegal}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className={modoOscuro ? iconWrapperDark : iconWrapper}>
+                            <Users size={16} />
+                          </div>
+                          <div>
+                            <p className={`text-xs font-medium ${textColor}`}>N° Empleados</p>
+                            <p className={`text-sm ${secondaryText}`}>{empresa.empleados}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className={modoOscuro ? iconWrapperDark : iconWrapper}>
+                            <Clock size={16} />
+                          </div>
+                          <div>
+                            <p className={`text-xs font-medium ${textColor}`}>Años de Operación</p>
+                            <p className={`text-sm ${secondaryText}`}>{empresa.tiempo}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className={modoOscuro ? iconWrapperDark : iconWrapper}>
+                            <FileBadge size={16} />
+                          </div>
+                          <div>
+                            <p className={`text-xs font-medium ${textColor}`}>Teléfono Fijo Legal</p>
+                            <p className={`text-sm ${secondaryText}`}>{empresa.telefonoFijo}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Botones de Acción */}
+                  <div className="flex lg:flex-col items-center justify-center lg:justify-start gap-3 lg:w-20 lg:border-l lg:pl-4 lg:ml-4">
+                    <button
+                      onClick={() => abrirModal(empresa)}
+                      className={`p-3 rounded-xl ${modoOscuro ? "bg-blue-900/30 text-blue-400" : "bg-blue-50 text-blue-600"} hover:scale-110 transition`}
+                      title="Editar empresa"
+                    >
+                      <Edit size={20} />
+                    </button>
+                    <button
+                      onClick={() => handleEliminar(empresa.id)}
+                      className={`p-3 rounded-xl ${modoOscuro ? "bg-red-900/30 text-red-400" : "bg-red-50 text-red-600"} hover:scale-110 transition`}
+                      title="Eliminar empresa"
+                    >
+                      <Trash2 size={20} />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))
@@ -350,10 +469,7 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
           onSave={handleSave}
           empresa={empresaActual}
           onChange={(e: any) =>
-            setEmpresaActual({
-              ...empresaActual,
-              [e.target.name]: e.target.value,
-            })
+            setEmpresaActual({ ...empresaActual, [e.target.name]: e.target.value })
           }
           modoOscuro={modoOscuro}
         />
@@ -366,10 +482,7 @@ export default function Empresa({ modoOscuro }: EmpresaProps) {
           onSave={handleSave}
           empresa={empresaActual}
           onChange={(e: any) =>
-            setEmpresaActual({
-              ...empresaActual,
-              [e.target.name]: e.target.value,
-            })
+            setEmpresaActual({ ...empresaActual, [e.target.name]: e.target.value })
           }
           modoOscuro={modoOscuro}
         />

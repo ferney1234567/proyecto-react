@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Edit, Trash2, Plus, Search } from 'lucide-react';
+import { Edit, Trash2, Plus, Search, Building2, Calendar, User } from 'lucide-react';
 import { FaClipboardCheck } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
@@ -19,13 +19,36 @@ interface ChequeosProps {
   modoOscuro: boolean;
 }
 
+interface Company {
+  id: number;
+  name: string;
+  taxId: string;
+  legalName: string;
+  address: string;
+  phone: string;
+  email: string;
+  legalRepresentativeName: string;
+}
+
+interface Requirement {
+  id: number;
+  name: string;
+  notes: string;
+  institutionId: number;
+  groupId: number;
+}
+
 interface Chequeo {
   id: number;
-  is_checked: boolean; // ✅ ahora boolean
-  empresa: string;
-  requisito: string;
+  isChecked: boolean;
   companyId: number;
   requirementId: number;
+  idUser: number | null;
+  createdAt: string;
+  updatedAt: string;
+  company: Company;
+  requirement: Requirement;
+  user: any | null;
 }
 
 interface Empresa {
@@ -42,19 +65,18 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
   const [chequeos, setChequeos] = useState<Chequeo[]>([]);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [requisitos, setRequisitos] = useState<Requisito[]>([]);
-
   const [searchTerm, setSearchTerm] = useState('');
   const [mostrarModal, setMostrarModal] = useState(false);
   const [mostrarModalEditar, setMostrarModalEditar] = useState(false);
   const [editandoId, setEditandoId] = useState<number | null>(null);
 
-  const [nuevoChequeo, setNuevoChequeo] = useState<Chequeo>({
+  const [nuevoChequeo, setNuevoChequeo] = useState({
     id: 0,
-    is_checked: false, // ✅ inicia en false
+    is_checked: false,
     empresa: '',
     requisito: '',
-    companyId: 0,
-    requirementId: 0,
+    companyId: null as number | null,
+    requirementId: null as number | null,
   });
 
   // === ALERTAS ===
@@ -82,49 +104,48 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
   const cargarChequeos = async () => {
     try {
       const data = await getRequirementChecks();
-      // 🔹 Normalizar a boolean
-      const normalizados = data.map((c: any) => ({
-        ...c,
-        is_checked: Boolean(c.is_checked),
-      }));
-      setChequeos(normalizados);
+      if (data && Array.isArray(data)) {
+        setChequeos(data);
+      } else setChequeos([]);
     } catch (error: any) {
-      showWarning(error.message);
+      showWarning(error.message || 'Error al cargar los chequeos');
     }
   };
 
-  const cargarEmpresasYRequisitos = async () => {
+  const cargarEmpresasRequisitos = async () => {
     try {
-      const resEmp = await fetch("http://localhost:4000/api/v1/companies");
-      const jsonEmp = await resEmp.json();
-      setEmpresas(jsonEmp.data || []);
+      const [resEmp, resReq] = await Promise.all([
+        fetch('http://localhost:4000/api/v1/companies').then((r) => r.json()),
+        fetch('http://localhost:4000/api/v1/requirements').then((r) => r.json()),
+      ]);
 
-      const resReq = await fetch("http://localhost:4000/api/v1/requirements");
-      const jsonReq = await resReq.json();
-      setRequisitos(jsonReq.data || []);
-    } catch (error: any) {
-      showWarning("Error cargando empresas/requisitos");
+      setEmpresas(resEmp.data || []);
+      setRequisitos(resReq.data || []);
+    } catch {
+      showWarning('Error cargando empresas o requisitos');
     }
   };
 
   useEffect(() => {
     cargarChequeos();
-    cargarEmpresasYRequisitos();
+    cargarEmpresasRequisitos();
   }, []);
 
   // === CREAR / EDITAR ===
   const handleGuardar = async () => {
-    if (!nuevoChequeo.companyId || !nuevoChequeo.requirementId) {
-      showWarning('Debes seleccionar Empresa y Requisito');
-      return;
-    }
     try {
+      if (!nuevoChequeo.companyId || !nuevoChequeo.requirementId) {
+        showWarning('Debes seleccionar una empresa y un requisito');
+        return;
+      }
+
       if (editandoId) {
         await updateRequirementCheck(
           editandoId,
           nuevoChequeo.is_checked,
           nuevoChequeo.companyId,
-          nuevoChequeo.requirementId
+          nuevoChequeo.requirementId,
+          null
         );
         showSuccess('Chequeo actualizado correctamente');
         setMostrarModalEditar(false);
@@ -132,11 +153,13 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
         await createRequirementCheck(
           nuevoChequeo.is_checked,
           nuevoChequeo.companyId,
-          nuevoChequeo.requirementId
+          nuevoChequeo.requirementId,
+          null
         );
         showSuccess('Chequeo agregado correctamente');
         setMostrarModal(false);
       }
+
       setEditandoId(null);
       await cargarChequeos();
     } catch (error: any) {
@@ -174,13 +197,16 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
   const handleEditChequeo = (chequeo: Chequeo) => {
     setEditandoId(chequeo.id);
     setNuevoChequeo({
-      ...chequeo,
-      is_checked: Boolean(chequeo.is_checked), // ✅ asegurar boolean
+      id: chequeo.id,
+      is_checked: chequeo.isChecked,
+      empresa: chequeo.company.name,
+      requisito: chequeo.requirement.name,
+      companyId: chequeo.companyId,
+      requirementId: chequeo.requirementId,
     });
     setMostrarModalEditar(true);
   };
 
-  // === NUEVO ===
   const handleAddChequeo = () => {
     setEditandoId(null);
     setNuevoChequeo({
@@ -188,55 +214,60 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
       is_checked: false,
       empresa: '',
       requisito: '',
-      companyId: 0,
-      requirementId: 0,
+      companyId: null,
+      requirementId: null,
     });
     setMostrarModal(true);
   };
 
-  // === FILTRO ===
+  // === FILTROS ===
   const filteredChequeos = chequeos.filter(
     (c) =>
-      c.empresa.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.requisito.toLowerCase().includes(searchTerm.toLowerCase())
+      c.company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.requirement.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.company.legalRepresentativeName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // === ESTILOS ===
+  const aprobados = filteredChequeos.filter((c) => c.isChecked);
+  const noAprobados = filteredChequeos.filter((c) => !c.isChecked);
+
+  const formatFecha = (fecha: string) => {
+    return new Date(fecha).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
   const bgColor = modoOscuro ? 'bg-[#1a0526]' : 'bg-white';
   const textColor = modoOscuro ? 'text-white' : 'text-gray-900';
-  const borderColor = modoOscuro ? 'border-white/20' : 'border-gray-200';
   const cardBg = modoOscuro ? 'bg-white/10' : 'bg-white';
-  const placeholderColor = modoOscuro ? 'placeholder-gray-400' : 'placeholder-gray-500';
-  const searchBg = modoOscuro ? 'bg-white/10' : 'bg-white';
-  const searchBorder = modoOscuro ? 'border-white/20' : 'border-gray-300';
-  const searchFocus = 'focus:ring-[#39A900] focus:border-[#39A900]';
-  const emptyStateBg = modoOscuro ? 'bg-gray-800/30' : 'bg-gray-50';
-  const iconBg = modoOscuro ? 'bg-[#39A900]/20' : 'bg-[#39A900]/10';
   const secondaryText = modoOscuro ? 'text-gray-300' : 'text-gray-600';
   const titleColor = modoOscuro ? 'text-white' : 'text-gray-800';
 
   return (
     <>
       <div className={`rounded-3xl p-10 max-w-9xl mx-auto my-12 ${bgColor} ${textColor}`}>
-        {/* Header */}
         <div className="text-center mb-10">
           <h2 className={`text-4xl font-extrabold mb-2 ${titleColor}`}>
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600">
-              Gestión de Chequeos
+              Chequeos de Empresas
             </span>
           </h2>
           <p className={`text-lg ${secondaryText}`}>
-            Administra los chequeos de requisitos y empresas
+            Gestión de chequeos realizados exclusivamente por empresas
           </p>
         </div>
 
-        {/* Buscador + botón */}
+        {/* === BUSCADOR === */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
           <div className="relative w-full sm:w-96">
             <input
               type="text"
-              placeholder="Buscar chequeos..."
-              className={`border rounded-2xl px-5 py-3 text-lg pl-12 focus:outline-none focus:ring-2 w-full transition-all duration-300 hover:shadow-md ${searchBg} ${textColor} ${searchBorder} ${searchFocus} ${placeholderColor}`}
+              placeholder="Buscar por empresa, requisito o representante..."
+              className={`border rounded-2xl px-5 py-3 text-lg pl-12 focus:outline-none w-full`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -251,55 +282,86 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
           </button>
         </div>
 
-        {/* Lista */}
+        {/* === SECCIÓN: APROBADOS === */}
+        <h3 className={`text-2xl font-bold mb-4 mt-8 ${titleColor}`}>✅ Chequeos Aprobados</h3>
         <div className="space-y-5">
-          {filteredChequeos.length === 0 ? (
-            <div className={`text-center py-16 rounded-2xl border ${emptyStateBg}`}>
-              <p className={`${secondaryText} text-lg`}>No se encontraron chequeos</p>
+          {aprobados.length === 0 ? (
+            <div className="text-center py-6 rounded-2xl border bg-gray-50 dark:bg-gray-800/30">
+              <p className={`${secondaryText}`}>No hay chequeos aprobados</p>
             </div>
           ) : (
-            filteredChequeos.map((chequeo) => (
-              <div
-                key={chequeo.id}
-                className={`p-6 rounded-2xl border shadow-md hover:shadow-xl transition-all duration-300 flex flex-col sm:flex-row justify-between items-center gap-5 transform hover:-translate-y-1 ${cardBg} ${borderColor}`}
-              >
-                <div className="flex items-center gap-2 w-full">
-                  <div
-                    className={`p-4 rounded-xl transition-colors ${iconBg} ${
-                      chequeo.is_checked ? 'text-[#39A900]' : 'text-red-500'
-                    }`}
-                  >
-                    <FaClipboardCheck />
-                  </div>
-                  <div>
-                    <h3 className={`text-xl font-semibold ${titleColor}`}>{chequeo.empresa}</h3>
-                    <p className={`text-sm ${secondaryText}`}>Requisito: {chequeo.requisito}</p>
-                    <p
-                      className={`text-sm font-bold ${
-                        chequeo.is_checked ? 'text-[#39A900]' : 'text-red-500'
-                      }`}
-                    >
-                      {chequeo.is_checked ? 'Aprobado' : 'Pendiente'}
+            aprobados.map((chequeo) => (
+              <div key={chequeo.id} className={`p-6 rounded-2xl border shadow-md ${cardBg}`}>
+                <div className="flex flex-col lg:flex-row justify-between gap-6">
+                  <div className="flex-1">
+                    <h3 className={`text-xl font-semibold flex items-center gap-2 ${titleColor} mb-2`}>
+                      <Building2 size={20} />
+                      {chequeo.company.name}
+                    </h3>
+                    <p className={`${secondaryText}`}>{chequeo.requirement.name}</p>
+                    <p className="text-sm">{chequeo.requirement.notes}</p>
+                    <p className="text-xs mt-2">
+                      <Calendar size={14} className="inline mr-1" />
+                      Creado: {formatFecha(chequeo.createdAt)}
                     </p>
                   </div>
+                  <div className="flex lg:flex-col gap-2 justify-center lg:justify-start">
+                    <button
+                      onClick={() => handleEditChequeo(chequeo)}
+                      className="p-3 rounded-xl bg-blue-50 text-blue-600 hover:scale-110 transition"
+                    >
+                      <Edit size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteChequeo(chequeo.id)}
+                      className="p-3 rounded-xl bg-red-50 text-red-600 hover:scale-110 transition"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => handleEditChequeo(chequeo)}
-                    className={`p-3 rounded-xl ${
-                      modoOscuro ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-50 text-blue-600'
-                    } hover:scale-110 transition`}
-                  >
-                    <Edit size={20} />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteChequeo(chequeo.id)}
-                    className={`p-3 rounded-xl ${
-                      modoOscuro ? 'bg-red-900/30 text-red-400' : 'bg-red-50 text-red-600'
-                    } hover:scale-110 transition`}
-                  >
-                    <Trash2 size={20} />
-                  </button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* === SECCIÓN: NO APROBADOS === */}
+        <h3 className={`text-2xl font-bold mb-4 mt-10 ${titleColor}`}>⏳ Chequeos No Aprobados</h3>
+        <div className="space-y-5">
+          {noAprobados.length === 0 ? (
+            <div className="text-center py-6 rounded-2xl border bg-gray-50 dark:bg-gray-800/30">
+              <p className={`${secondaryText}`}>No hay chequeos pendientes o no aprobados</p>
+            </div>
+          ) : (
+            noAprobados.map((chequeo) => (
+              <div key={chequeo.id} className={`p-6 rounded-2xl border shadow-md ${cardBg}`}>
+                <div className="flex flex-col lg:flex-row justify-between gap-6">
+                  <div className="flex-1">
+                    <h3 className={`text-xl font-semibold flex items-center gap-2 ${titleColor} mb-2`}>
+                      <Building2 size={20} />
+                      {chequeo.company.name}
+                    </h3>
+                    <p className={`${secondaryText}`}>{chequeo.requirement.name}</p>
+                    <p className="text-sm">{chequeo.requirement.notes}</p>
+                    <p className="text-xs mt-2">
+                      <Calendar size={14} className="inline mr-1" />
+                      Creado: {formatFecha(chequeo.createdAt)}
+                    </p>
+                  </div>
+                  <div className="flex lg:flex-col gap-2 justify-center lg:justify-start">
+                    <button
+                      onClick={() => handleEditChequeo(chequeo)}
+                      className="p-3 rounded-xl bg-blue-50 text-blue-600 hover:scale-110 transition"
+                    >
+                      <Edit size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteChequeo(chequeo.id)}
+                      className="p-3 rounded-xl bg-red-50 text-red-600 hover:scale-110 transition"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))
@@ -307,7 +369,7 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
         </div>
       </div>
 
-      {/* Modales */}
+      {/* === MODALES === */}
       {mostrarModal && (
         <ModalChequeo
           abierto={mostrarModal}
@@ -315,11 +377,10 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
           chequeo={nuevoChequeo}
           empresas={empresas}
           requisitos={requisitos}
+          usuarios={[]}
           onCerrar={() => setMostrarModal(false)}
           onGuardar={handleGuardar}
-          onChange={(field, value) =>
-            setNuevoChequeo((prev) => ({ ...prev, [field]: value }))
-          }
+          onChange={(field, value) => setNuevoChequeo((prev) => ({ ...prev, [field]: value }))}
           modoOscuro={modoOscuro}
         />
       )}
@@ -331,11 +392,10 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
           chequeo={nuevoChequeo}
           empresas={empresas}
           requisitos={requisitos}
+          usuarios={[]}
           onCerrar={() => setMostrarModalEditar(false)}
           onGuardar={handleGuardar}
-          onChange={(field, value) =>
-            setNuevoChequeo((prev) => ({ ...prev, [field]: value }))
-          }
+          onChange={(field, value) => setNuevoChequeo((prev) => ({ ...prev, [field]: value }))}
           modoOscuro={modoOscuro}
         />
       )}

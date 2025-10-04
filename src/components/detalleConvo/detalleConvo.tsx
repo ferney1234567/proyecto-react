@@ -73,30 +73,28 @@ export default function ModalConvocatoria({
   }, [cerrarModal]);
 
   // ✅ Cargar catálogos reales de la API
- useEffect(() => {
-  const fetchCatalogos = async () => {
-    try {
-      const [instRes, lineRes, publRes, intRes, userRes] = await Promise.all([
-        fetch("http://localhost:4000/api/v1/institutions").then(r => r.json()),
-        fetch("http://localhost:4000/api/v1/lines").then(r => r.json()),
-        fetch("http://localhost:4000/api/v1/targetAudiences").then(r => r.json()),
-        fetch("http://localhost:4000/api/v1/interests").then(r => r.json()),
-        fetch("http://localhost:4000/api/v1/users").then(r => r.json()),
-      ]);
+  useEffect(() => {
+    const fetchCatalogos = async () => {
+      try {
+        const [instRes, lineRes, publRes, intRes, userRes] = await Promise.all([
+          fetch("http://localhost:4000/api/v1/institutions").then(r => r.json()),
+          fetch("http://localhost:4000/api/v1/lines").then(r => r.json()),
+          fetch("http://localhost:4000/api/v1/targetAudiences").then(r => r.json()),
+          fetch("http://localhost:4000/api/v1/interests").then(r => r.json()),
+          fetch("http://localhost:4000/api/v1/users").then(r => r.json()),
+        ]);
 
-      // 👇 Si tu backend devuelve { data: [...] }
-      setInstituciones(instRes.data || []);
-      setLineas(lineRes.data || []);
-      setPublicos(publRes.data || []);
-      setIntereses(intRes.data || []);
-      setUsuarios(userRes.data || []);
-    } catch (error) {
-      console.error("Error cargando catálogos", error);
-    }
-  };
-  fetchCatalogos();
-}, []);
-
+        setInstituciones(instRes.data || []);
+        setLineas(lineRes.data || []);
+        setPublicos(publRes.data || []);
+        setIntereses(intRes.data || []);
+        setUsuarios(userRes.data || []);
+      } catch (error) {
+        console.error("Error cargando catálogos", error);
+      }
+    };
+    fetchCatalogos();
+  }, []);
 
   if (!modalAbierto || !convocatoria) return null;
 
@@ -143,17 +141,17 @@ export default function ModalConvocatoria({
 
         {/* INFO CARDS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 mx-8 mb-6">
-          <div className={`${modoOscuro ? "bg-gray-800" : "bg-blue-50"} rounded-xl p-5 shadow-sm text-center`}>
+          <div className={`${modoOscuro ? "bg-gray-800" : "bg-blue-50"} rounded-xl p-5 shadow-sm text-center transform transition-transform hover:scale-105`}>
             <FaCalendarAlt className="text-blue-500 text-3xl mb-2 mx-auto" />
             <p className="text-sm font-medium">Fecha de Apertura</p>
             <strong>{new Date(convocatoria.openDate).toLocaleDateString()}</strong>
           </div>
-          <div className={`${modoOscuro ? "bg-gray-800" : "bg-red-50"} rounded-xl p-5 shadow-sm text-center`}>
+          <div className={`${modoOscuro ? "bg-gray-800" : "bg-red-50"} rounded-xl p-5 shadow-sm text-center transform transition-transform hover:scale-105`}>
             <FaCalendarTimes className="text-red-500 text-3xl mb-2 mx-auto" />
             <p className="text-sm font-medium">Fecha de Cierre</p>
             <strong>{new Date(convocatoria.closeDate).toLocaleDateString()}</strong>
           </div>
-          <div className={`${modoOscuro ? "bg-gray-800" : "bg-purple-50"} rounded-xl p-5 shadow-sm text-center`}>
+          <div className={`${modoOscuro ? "bg-gray-800" : "bg-purple-50"} rounded-xl p-5 shadow-sm text-center transform transition-transform hover:scale-105`}>
             <FaBuilding className="text-purple-600 text-3xl mb-2 mx-auto" />
             <p className="text-sm font-medium">Entidad</p>
             <strong>{getNombre(instituciones, convocatoria.institutionId)}</strong>
@@ -172,11 +170,9 @@ export default function ModalConvocatoria({
             <button
               key={id}
               onClick={() => setPestanaActiva(id)}
-              className={`flex items-center gap-2 px-6 py-3 text-sm rounded-lg font-medium transition-all duration-200 ${
-                pestanaActiva === id
+              className={`flex items-center gap-2 px-6 py-3 text-sm rounded-lg font-medium transition-all duration-200 ${pestanaActiva === id
                   ? `${modoOscuro ? "bg-gray-700 shadow text-white" : "bg-white shadow-sm"} ${color}`
-                  : `${modoOscuro ? "text-gray-400 hover:text-gray-200" : "text-gray-500 hover:text-gray-700"}`
-              }`}
+                  : `${modoOscuro ? "text-gray-400 hover:text-gray-200" : "text-gray-500 hover:text-gray-700"}`}`}
             >
               <Icon className="text-base" />
               <span>{label}</span>
@@ -184,22 +180,72 @@ export default function ModalConvocatoria({
           ))}
         </div>
 
-        {/* CONTENIDO */}
-        <div className={`p-6 mx-8 rounded-xl min-h-[150px] mb-6 shadow-sm border 
-        ${modoOscuro ? "bg-gray-800 text-gray-200" : "bg-white text-gray-700"}`}>
-          {pestanaActiva === "descripcion" && <p>{convocatoria.description}</p>}
-          {pestanaActiva === "objetivos" && <p>{convocatoria.objective}</p>}
-          {pestanaActiva === "recursos" && <p>{convocatoria.resources}</p>}
-          {pestanaActiva === "observaciones" && <p>{convocatoria.notes}</p>}
-          {pestanaActiva === "masInformacion" && (
-            <div className="space-y-2 text-sm">
-              <p><strong>Público Objetivo:</strong> {getNombre(publicos, convocatoria.targetAudienceId)}</p>
-              <p><strong>Área de Interés:</strong> {getNombre(intereses, convocatoria.interestId)}</p>
-              <p><strong>Línea Estratégica:</strong> {getNombre(lineas, convocatoria.lineId)}</p>
-              <p><strong>Usuario Responsable:</strong> {getNombre(usuarios, convocatoria.userId)}</p>
-              <p><strong>Clicks registrados:</strong> {convocatoria.clickCount}</p>
+        {/* CONTENIDO MEJORADO */}
+        <div
+          className={`p-6 mx-8 rounded-xl min-h-[150px] mb-6 shadow-md border transition-colors duration-300 
+          ${modoOscuro ? "bg-gray-900 border-gray-700 text-gray-200" : "bg-white border-gray-200 text-gray-700"}`}
+        >
+          {pestanaActiva === "descripcion" && (
+            <div>
+              <h4 className={`text-lg font-semibold mb-3 ${modoOscuro ? "text-white" : "text-gray-900"}`}>Descripción</h4>
+              <p className="leading-relaxed">{convocatoria.description}</p>
             </div>
           )}
+          {pestanaActiva === "objetivos" && (
+            <div>
+              <h4 className={`text-lg font-semibold mb-3 ${modoOscuro ? "text-white" : "text-gray-900"}`}>Objetivos</h4>
+              <p className="leading-relaxed">{convocatoria.objective}</p>
+            </div>
+          )}
+          {pestanaActiva === "recursos" && (
+            <div>
+              <h4 className={`text-lg font-semibold mb-3 ${modoOscuro ? "text-white" : "text-gray-900"}`}>Recursos</h4>
+              <p className="leading-relaxed">{convocatoria.resources}</p>
+            </div>
+          )}
+          {pestanaActiva === "observaciones" && (
+            <div>
+              <h4 className={`text-lg font-semibold mb-3 ${modoOscuro ? "text-white" : "text-gray-900"}`}>Observaciones</h4>
+              <p className="leading-relaxed">{convocatoria.notes}</p>
+            </div>
+          )}
+          {pestanaActiva === "masInformacion" && (
+            <div>
+              <h4 className={`text-lg font-semibold mb-4 ${modoOscuro ? "text-white" : "text-gray-900"}`}>Más Información</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div className={`p-3 rounded-lg shadow-sm ${modoOscuro ? "bg-gray-800" : "bg-gray-50"}`}>
+                  <strong>Público Objetivo:</strong> {getNombre(publicos, convocatoria.targetAudienceId)}
+                </div>
+                <div className={`p-3 rounded-lg shadow-sm ${modoOscuro ? "bg-gray-800" : "bg-gray-50"}`}>
+                  <strong>Área de Interés:</strong> {getNombre(intereses, convocatoria.interestId)}
+                </div>
+                <div className={`p-3 rounded-lg shadow-sm ${modoOscuro ? "bg-gray-800" : "bg-gray-50"}`}>
+                  <strong>Línea Estratégica:</strong> {getNombre(lineas, convocatoria.lineId)}
+                </div>
+                <div className={`p-3 rounded-lg shadow-sm ${modoOscuro ? "bg-gray-800" : "bg-gray-50"}`}>
+                  <strong>Usuario Responsable:</strong> {getNombre(usuarios, convocatoria.userId)}
+                </div>
+                <div className={`p-3 rounded-lg shadow-sm ${modoOscuro ? "bg-gray-800" : "bg-gray-50"}`}>
+                  <strong>Clicks registrados:</strong> {convocatoria.clickCount}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* BOTONES FINALES */}
+        <div className="flex justify-end gap-4 px-8 pb-6">
+          <button
+            className="flex items-center gap-2 px-6 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold shadow transition"
+          >
+            <FaCheckCircle /> Inscribirse
+          </button>
+          <button
+            onClick={cerrarModal}
+            className="flex items-center gap-2 px-6 py-2 rounded-lg bg-gray-400 hover:bg-gray-500 text-white font-semibold shadow transition"
+          >
+            <FaTimes /> Cancelar
+          </button>
         </div>
       </div>
     </div>

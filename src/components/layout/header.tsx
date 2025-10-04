@@ -2,6 +2,8 @@
 
 import { Settings, Search, Sun, Moon, LogOut } from "lucide-react";
 import { Dispatch, SetStateAction } from "react";
+import { useRouter } from "next/navigation";
+import Swal from "sweetalert2";
 
 type HeaderProps = {
   sectionBg: string;
@@ -9,7 +11,6 @@ type HeaderProps = {
   searchTerm: string;
   setSearchTerm: Dispatch<SetStateAction<string>>;
   toggleModoOscuro: () => void;
-  toggleLogoutModal: () => void;
   setShowProfileModal: Dispatch<SetStateAction<boolean>>;
 };
 
@@ -19,9 +20,41 @@ export default function Header({
   searchTerm,
   setSearchTerm,
   toggleModoOscuro,
-  toggleLogoutModal,
   setShowProfileModal,
 }: HeaderProps) {
+  const router = useRouter();
+
+  // 🔑 Función para cerrar sesión
+  const handleLogout = () => {
+    Swal.fire({
+      title: "¿Cerrar sesión?",
+      text: "Tu sesión actual se cerrará",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#39A900",
+      confirmButtonText: "Sí, salir",
+      cancelButtonText: "Cancelar",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Eliminar token y usuario
+        localStorage.removeItem("token");
+        localStorage.removeItem("usuario");
+
+        Swal.fire({
+          icon: "success",
+          title: "Sesión cerrada",
+          text: "Has cerrado sesión correctamente",
+          showConfirmButton: false,
+          timer: 1500,
+        });
+
+        // Redirigir al login
+        router.push("/");
+      }
+    });
+  };
+
   return (
     <header
       className={`${sectionBg} shadow-xl relative z-10 transition-all duration-500`}
@@ -96,7 +129,7 @@ export default function Header({
 
             {/* Logout Button */}
             <button
-              onClick={toggleLogoutModal}
+              onClick={handleLogout}
               className="p-3 rounded-2xl bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-all duration-300 hover:scale-110"
               title="Cerrar sesión"
             >

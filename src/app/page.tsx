@@ -2,9 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Mail, Lock, LogIn, Eye, EyeOff, Sun, Moon } from "lucide-react";
 import { useTheme } from "../app/ThemeContext";
 import { getThemeStyles } from "../app/themeStyles";
+import Swal from "sweetalert2";
+
+const API_URL = "http://localhost:4000/api/v1/auths/authenticate";
 
 export default function LoginPage() {
   const { modoOscuro, toggleModoOscuro } = useTheme();
@@ -13,18 +17,81 @@ export default function LoginPage() {
   const [correo, setCorreo] = useState("");
   const [contrasena, setContrasena] = useState("");
   const [mostrarContrasena, setMostrarContrasena] = useState(false);
+  const [cargando, setCargando] = useState(false);
 
-  const manejarEnvio = (e: React.FormEvent<HTMLFormElement>) => {
+  const router = useRouter();
+
+  const manejarEnvio = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    alert(`Correo: ${correo}\nPassword: ${contrasena}`);
+    setCargando(true);
+
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: correo,
+          password: contrasena,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.token) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("usuario", JSON.stringify(data.user));
+
+        // Guardamos rol de forma segura
+        const roleId =
+          data.user.rolId ||
+          data.user.role_id ||
+          data.user.roleId ||
+          data.user.role?.id ||
+          null;
+
+        const roleName =
+          (data.user.rol || data.user.role?.name || "")
+            .toString()
+            .toLowerCase();
+
+        localStorage.setItem("rol", roleName || roleId?.toString() || "");
+
+        Swal.fire({
+          icon: "success",
+          title: `¡Bienvenido ${data.user.name}! 🎉`,
+          text: "Has iniciado sesión correctamente",
+          confirmButtonColor: "#39A900",
+        }).then(() => {
+          // 🚀 Ahora todos entran a /menu (admin también)
+          router.push("/menu");
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Credenciales incorrectas",
+          text: data.message || "❌ El correo o la contraseña no son válidos.",
+          confirmButtonColor: "#d33",
+        });
+      }
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error de conexión",
+        text: "⚠️ No se pudo conectar con el servidor.",
+        confirmButtonColor: "#d33",
+      });
+      console.error(error);
+    } finally {
+      setCargando(false);
+    }
   };
 
   return (
     <div
       className={`min-h-screen w-full flex items-center justify-center p-6 relative transition-colors duration-500 ${
-    modoOscuro
-      ? "bg-gray-900 border border-gray-700" // 👈 contenedor con borde gris
-      : "bg-gray-100"
+        modoOscuro
+          ? "bg-gradient-to-br from-gray-900 via-gray-800 to-black"
+          : estilos.fondo
       }`}
     >
       {/* ☀️🌙 Botón modo oscuro */}
@@ -33,8 +100,8 @@ export default function LoginPage() {
           onClick={toggleModoOscuro}
           className={`p-3 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
             modoOscuro
-              ? "bg-gray-800 border border-gray-800 text-yellow-300 hover:bg-gray-700"
-              : "bg-white text-gray-700  border border-gray-300 hover:bg-gray-100 shadow-md"
+              ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
+              : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
           }`}
           title="Cambiar modo"
         >
@@ -46,7 +113,7 @@ export default function LoginPage() {
       <div
         className={`relative z-10 w-full max-w-md rounded-2xl p-8 shadow-2xl backdrop-blur-md border transition-colors duration-500 ${
           modoOscuro
-            ? "bg-gray-800/80 border border-gray-600 text-gray-100"
+            ? "bg-gray-900/80 border border-gray-700 text-gray-100 shadow-[0_0_20px_rgba(0,255,128,0.15)]"
             : "bg-white border-gray-200 text-gray-900"
         }`}
       >
@@ -55,7 +122,7 @@ export default function LoginPage() {
           <img
             src="/img/convo2.png"
             alt="Logo Convocatorias"
-            className="w-40 h-auto mb-6"
+            className="w-45 h-auto mb-6 drop-shadow-lg"
           />
           <h1
             className={`text-3xl font-bold bg-clip-text text-transparent ${estilos.titulo}`}
@@ -67,7 +134,7 @@ export default function LoginPage() {
         {/* Formulario */}
         <form onSubmit={manejarEnvio} className="space-y-8">
           {/* Correo */}
-          <div className="relative">
+          <div className="relative group">
             <Mail className={`absolute left-3 top-4 text-lg ${estilos.icono}`} />
             <input
               type="email"
@@ -78,15 +145,17 @@ export default function LoginPage() {
               className={`peer w-full pt-5 pb-2 px-3 pl-10 text-base font-medium bg-transparent border-0 border-b-2 outline-none transition-colors duration-300
                 ${
                   modoOscuro
-                    ? "border-gray-600 text-white placeholder-transparent focus:border-[#39A900]"
-                    : "border-gray-400 text-gray-900 placeholder-transparent focus:border-[#39A900]"
+                    ? "border-gray-600 text-white placeholder-transparent focus:border-green-400 focus:shadow-[0_2px_10px_rgba(0,255,128,0.3)]"
+                    : "border-gray-300 text-gray-900 placeholder-transparent focus:border-[#39A900]"
                 }`}
             />
             <label
               className={`absolute top-4 left-10 text-base pointer-events-none transition-all duration-300 ease-in-out ${
-                modoOscuro ? "text-gray-400" : "text-gray-500"
+                modoOscuro
+                  ? "text-gray-500 peer-focus:text-green-400"
+                  : "text-gray-500 peer-focus:text-[#39A900]"
               }
-                peer-focus:top-[-0.6rem] peer-focus:text-sm peer-focus:text-[#39A900]
+                peer-focus:top-[-0.6rem] peer-focus:text-sm
                 peer-[&:not(:placeholder-shown)]:top-[-0.6rem]
                 peer-[&:not(:placeholder-shown)]:text-sm`}
             >
@@ -95,7 +164,7 @@ export default function LoginPage() {
           </div>
 
           {/* Contraseña */}
-          <div className="relative">
+          <div className="relative group">
             <Lock className={`absolute left-3 top-4 text-lg ${estilos.icono}`} />
             <input
               type={mostrarContrasena ? "text" : "password"}
@@ -106,22 +175,28 @@ export default function LoginPage() {
               className={`peer w-full pt-5 pb-2 px-3 pl-10 text-base font-medium bg-transparent border-0 border-b-2 outline-none transition-colors duration-300
                 ${
                   modoOscuro
-                    ? "border-gray-600 text-white placeholder-transparent focus:border-[#39A900]"
-                    : "border-gray-400 text-gray-900 placeholder-transparent focus:border-[#39A900]"
+                    ? "border-gray-600 text-white placeholder-transparent focus:border-green-400 focus:shadow-[0_2px_10px_rgba(0,255,128,0.3)]"
+                    : "border-gray-300 text-gray-900 placeholder-transparent focus:border-[#39A900]"
                 }`}
             />
             <button
               type="button"
               onClick={() => setMostrarContrasena(!mostrarContrasena)}
-              className="absolute right-3 top-4 text-slate-400 hover:text-[#39A900] transition-colors"
+              className={`absolute right-3 top-4 transition-colors ${
+                modoOscuro
+                  ? "text-gray-400 hover:text-green-400"
+                  : "text-slate-400 hover:text-[#39A900]"
+              }`}
             >
               {mostrarContrasena ? <EyeOff /> : <Eye />}
             </button>
             <label
               className={`absolute top-4 left-10 text-base pointer-events-none transition-all duration-300 ease-in-out ${
-                modoOscuro ? "text-gray-400" : "text-gray-500"
+                modoOscuro
+                  ? "text-gray-500 peer-focus:text-green-400"
+                  : "text-gray-500 peer-focus:text-[#39A900]"
               }
-                peer-focus:top-[-0.6rem] peer-focus:text-sm peer-focus:text-[#39A900]
+                peer-focus:top-[-0.6rem] peer-focus:text-sm
                 peer-[&:not(:placeholder-shown)]:top-[-0.6rem]
                 peer-[&:not(:placeholder-shown)]:text-sm`}
             >
@@ -132,15 +207,27 @@ export default function LoginPage() {
           {/* Botón */}
           <button
             type="submit"
-            className="relative w-full py-4 text-lg font-bold text-white rounded-xl cursor-pointer overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl flex justify-center items-center gap-2 bg-[#39A900] hover:bg-[#2d8a00]"
+            disabled={cargando}
+            className={`relative w-full py-4 text-lg font-bold text-white rounded-xl cursor-pointer overflow-hidden transition-all duration-300 flex justify-center items-center gap-2 
+              ${
+                cargando
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-[#39A900] hover:scale-105 hover:shadow-xl hover:bg-[#2d8a00]"
+              }`}
           >
-            <LogIn size={20} /> Ingresar
+            {cargando ? "Ingresando..." : (
+              <>
+                <LogIn size={20} /> Ingresar
+              </>
+            )}
           </button>
         </form>
 
         {/* Links */}
-        <div className="text-center mt-6 text-sm text-gray-400">
-          ¿No tienes una cuenta?{" "}
+        <div className="text-center mt-6 text-sm">
+          <span className={modoOscuro ? "text-gray-400" : "text-gray-500"}>
+            ¿No tienes una cuenta?{" "}
+          </span>
           <Link
             href="/public/registro"
             className="font-semibold text-[#39A900] hover:underline"
@@ -148,7 +235,7 @@ export default function LoginPage() {
             Regístrate aquí
           </Link>
         </div>
-        <div className="text-center mt-3 text-sm text-gray-400">
+        <div className="text-center mt-3 text-sm">
           <Link
             href="/public/recuperarcontrasena"
             className="font-semibold text-[#39A900] hover:underline"

@@ -26,7 +26,13 @@ export default function FormularioRegistro() {
     setCargando(true);
 
     try {
-      const nuevoUsuario = { name: nombre, email: correo, password: contrasena };
+      const nuevoUsuario = { 
+        name: nombre, 
+        email: correo, 
+        password: contrasena,
+        role_id: 1 
+      };
+
       await createUser(nuevoUsuario);
 
       Swal.fire({
@@ -53,7 +59,11 @@ export default function FormularioRegistro() {
 
   return (
     <div
-      className={`min-h-screen w-full flex items-center justify-center p-6 relative transition-colors duration-500 ${estilos.fondo}`}
+      className={`min-h-screen w-full flex items-center justify-center p-6 relative transition-colors duration-500 ${
+        modoOscuro 
+          ? "bg-gradient-to-br from-gray-900 via-gray-800 to-black" 
+          : estilos.fondo
+      }`}
     >
       {/* ☀️🌙 Botón modo oscuro */}
       <div className="fixed top-6 right-6 z-50">
@@ -74,13 +84,13 @@ export default function FormularioRegistro() {
       <div
         className={`relative z-10 w-full max-w-md rounded-2xl p-8 shadow-2xl backdrop-blur-md border transition-colors duration-500 ${
           modoOscuro
-            ? "bg-gray-800/80 border border-gray-600 text-gray-100"
+            ? "bg-gray-900/80 border border-gray-700 text-gray-100 shadow-[0_0_20px_rgba(0,255,128,0.15)]"
             : "bg-white border-gray-200 text-gray-900"
         }`}
       >
         {/* Logo + título */}
-        <div className="flex flex-col items-center mb-8">
-          <img src="/img/convo2.png" alt="Logo" className="w-40 h-auto mb-6" />
+       <div className="flex flex-col items-center mb-8">
+          <img src="/img/convo2.png" alt="Logo" className="w-45 h-auto mb-6" />
           <h1
             className={`text-3xl font-bold bg-clip-text text-transparent ${estilos.titulo}`}
           >
@@ -91,7 +101,7 @@ export default function FormularioRegistro() {
         {/* Formulario */}
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Nombre */}
-          <div className="relative">
+          <div className="relative group">
             <User className={`absolute left-3 top-4 text-lg ${estilos.icono}`} />
             <input
               type="text"
@@ -101,14 +111,14 @@ export default function FormularioRegistro() {
               required
               className={`peer w-full pt-5 pb-2 px-3 pl-10 text-base font-medium bg-transparent border-0 border-b-2 outline-none transition-colors duration-300
                 ${modoOscuro 
-                  ? "border-gray-500 text-white placeholder-transparent focus:border-[#39A900]" 
-                  : "border-gray-400 text-gray-900 placeholder-transparent focus:border-[#39A900]"}`}
+                  ? "border-gray-600 text-white placeholder-transparent focus:border-green-400 focus:shadow-[0_2px_10px_rgba(0,255,128,0.3)]" 
+                  : "border-gray-300 text-gray-900 placeholder-transparent focus:border-[#39A900]"}`}
             />
             <label
               className={`absolute top-4 left-10 text-base pointer-events-none transition-all duration-300 ease-in-out ${
-                modoOscuro ? "text-gray-400" : "text-gray-500"
+                modoOscuro ? "text-gray-500 peer-focus:text-green-400" : "text-gray-500 peer-focus:text-[#39A900]"
               }
-                peer-focus:top-[-0.6rem] peer-focus:text-sm peer-focus:text-[#39A900]
+                peer-focus:top-[-0.6rem] peer-focus:text-sm
                 peer-[&:not(:placeholder-shown)]:top-[-0.6rem]
                 peer-[&:not(:placeholder-shown)]:text-sm`}
             >
@@ -117,7 +127,7 @@ export default function FormularioRegistro() {
           </div>
 
           {/* Correo */}
-          <div className="relative">
+          <div className="relative group">
             <Mail className={`absolute left-3 top-4 text-lg ${estilos.icono}`} />
             <input
               type="email"
@@ -127,14 +137,14 @@ export default function FormularioRegistro() {
               required
               className={`peer w-full pt-5 pb-2 px-3 pl-10 text-base font-medium bg-transparent border-0 border-b-2 outline-none transition-colors duration-300
                 ${modoOscuro 
-                  ? "border-gray-500 text-white placeholder-transparent focus:border-[#39A900]" 
-                  : "border-gray-400 text-gray-900 placeholder-transparent focus:border-[#39A900]"}`}
+                  ? "border-gray-600 text-white placeholder-transparent focus:border-green-400 focus:shadow-[0_2px_10px_rgba(0,255,128,0.3)]" 
+                  : "border-gray-300 text-gray-900 placeholder-transparent focus:border-[#39A900]"}`}
             />
             <label
               className={`absolute top-4 left-10 text-base pointer-events-none transition-all duration-300 ease-in-out ${
-                modoOscuro ? "text-gray-400" : "text-gray-500"
+                modoOscuro ? "text-gray-500 peer-focus:text-green-400" : "text-gray-500 peer-focus:text-[#39A900]"
               }
-                peer-focus:top-[-0.6rem] peer-focus:text-sm peer-focus:text-[#39A900]
+                peer-focus:top-[-0.6rem] peer-focus:text-sm
                 peer-[&:not(:placeholder-shown)]:top-[-0.6rem]
                 peer-[&:not(:placeholder-shown)]:text-sm`}
             >
@@ -143,7 +153,7 @@ export default function FormularioRegistro() {
           </div>
 
           {/* Contraseña */}
-          <div className="relative">
+          <div className="relative group">
             <Lock className={`absolute left-3 top-4 text-lg ${estilos.icono}`} />
             <input
               type={mostrarContrasena ? "text" : "password"}
@@ -153,21 +163,23 @@ export default function FormularioRegistro() {
               required
               className={`peer w-full pt-5 pb-2 px-3 pl-10 text-base font-medium bg-transparent border-0 border-b-2 outline-none transition-colors duration-300
                 ${modoOscuro 
-                  ? "border-gray-500 text-white placeholder-transparent focus:border-[#39A900]" 
-                  : "border-gray-400 text-gray-900 placeholder-transparent focus:border-[#39A900]"}`}
+                  ? "border-gray-600 text-white placeholder-transparent focus:border-green-400 focus:shadow-[0_2px_10px_rgba(0,255,128,0.3)]" 
+                  : "border-gray-300 text-gray-900 placeholder-transparent focus:border-[#39A900]"}`}
             />
             <button
               type="button"
               onClick={() => setMostrarContrasena(!mostrarContrasena)}
-              className="absolute right-3 top-4 text-slate-400 hover:text-[#39A900] transition-colors"
+              className={`absolute right-3 top-4 transition-colors ${
+                modoOscuro ? "text-gray-400 hover:text-green-400" : "text-slate-400 hover:text-[#39A900]"
+              }`}
             >
               {mostrarContrasena ? <EyeOff /> : <Eye />}
             </button>
             <label
               className={`absolute top-4 left-10 text-base pointer-events-none transition-all duration-300 ease-in-out ${
-                modoOscuro ? "text-gray-400" : "text-gray-500"
+                modoOscuro ? "text-gray-500 peer-focus:text-green-400" : "text-gray-500 peer-focus:text-[#39A900]"
               }
-                peer-focus:top-[-0.6rem] peer-focus:text-sm peer-focus:text-[#39A900]
+                peer-focus:top-[-0.6rem] peer-focus:text-sm
                 peer-[&:not(:placeholder-shown)]:top-[-0.6rem]
                 peer-[&:not(:placeholder-shown)]:text-sm`}
             >
@@ -187,8 +199,10 @@ export default function FormularioRegistro() {
         </form>
 
         {/* Link login */}
-        <div className="text-center mt-6 text-sm text-gray-300">
-          ¿Ya tienes una cuenta?{" "}
+        <div className="text-center mt-6 text-sm">
+          <span className={modoOscuro ? "text-gray-400" : "text-gray-500"}>
+            ¿Ya tienes una cuenta?{" "}
+          </span>
           <a href="/" className="font-semibold text-[#39A900] hover:underline">
             Inicia Sesión
           </a>
