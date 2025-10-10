@@ -43,6 +43,9 @@ interface EmpresaModalProps {
   modoOscuro: boolean;
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+
 export default function EmpresaModal({
   isOpen,
   onClose,
@@ -55,7 +58,7 @@ export default function EmpresaModal({
 
   useEffect(() => {
     if (isOpen) {
-      fetch('http://localhost:4000/api/v1/cities')
+      fetch(`${API_URL}/cities`)
         .then((res) => res.json())
         .then((data) => setCiudades(data.data || data || []))
         .catch((err) => {

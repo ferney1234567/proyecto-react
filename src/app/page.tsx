@@ -3,17 +3,39 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, LogIn, Eye, EyeOff, Sun, Moon } from "lucide-react";
+import {
+  Mail,
+  Lock,
+  LogIn,
+  Eye,
+  EyeOff,
+  Sun,
+  Moon,
+  ZoomIn,
+  ZoomOut,
+  RefreshCcw,
+} from "lucide-react";
 import { useTheme } from "../app/ThemeContext";
 import { getThemeStyles } from "../app/themeStyles";
 import Swal from "sweetalert2";
+import { useFontSize } from "../../FontSizeContext";
+import { MdAccessibility } from "react-icons/md";
 
-const API_URL = "http://localhost:4000/api/v1/auths/authenticate";
+// ✅ URL base dinámica desde .env
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = `${BASE_URL}/auths/authenticate`;
 
 export default function LoginPage() {
+  // 🎨 Modo oscuro
   const { modoOscuro, toggleModoOscuro } = useTheme();
   const estilos = getThemeStyles(modoOscuro);
 
+  // 🔠 Tamaño de texto global (contexto)
+  const { fontSize, aumentarTexto, disminuirTexto, resetTexto } = useFontSize();
+  const [mostrarZoom, setMostrarZoom] = useState(false);
+  const toggleZoomMenu = () => setMostrarZoom(!mostrarZoom);
+
+  // 🧾 Formulario
   const [correo, setCorreo] = useState("");
   const [contrasena, setContrasena] = useState("");
   const [mostrarContrasena, setMostrarContrasena] = useState(false);
@@ -21,6 +43,7 @@ export default function LoginPage() {
 
   const router = useRouter();
 
+  // 🚀 Envío de formulario
   const manejarEnvio = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setCargando(true);
@@ -41,7 +64,7 @@ export default function LoginPage() {
         localStorage.setItem("token", data.token);
         localStorage.setItem("usuario", JSON.stringify(data.user));
 
-        // Guardamos rol de forma segura
+        // Guardamos rol
         const roleId =
           data.user.rolId ||
           data.user.role_id ||
@@ -62,7 +85,6 @@ export default function LoginPage() {
           text: "Has iniciado sesión correctamente",
           confirmButtonColor: "#39A900",
         }).then(() => {
-          // 🚀 Ahora todos entran a /menu (admin también)
           router.push("/menu");
         });
       } else {
@@ -93,9 +115,10 @@ export default function LoginPage() {
           ? "bg-gradient-to-br from-gray-900 via-gray-800 to-black"
           : estilos.fondo
       }`}
+      style={{ fontSize: `${fontSize}px` }}
     >
       {/* ☀️🌙 Botón modo oscuro */}
-      <div className="fixed top-6 right-6 z-50">
+      <div className="fixed top-6 right-6 z-50 flex flex-col space-y-3 items-end">
         <button
           onClick={toggleModoOscuro}
           className={`p-3 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
@@ -107,6 +130,60 @@ export default function LoginPage() {
         >
           {modoOscuro ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
         </button>
+
+        {/* 🔍 Botón de menú zoom */}
+        <button
+          onClick={toggleZoomMenu}
+          className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
+            modoOscuro
+              ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
+              : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
+          }`}
+          title="Opciones de texto"
+        >
+          <MdAccessibility className="h-6 w-6" />
+        </button>
+
+        {/* 📏 Menú Zoom (aparece al presionar el botón) */}
+        {mostrarZoom && (
+          <div className="flex flex-col space-y-3 mt-2 animate-fade-in">
+            <button
+              onClick={aumentarTexto}
+              className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
+                modoOscuro
+                  ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
+                  : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
+              }`}
+              title="Aumentar texto"
+            >
+              <ZoomIn className="h-6 w-6" />
+            </button>
+
+            <button
+              onClick={resetTexto}
+              className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
+                modoOscuro
+                  ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
+                  : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
+              }`}
+              title="Restablecer tamaño"
+            >
+              <RefreshCcw className="h-6 w-6" />
+            </button>
+
+            <button
+              onClick={disminuirTexto}
+              className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
+                modoOscuro
+                  ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
+                  : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
+              }`}
+              title="Disminuir texto"
+            >
+              <ZoomOut className="h-6 w-6" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 📋 Card Login */}
@@ -142,10 +219,10 @@ export default function LoginPage() {
               onChange={(e) => setCorreo(e.target.value)}
               placeholder=" "
               required
-              className={`peer w-full pt-5 pb-2 px-3 pl-10 text-base font-medium bg-transparent border-0 border-b-2 outline-none transition-colors duration-300
+              className={`peer w-full pt-5 pb-2 px-3 pl-10 text-base font-medium bg-transparent border-0 border-b-2 outline-none transition-colors duration-300 
                 ${
                   modoOscuro
-                    ? "border-gray-600 text-white placeholder-transparent focus:border-green-400 focus:shadow-[0_2px_10px_rgba(0,255,128,0.3)]"
+                    ? "border-gray-600 text-white placeholder-transparent focus:border-green-400"
                     : "border-gray-300 text-gray-900 placeholder-transparent focus:border-[#39A900]"
                 }`}
             />
@@ -175,7 +252,7 @@ export default function LoginPage() {
               className={`peer w-full pt-5 pb-2 px-3 pl-10 text-base font-medium bg-transparent border-0 border-b-2 outline-none transition-colors duration-300
                 ${
                   modoOscuro
-                    ? "border-gray-600 text-white placeholder-transparent focus:border-green-400 focus:shadow-[0_2px_10px_rgba(0,255,128,0.3)]"
+                    ? "border-gray-600 text-white placeholder-transparent focus:border-green-400"
                     : "border-gray-300 text-gray-900 placeholder-transparent focus:border-[#39A900]"
                 }`}
             />
@@ -215,11 +292,7 @@ export default function LoginPage() {
                   : "bg-[#39A900] hover:scale-105 hover:shadow-xl hover:bg-[#2d8a00]"
               }`}
           >
-            {cargando ? "Ingresando..." : (
-              <>
-                <LogIn size={20} /> Ingresar
-              </>
-            )}
+            {cargando ? "Ingresando..." : (<><LogIn size={20} /> Ingresar</>)}
           </button>
         </form>
 
@@ -235,6 +308,7 @@ export default function LoginPage() {
             Regístrate aquí
           </Link>
         </div>
+
         <div className="text-center mt-3 text-sm">
           <Link
             href="/public/recuperarcontrasena"

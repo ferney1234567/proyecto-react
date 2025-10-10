@@ -11,8 +11,9 @@ import {
 import { useTheme } from "../../app/ThemeContext";
 import { getThemeStyles } from "../../app/themeStyles";
 
-interface Convocatoria {
-  id: number;
+export interface Convocatoria {
+  id?: number;
+  callId?: number;
   title: string;
   description: string;
   resources: string;
@@ -32,10 +33,15 @@ interface Convocatoria {
   imageUrl?: string;
 }
 
+
 interface Catalogo {
   id: number;
   name: string;
 }
+
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 
 export default function ModalConvocatoria({
   modalAbierto,
@@ -77,11 +83,11 @@ export default function ModalConvocatoria({
     const fetchCatalogos = async () => {
       try {
         const [instRes, lineRes, publRes, intRes, userRes] = await Promise.all([
-          fetch("http://localhost:4000/api/v1/institutions").then(r => r.json()),
-          fetch("http://localhost:4000/api/v1/lines").then(r => r.json()),
-          fetch("http://localhost:4000/api/v1/targetAudiences").then(r => r.json()),
-          fetch("http://localhost:4000/api/v1/interests").then(r => r.json()),
-          fetch("http://localhost:4000/api/v1/users").then(r => r.json()),
+          fetch(`${API_URL}/institutions`).then(r => r.json()),
+          fetch(`${API_URL}/lines`).then(r => r.json()),
+          fetch(`${API_URL}/targetAudiences`).then(r => r.json()),
+          fetch(`${API_URL}/interests`).then(r => r.json()),
+          fetch(`${API_URL}/users`).then(r => r.json()),
         ]);
 
         setInstituciones(instRes.data || []);
@@ -159,7 +165,8 @@ export default function ModalConvocatoria({
         </div>
 
         {/* PESTAÑAS */}
-        <div className="flex flex-wrap justify-center gap-1 mx-8 border-b pb-2">
+       <div className="flex flex-wrap justify-center gap-1 mx-8 pb-2">
+
           {[
             { id: "descripcion", icon: FaRegFileAlt, label: "Descripción", color: "text-blue-500" },
             { id: "objetivos", icon: FaCheckCircle, label: "Objetivos", color: "text-green-500" },

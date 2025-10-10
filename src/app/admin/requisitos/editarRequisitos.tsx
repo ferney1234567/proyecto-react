@@ -36,6 +36,9 @@ interface Grupo {
   name: string;
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+
 export default function ModalEditarRequisito({
   visible,
   onClose,
@@ -59,8 +62,8 @@ export default function ModalEditarRequisito({
       const fetchData = async () => {
         try {
           const [resInst, resGroup] = await Promise.all([
-            fetch("http://localhost:4000/api/v1/institutions"),
-            fetch("http://localhost:4000/api/v1/requirementGroups"),
+            fetch(`${API_URL}/institutions`),
+            fetch(`${API_URL}/requirementGroups`),
           ]);
 
           const instData = await resInst.json();

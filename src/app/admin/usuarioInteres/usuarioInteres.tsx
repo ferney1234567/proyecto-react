@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Edit, Trash2, Plus, Search, Loader2, User, Heart } from "lucide-react";
 import Swal from "sweetalert2";
 
-// API
+// ✅ API — conexión con tu archivo: src/app/api/usuarioInteres/route.js
 import {
   getUserInterests,
   createUserInterest,
@@ -12,10 +12,13 @@ import {
   deleteUserInterest,
 } from "../../api/usuarioInteres/route";
 
-// Modales
+// ✅ Modales
 import ModalCrearUserInterest from "./crearUserInteres";
 import ModalEditarUserInterest from "./editarUserInteres";
 
+// ==============================
+// 🔹 Tipos e Interfaces
+// ==============================
 interface UserInterest {
   userId: number;
   interestId: number;
@@ -31,35 +34,41 @@ interface Props {
   modoOscuro: boolean;
 }
 
+// ==============================
+// 🔹 Componente principal
+// ==============================
 export default function UserInterests({ modoOscuro }: Props) {
   const [data, setData] = useState<UserInterest[]>([]);
   const [buscar, setBuscar] = useState("");
   const [loading, setLoading] = useState(true);
-
   const [mostrarModal, setMostrarModal] = useState(false);
   const [mostrarEditar, setMostrarEditar] = useState(false);
   const [seleccionado, setSeleccionado] = useState<UserInterest | null>(null);
 
-  // === Cargar datos ===
+  // ============================
+  // 🔹 Cargar datos
+  // ============================
   const cargarDatos = async () => {
     try {
       setLoading(true);
+      console.log("📡 Cargando UserInterests...");
       const res = await getUserInterests();
       const arr = res?.data || [];
 
       const mapped = arr.map((item: any) => ({
         userId: item.userId,
         interestId: item.interestId,
-        userName: item.user?.name,
-        userEmail: item.user?.email,
-        interestName: item.interest?.name,
-        description: item.interest?.description,
+        userName: item.user?.name ?? "Sin nombre",
+        userEmail: item.user?.email ?? "Sin email",
+        interestName: item.interest?.name ?? "Sin interés",
+        description: item.interest?.description ?? "",
         createdAt: item.createdAt,
         updatedAt: item.updatedAt,
       }));
 
       setData(mapped);
     } catch (error) {
+      console.error("❌ Error al cargar UserInterests:", error);
       Swal.fire("Error", "No se pudieron cargar los datos", "error");
     } finally {
       setLoading(false);
@@ -70,36 +79,44 @@ export default function UserInterests({ modoOscuro }: Props) {
     cargarDatos();
   }, []);
 
-  // === Crear ===
+  // ============================
+  // 🔹 Crear nuevo registro
+  // ============================
   const guardarNuevo = async (nuevo: any) => {
     try {
       await createUserInterest(nuevo);
-      setMostrarModal(false);
       Swal.fire("Éxito", "UserInterest creado correctamente", "success");
+      setMostrarModal(false);
       cargarDatos();
-    } catch {
-      Swal.fire("Error", "No se pudo crear", "error");
+    } catch (error) {
+      console.error("❌ Error al crear:", error);
+      Swal.fire("Error", "No se pudo crear el registro", "error");
     }
   };
 
-  // === Editar ===
+  // ============================
+  // 🔹 Editar registro
+  // ============================
   const guardarCambios = async (editado: any) => {
     try {
       await updateUserInterest(editado.userId, editado.interestId, editado);
+      Swal.fire("Éxito", "UserInterest actualizado correctamente", "success");
       setMostrarEditar(false);
       setSeleccionado(null);
-      Swal.fire("Éxito", "UserInterest actualizado", "success");
       cargarDatos();
-    } catch {
-      Swal.fire("Error", "No se pudo actualizar", "error");
+    } catch (error) {
+      console.error("❌ Error al actualizar:", error);
+      Swal.fire("Error", "No se pudo actualizar el registro", "error");
     }
   };
 
-  // === Eliminar ===
+  // ============================
+  // 🔹 Eliminar registro
+  // ============================
   const eliminar = async (userId: number, interestId: number) => {
     Swal.fire({
       title: "¿Eliminar relación?",
-      text: "Esta acción no se puede deshacer",
+      text: "Esta acción no se puede deshacer.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Eliminar",
@@ -111,21 +128,26 @@ export default function UserInterests({ modoOscuro }: Props) {
           await deleteUserInterest(userId, interestId);
           Swal.fire("Éxito", "Eliminado correctamente", "success");
           cargarDatos();
-        } catch {
+        } catch (error) {
+          console.error("❌ Error al eliminar:", error);
           Swal.fire("Error", "No se pudo eliminar", "error");
         }
       }
     });
   };
 
-  // === Filtro ===
+  // ============================
+  // 🔹 Filtro de búsqueda
+  // ============================
   const filtrados = data.filter(
     (d) =>
       d.userName.toLowerCase().includes(buscar.toLowerCase()) ||
       d.interestName.toLowerCase().includes(buscar.toLowerCase())
   );
 
-  // === Estilos ===
+  // ============================
+  // 🔹 Estilos condicionales
+  // ============================
   const bgColor = modoOscuro ? "bg-[#1a0526]" : "bg-white";
   const textColor = modoOscuro ? "text-white" : "text-gray-900";
   const borderColor = modoOscuro ? "border-white/20" : "border-gray-200";
@@ -139,6 +161,9 @@ export default function UserInterests({ modoOscuro }: Props) {
   const secondaryText = modoOscuro ? "text-gray-300" : "text-gray-600";
   const titleColor = modoOscuro ? "text-white" : "text-gray-800";
 
+  // ============================
+  // 🔹 Render
+  // ============================
   return (
     <div className={`rounded-3xl p-10 max-w-9xl mx-auto my-12 ${bgColor} ${textColor}`}>
       {/* Header */}
@@ -148,7 +173,9 @@ export default function UserInterests({ modoOscuro }: Props) {
             Gestión de UserInterests
           </span>
         </h2>
-        <p className={`text-lg ${secondaryText}`}>Relación de Usuarios con Intereses</p>
+        <p className={`text-lg ${secondaryText}`}>
+          Relación de Usuarios con Intereses
+        </p>
       </div>
 
       {/* Buscar + Botón */}
@@ -181,7 +208,9 @@ export default function UserInterests({ modoOscuro }: Props) {
         <div className="space-y-5">
           {filtrados.length === 0 ? (
             <div className={`text-center py-16 rounded-2xl border ${emptyStateBg}`}>
-              <p className={`${secondaryText} text-lg`}>No se encontraron datos</p>
+              <p className={`${secondaryText} text-lg`}>
+                No se encontraron datos
+              </p>
             </div>
           ) : (
             filtrados.map((item) => (
@@ -190,16 +219,30 @@ export default function UserInterests({ modoOscuro }: Props) {
                 className={`p-6 rounded-2xl border shadow-md hover:shadow-xl transition-all duration-300 flex flex-col sm:flex-row justify-between items-center gap-5 transform hover:-translate-y-1 ${cardBg} ${borderColor}`}
               >
                 <div className="flex items-center gap-3 w-full">
-                  <div className={`p-4 rounded-xl transition-colors ${iconBg} text-[#39A900]`}>
+                  <div
+                    className={`p-4 rounded-xl transition-colors ${iconBg} text-[#39A900]`}
+                  >
                     <User size={24} />
                   </div>
                   <div>
-                    <h3 className={`text-xl font-semibold ${modoOscuro ? "text-white hover:text-[#39A900]" : "text-gray-800 hover:text-[#39A900]"}`}>
+                    <h3
+                      className={`text-xl font-semibold ${
+                        modoOscuro
+                          ? "text-white hover:text-[#39A900]"
+                          : "text-gray-800 hover:text-[#39A900]"
+                      }`}
+                    >
                       {item.userName}
                     </h3>
                     <p className={`text-sm ${secondaryText}`}>{item.userEmail}</p>
-                    <p className={`text-sm ${secondaryText} flex items-center gap-1`}>
-                      <Heart size={14} className="text-pink-500" /> {item.interestName} - {item.description}
+                    <p
+                      className={`text-sm ${secondaryText} flex items-center gap-1`}
+                    >
+                      <Heart
+                        size={14}
+                        className="text-pink-500"
+                      />{" "}
+                      {item.interestName} - {item.description}
                     </p>
                     <p className={`text-xs ${secondaryText}`}>
                       Creado: {new Date(item.createdAt).toLocaleString()}
@@ -212,13 +255,21 @@ export default function UserInterests({ modoOscuro }: Props) {
                       setSeleccionado(item);
                       setMostrarEditar(true);
                     }}
-                    className={`p-3 rounded-xl ${modoOscuro ? "bg-blue-900/30 text-blue-400" : "bg-blue-50 text-blue-600"} hover:scale-110 transition`}
+                    className={`p-3 rounded-xl ${
+                      modoOscuro
+                        ? "bg-blue-900/30 text-blue-400"
+                        : "bg-blue-50 text-blue-600"
+                    } hover:scale-110 transition`}
                   >
                     <Edit size={20} />
                   </button>
                   <button
                     onClick={() => eliminar(item.userId, item.interestId)}
-                    className={`p-3 rounded-xl ${modoOscuro ? "bg-red-900/30 text-red-400" : "bg-red-50 text-red-600"} hover:scale-110 transition`}
+                    className={`p-3 rounded-xl ${
+                      modoOscuro
+                        ? "bg-red-900/30 text-red-400"
+                        : "bg-red-50 text-red-600"
+                    } hover:scale-110 transition`}
                   >
                     <Trash2 size={20} />
                   </button>

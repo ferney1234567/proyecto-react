@@ -18,6 +18,8 @@ interface Props {
   setItem: (val: any) => void;
   modoOscuro: boolean;
 }
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 
 export default function ModalEditarCallAdditionalInterest({
   visible,
@@ -34,8 +36,8 @@ export default function ModalEditarCallAdditionalInterest({
     if (visible) {
       const fetchData = async () => {
         try {
-          const resCalls = await fetch("http://localhost:4000/api/v1/calls");
-          const resInterests = await fetch("http://localhost:4000/api/v1/interests");
+          const resCalls = await fetch(`${API_URL}/calls`);
+          const resInterests = await fetch(`${API_URL}/interests`);
           const callsData = await resCalls.json();
           const interestsData = await resInterests.json();
           setCalls(callsData.data || []);

@@ -99,13 +99,38 @@ export default function ConvocatoriaModal({
   };
 
   const handleSave = () => {
-    if (!formData.nombre.trim() || !formData.linea || !formData.entidad) {
-      alert("⚠️ Debes completar: Nombre, Línea e Institución.");
-      return;
-    }
-    onSave(formData);
-    cerrarModal();
+  // Verificación mínima
+  if (!formData.nombre.trim() || !formData.linea || !formData.entidad) {
+    alert("⚠️ Debes completar: Nombre, Línea e Institución.");
+    return;
+  }
+
+  // 🔁 Mapeo de los nombres del frontend a los del backend
+  const dataMapped = {
+    title: formData.nombre,
+    description: formData.descripcion,
+    resources: formData.recursos,
+    callLink: formData.link,
+    openDate: formData.fechaApertura,
+    closeDate: formData.fechaCierre,
+    pageName: formData.nombrePagina,
+    pageUrl: formData.pagina,
+    objective: formData.objetivos,
+    notes: formData.observaciones,
+    institutionId: parseInt(formData.entidad) || null,
+    lineId: parseInt(formData.linea) || null,
+    targetAudienceId: parseInt(formData.publicoObjetivo) || null,
+    interestId: parseInt(formData.interes) || null,
+    userId: parseInt(formData.usuario) || null,
+    imageUrl: formData.imagen || null,
+    clickCount: 0,
   };
+
+  // 🚀 Llamas al método padre con los campos correctos
+  onSave(dataMapped);
+  cerrarModal();
+};
+
 
   // estilos
   const modalBg = modoOscuro ? "bg-[#1a0526] text-white" : "bg-white text-gray-900";

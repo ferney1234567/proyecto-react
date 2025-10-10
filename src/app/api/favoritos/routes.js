@@ -1,9 +1,33 @@
-const API_URL = "http://localhost:4000/api/v1/favorites";
+// src/api/favoritos/routes.js
 
-// === Obtener todos ===
+// ✅ Cargar URL base desde la variable de entorno (.env)
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = `${BASE_URL}/favorites`;
+
+// ======================================================
+// 🧠 Helper global para peticiones con JWT automáticamente
+// ======================================================
+const fetchConToken = async (url, options = {}) => {
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+  const headers = {
+    "Content-Type": "application/json",
+    ...(token && { Authorization: `Bearer ${token}` }), // 🔒 Agrega el token JWT si existe
+    ...options.headers,
+  };
+
+  const res = await fetch(url, { ...options, headers });
+  return res;
+};
+
+// ============================
+// 📍 CRUD de Favoritos
+// ============================
+
+// === Obtener todos los favoritos (pública o autenticada)
 export const getFavoritos = async () => {
   try {
-    const res = await fetch(API_URL, { cache: "no-store" });
+    const res = await fetchConToken(API_URL, { cache: "no-store" });
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) throw new Error(data.message || "Error al obtener favoritos");
@@ -14,25 +38,39 @@ export const getFavoritos = async () => {
   }
 };
 
-// === Crear favorito ===
+// === Crear favorito (requiere token)
 export const createFavorito = async (favorito) => {
-  const res = await fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(favorito),
-  });
+  try {
+    const res = await fetchConToken(API_URL, {
+      method: "POST",
+      body: JSON.stringify(favorito),
+    });
 
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`Error al crear favorito: ${errorText}`);
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Error al crear favorito: ${errorText}`);
+    }
+
+    return res.json();
+  } catch (error) {
+    console.error("❌ Error en createFavorito:", error);
+    throw error;
   }
-
-  return res.json();
 };
 
-// === Eliminar favorito ===
+// === Eliminar favorito (requiere token)
 export const deleteFavorito = async (id) => {
-  const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-  if (!res.ok) throw new Error("Error al eliminar favorito");
-  return res.json();
+  try {
+    const res = await fetchConToken(`${API_URL}/${id}`, { method: "DELETE" });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Error al eliminar favorito: ${errorText}`);
+    }
+
+    return res.json();
+  } catch (error) {
+    console.error("❌ Error en deleteFavorito:", error);
+    throw error;
+  }
 };

@@ -8,12 +8,17 @@ import {
   FaTag,
   FaChevronDown,
 } from "react-icons/fa";
+import { fetchConToken } from "../../api/usuarioInteres/route";
+
 
 interface ModalCrearUserInterestProps {
   onClose: () => void;
   onSave: (nuevo: any) => void;
   modoOscuro: boolean;
 }
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 
 export default function ModalCrearUserInterest({
   onClose,
@@ -29,8 +34,10 @@ export default function ModalCrearUserInterest({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const resUsers = await fetch("http://localhost:4000/api/v1/users");
-        const resInterests = await fetch("http://localhost:4000/api/v1/interests");
+       
+const resUsers = await fetchConToken(`${API_URL}/users`);
+const resInterests = await fetchConToken(`${API_URL}/interests`);
+
         const usersData = await resUsers.json();
         const interestsData = await resInterests.json();
         setUsers(usersData.data || []);

@@ -6,7 +6,8 @@ import {
   FaTags, FaSearchLocation, FaRegBookmark, FaSearch, FaStar, FaRegStar,
   FaCheckCircle, FaCalendarAlt, FaCalendarTimes, FaMobileAlt, FaGraduationCap,
   FaClock, FaRegFileAlt, FaImage, FaInfoCircle, FaCog,
-  FaUserShield
+  FaUserShield,
+  FaBriefcase
 } from 'react-icons/fa';
 import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, MapPin, Moon, RefreshCcw, Sun, View, ZoomIn, ZoomOut } from 'lucide-react';
 import Swal from 'sweetalert2';
@@ -14,13 +15,19 @@ import Swal from 'sweetalert2';
 import ModalConvocatoria from '../../../components/detalleConvo/detalleConvo'; // ajusta si tu ruta real difiere
 import { getConvocatorias } from '../../api/convocatorias/routes';
 import { getFavoritos, createFavorito, deleteFavorito } from "../../api/favoritos/routes";
+import { getUserInterestsByUserId } from "../../api/usuarioInteres/route";
 
 
+import { useFontSize } from '../../../../FontSizeContext';
 // Tema
 import { useTheme } from '../../ThemeContext';
 import { getThemeStyles } from '../../themeStyles';
 import confetti from "canvas-confetti";
 import { useSearchParams } from 'next/navigation';
+import { asignarImagenesPorDefecto } from "@/utils/asignarImagenesPorDefecto";
+import { MdAccessibility } from 'react-icons/md';
+import 'animate.css';
+
 
 // Tipado base
 interface Convocatoria {
@@ -61,7 +68,9 @@ type Favorito = {
   call?: any;
 };
 
-// Helpers de normalización (evita campos undefined)
+// ============================
+// 🔹 Helpers
+// ============================
 const getUserId = (u: Usuario) => {
   if (!u) return null;
   const raw = (u as any).id ?? (u as any).uId ?? (u as any).uid ?? (u as any).userId;
@@ -86,42 +95,124 @@ const normalizeFav = (f: any): Favorito | null => {
 };
 
 export default function ExplorarPage() {
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+
   // === Estados ===
   const [categorias, setCategorias] = useState<{ id: number; name: string; description: string }[]>([]);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<number | ''>('');
+
+  // 🔹 Públicos objetivo
+  const [publicosObjetivo, setPublicosObjetivo] = useState<{ id: number; name: string }[]>([]);
+  const [publicoObjetivoSeleccionado, setPublicoObjetivoSeleccionado] = useState<number | ''>('');
+
 
   const [convocatorias, setConvocatorias] = useState<Convocatoria[]>([]);
   const [paginaActual, setPaginaActual] = useState(1);
   const convocatoriasPorPagina = 12;
 
-   const searchParams = useSearchParams();
+  const [interesesUsuario, setInteresesUsuario] = useState<{ id: number; name: string }[]>([]);
+  const [interesSeleccionado, setInteresSeleccionado] = useState<number | ''>('');
+
+
+  // 🔹 Estados para filtrar por rango de fechas
+  const [fechaInicio, setFechaInicio] = useState<string>('');
+  const [fechaFin, setFechaFin] = useState<string>('');
+
+  const searchParams = useSearchParams();
   const search = searchParams.get("search")?.toLowerCase() || "";
 
+
+  const [fechaSeleccionada, setFechaSeleccionada] = useState("");
   const convocatoriasFiltradas = useMemo(() => {
     let filtradas = convocatorias;
 
+    // 🔹 Filtro por categoría
     if (categoriaSeleccionada) {
       filtradas = filtradas.filter((c) => c.lineId === categoriaSeleccionada);
     }
 
+    // 🔹 Filtro por interés
+    if (interesSeleccionado) {
+      filtradas = filtradas.filter((c) => c.interestId === interesSeleccionado);
+    }
+
+    // 🔹 Filtro por público objetivo
+    if (publicoObjetivoSeleccionado) {
+      filtradas = filtradas.filter((c) => c.targetAudienceId === publicoObjetivoSeleccionado);
+    }
+
+    // 🔹 Filtro por búsqueda
     if (search) {
-      filtradas = filtradas.filter((c) =>
-        c.title.toLowerCase().includes(search) ||
-        c.description.toLowerCase().includes(search)
+      filtradas = filtradas.filter(
+        (c) =>
+          c.title.toLowerCase().includes(search) ||
+          c.description.toLowerCase().includes(search)
       );
     }
 
+    // 🔹 Filtro por rango de fechas
+    if (fechaInicio || fechaFin) {
+      filtradas = filtradas.filter((c) => {
+        const open = new Date(c.openDate);
+        const start = fechaInicio ? new Date(fechaInicio) : null;
+        const end = fechaFin ? new Date(fechaFin) : null;
+
+        if (start && open < start) return false;
+        if (end && open > end) return false;
+        return true;
+      });
+    }
+
+    // 🔹 Filtro por tipo de fecha
+    if (fechaSeleccionada) {
+      const hoy = new Date();
+      filtradas = filtradas.filter((c) => {
+        const apertura = new Date(c.openDate);
+        const cierre = new Date(c.closeDate);
+        if (fechaSeleccionada === "recientes") {
+          const hace15Dias = new Date(hoy);
+          hace15Dias.setDate(hoy.getDate() - 15);
+          return apertura >= hace15Dias && apertura <= hoy;
+        }
+        if (fechaSeleccionada === "vencer") {
+          const en7Dias = new Date(hoy);
+          en7Dias.setDate(hoy.getDate() + 7);
+          return cierre >= hoy && cierre <= en7Dias;
+        }
+        if (fechaSeleccionada === "proximas") {
+          return apertura > hoy;
+        }
+        if (fechaSeleccionada === "finalizadas") {
+          return cierre < hoy;
+        }
+        return true;
+      });
+    }
+
     return filtradas;
-  }, [convocatorias, categoriaSeleccionada, search]);
+  }, [
+    convocatorias,
+    categoriaSeleccionada,
+    interesSeleccionado,
+    publicoObjetivoSeleccionado,
+    search,
+    fechaInicio,
+    fechaFin,
+    fechaSeleccionada,
+  ]);
+
+
+
+
 
   const [mostrarZoom, setMostrarZoom] = useState(false);
-  const [fontSize, setFontSize] = useState(16);
 
   const toggleZoomMenu = () => setMostrarZoom(!mostrarZoom);
+  // ✅ Usamos el contexto global (no definas useState aquí)
+  const { fontSize, aumentarTexto, disminuirTexto, resetTexto } = useFontSize();
 
-  const aumentarTexto = () => setFontSize((prev) => prev + 2);
-  const disminuirTexto = () => setFontSize((prev) => Math.max(10, prev - 2));
-  const resetTexto = () => setFontSize(16);
   // Datos
   // Estados UI
   const [vista, setVista] = useState<'Tarjeta' | 'Lista' | 'Tabla' | 'Mosaico'>('Tarjeta');
@@ -153,6 +244,10 @@ export default function ExplorarPage() {
   const [usuario, setUsuario] = useState<{ name: string } | null>(null);
 
 
+
+
+
+
   // 👉 Al cargar la página obtenemos el usuario del localStorage
   useEffect(() => {
     const usuarioGuardado = localStorage.getItem("usuario");
@@ -169,6 +264,35 @@ export default function ExplorarPage() {
     }
   }, []);
 
+  // 👉 Cargar intereses del usuario logueado
+  useEffect(() => {
+    const uid = getUserId(usuario);
+    if (!uid) return;
+
+    (async () => {
+      try {
+        const data = await getUserInterestsByUserId(uid);
+        setInteresesUsuario(data);
+      } catch (err) {
+        console.error("❌ Error cargando intereses del usuario:", err);
+      }
+    })();
+  }, [usuario]);
+
+
+  // === Cargar públicos objetivo desde la API ===
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${API_URL}/targetAudiences`);
+        const json = await res.json();
+        setPublicosObjetivo(json.data || []);
+      } catch (err) {
+        console.error('Error cargando públicos objetivo:', err);
+      }
+    })();
+  }, [API_URL]);
+
 
   // 👉 Función para obtener inicial
   const obtenerInicial = (nombre: string) => nombre.charAt(0).toUpperCase();
@@ -178,26 +302,30 @@ export default function ExplorarPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch('http://localhost:4000/api/v1/lines');
+        const res = await fetch(`${API_URL}/lines`);
         const json = await res.json();
         setCategorias(json.data || []);
       } catch (err) {
         console.error('Error cargando categorías:', err);
       }
     })();
-  }, []);
+  }, [API_URL]);
 
   // === Cargar convocatorias desde la API ===
   useEffect(() => {
     (async () => {
       try {
         const data = await getConvocatorias();
-        setConvocatorias(data?.data || []);
-      } catch (e) {
-        console.error('Error al cargar convocatorias', e);
+        // ✅ Aplica la función global que ya evita repeticiones
+        const listaConImagenes = asignarImagenesPorDefecto(data?.data || []);
+        setConvocatorias(listaConImagenes);
+      } catch (err) {
+        console.error("❌ Error al cargar convocatorias:", err);
+        Swal.fire("Error", "No se pudieron cargar las convocatorias.", "error");
       }
     })();
   }, []);
+
 
 
 
@@ -205,12 +333,15 @@ export default function ExplorarPage() {
   const [favoritos, setFavoritos] = useState<Favorito[]>([]);
 
   // Cargar favoritos del usuario logueado
+  // ============================
+  // 🔹 Favoritos con JWT
+  // ============================
   useEffect(() => {
     const uid = getUserId(usuario);
     if (!uid) return;
     (async () => {
       try {
-        const data = await getFavoritos();
+        const data = await getFavoritos(); // ← este ya usa token internamente
         const lista = (data?.data ?? data) as any[];
         const normalizados = Array.isArray(lista)
           ? lista.map(normalizeFav).filter(Boolean) as Favorito[]
@@ -234,11 +365,18 @@ export default function ExplorarPage() {
   const cid = getConvocatoriaCallId(convocatoria);
 
   if (!uid) {
-    Swal.fire("⚠️ Atención", "Debes iniciar sesión para guardar favoritos", "warning");
+    Swal.fire({
+      title: "⚠️ Atención",
+      text: "Debes iniciar sesión para guardar favoritos",
+      icon: "warning",
+      background: modoOscuro ? "#1a0526" : "#fff",
+      color: modoOscuro ? "#fff" : "#333",
+      confirmButtonColor: modoOscuro ? "#39A900" : "#2d8500",
+    });
     return;
   }
+
   if (!cid) {
-    console.error("No se pudo determinar el callId de la convocatoria", convocatoria);
     Swal.fire("Error", "No se pudo identificar la convocatoria (callId).", "error");
     return;
   }
@@ -246,42 +384,106 @@ export default function ExplorarPage() {
   try {
     const favoritoExistente = favoritos.find((f) => Number(f.callId) === Number(cid));
 
+    // === 🗑️ Eliminar favorito ===
     if (favoritoExistente?.id) {
-      // Eliminar
       await deleteFavorito(favoritoExistente.id);
       setFavoritos((prev) => prev.filter((f) => Number(f.callId) !== Number(cid)));
 
       Swal.fire({
-        title: "Eliminado",
-        text: "Este elemento fue eliminado de tus favoritos.",
-        icon: "info",
-        confirmButtonText: "OK",
+        title: "Eliminado de favoritos",
+        html: `
+          <div style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+            <div style="
+              font-size:60px;
+              color:#e63946;
+              margin-bottom:10px;
+              animation: pulse 1s ease-in-out infinite alternate;
+            ">🗑️</div>
+            <p style="font-size:17px;">Este elemento fue eliminado correctamente.</p>
+            <button id="ok-btn" style="
+              margin-top:12px;
+              background-color:#e63946;
+              color:#fff;
+              border:none;
+              border-radius:10px;
+              padding:8px 18px;
+              font-weight:bold;
+              cursor:pointer;
+            ">OK</button>
+          </div>
+          <style>
+            @keyframes pulse {
+              0% { transform: scale(1); opacity:0.9; }
+              100% { transform: scale(1.1); opacity:1; }
+            }
+          </style>
+        `,
+        background: modoOscuro ? "#1a0526" : "#fff",
+        color: modoOscuro ? "#fff" : "#333",
+        showConfirmButton: false,
+        width: 400,
+        padding: "1.6em",
+        didOpen: () => {
+          const okBtn = document.getElementById("ok-btn");
+          if (okBtn) okBtn.addEventListener("click", () => Swal.close());
+        },
       });
+    }
 
-    } else {
-      // Crear
+    // === ⭐ Agregar favorito ===
+    else {
       const payload = { userId: uid, callId: cid };
       const nuevoFav = await createFavorito(payload);
-      const creadoRaw = (nuevoFav?.data ?? nuevoFav);
-      const creado = normalizeFav(creadoRaw) ?? { userId: uid, callId: cid, id: creadoRaw?.id };
+      const creadoRaw = nuevoFav?.data ?? nuevoFav;
+      const creado =
+        normalizeFav(creadoRaw) ?? { userId: uid, callId: cid, id: creadoRaw?.id };
 
       setFavoritos((prev) => [...prev, creado]);
 
+      // ✨ SweetAlert estilizado con estrella
       Swal.fire({
-        title: "Agregado",
-        text: "Este elemento fue agregado a tus favoritos.",
-        icon: "success",
-        confirmButtonText: "OK",
+        title: "¡Agregado a Favoritos!",
+        html: `
+          <div style="display:flex; justify-content:center; align-items:center; flex-direction:column;">
+            <div style="
+              font-size:50px;
+              color:${modoOscuro ? '#FFD700' : '#ffcc00'};
+              animation: glow 1.4s ease-in-out infinite alternate;
+              margin-bottom:6px;
+            ">⭐</div>
+            <p style="font-size:16px;">Esta convocatoria ha sido destacada.</p>
+            <button id="ok-btn-add" style="
+              margin-top:12px;
+              background-color:${modoOscuro ? '#39A900' : '#2d8500'};
+              color:#fff;
+              border:none;
+              border-radius:10px;
+              padding:8px 18px;
+              font-weight:bold;
+              cursor:pointer;
+            ">OK</button>
+          </div>
+          <style>
+            @keyframes glow {
+              0% { text-shadow: 0 0 8px ${modoOscuro ? '#FFD700' : '#ffcc00'}; transform: scale(1); }
+              100% { text-shadow: 0 0 20px ${modoOscuro ? '#FFF176' : '#FFEB3B'}; transform: scale(1.15); }
+            }
+          </style>
+        `,
+        background: modoOscuro ? "#1a0526" : "#fff",
+        color: modoOscuro ? "#fff" : "#333",
+        showConfirmButton: false,
+        width: 400,
+        padding: "1.6em",
+        didOpen: () => {
+          const okBtn = document.getElementById("ok-btn-add");
+          if (okBtn) okBtn.addEventListener("click", () => Swal.close());
+        },
       });
     }
   } catch (err: any) {
     console.error("❌ Error al actualizar favoritos:", err);
-    const msg = String(err?.message ?? "");
-    if (msg.includes("Faltan campos obligatorios")) {
-      Swal.fire("Error", "Faltan userId o callId en la petición. Revisa el usuario en localStorage y la convocatoria.", "error");
-    } else {
-      Swal.fire("Error", "No se pudo actualizar favoritos", "error");
-    }
+    Swal.fire("Error", "No se pudo actualizar tus favoritos.", "error");
   }
 };
 
@@ -328,16 +530,16 @@ export default function ExplorarPage() {
                   <FaRegBookmark className="text-sm" />
                   <span>Favoritos</span>
                 </Link>
-                 {/* 👇 Botón solo para administradores */}
-  {typeof window !== "undefined" &&
-    (localStorage.getItem("rol") === "admin" ||
-      localStorage.getItem("rol") === "administrador" ||
-      localStorage.getItem("rol") === "2") && (
-      <Link href="/admin/menuadmin" className={`flex items-center space-x-1 ${styles.nav}`}>
-        <FaUserShield className="text-sm" />
-        <span>Admin</span>
-      </Link>
-    )}
+                {/* 👇 Botón solo para administradores */}
+                {typeof window !== "undefined" &&
+                  (localStorage.getItem("rol") === "admin" ||
+                    localStorage.getItem("rol") === "administrador" ||
+                    localStorage.getItem("rol") === "2") && (
+                    <Link href="/admin/menuadmin" className={`flex items-center space-x-1 ${styles.nav}`}>
+                      <FaUserShield className="text-sm" />
+                      <span>Admin</span>
+                    </Link>
+                  )}
 
                 {/* Avatar dinámico */}
                 <Link href="/usuario/perfilUser">
@@ -355,8 +557,8 @@ export default function ExplorarPage() {
                 <button
                   onClick={toggleModoOscuro}
                   className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
-                      ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
-                      : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
+                    ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
+                    : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
                     }`}
                   title="Cambiar modo"
                 >
@@ -367,12 +569,12 @@ export default function ExplorarPage() {
                 <button
                   onClick={toggleZoomMenu}
                   className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
-                      ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
-                      : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
+                    ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
+                    : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
                     }`}
                   title="Opciones de texto"
                 >
-                  <ZoomIn className="h-6 w-6" />
+                  <MdAccessibility className="h-6 w-6" />
                 </button>
 
 
@@ -383,8 +585,8 @@ export default function ExplorarPage() {
                     <button
                       onClick={aumentarTexto}
                       className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
-                          ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
-                          : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
+                        ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
+                        : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
                         }`}
                       title="Aumentar texto"
                     >
@@ -395,8 +597,8 @@ export default function ExplorarPage() {
                     <button
                       onClick={resetTexto}
                       className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
-                          ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
-                          : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
+                        ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
+                        : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
                         }`}
                       title="Restablecer tamaño"
                     >
@@ -407,8 +609,8 @@ export default function ExplorarPage() {
                     <button
                       onClick={disminuirTexto}
                       className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
-                          ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
-                          : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
+                        ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
+                        : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
                         }`}
                       title="Disminuir texto"
                     >
@@ -424,13 +626,17 @@ export default function ExplorarPage() {
        {/* FILTROS */}
 <section
   className={`rounded-2xl p-4 mb-6 border transition-colors duration-500 ${
-    modoOscuro ? "bg-[#121a2b] border-white/10" : "bg-white/80 border-gray-200/80"
+    modoOscuro
+      ? "bg-[#121a2b] border-white/10"
+      : "bg-white/80 border-gray-200/80"
   }`}
-  style={{ fontSize: `${fontSize}px` }} // 🔹 Escala global
+  style={{ fontSize: `${fontSize}px` }}
 >
   <div className="flex flex-wrap gap-x-6 gap-y-5 items-end">
-    <div className="flex-grow grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5">
-      {/* Categoría */}
+    {/* 🔹 Grid con 5 columnas en pantallas grandes */}
+    <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+      
+      {/* 🟢 Categoría */}
       <div className="flex flex-col">
         <label
           className={`flex items-center font-medium mb-2 gap-2 ${styles.textMuted}`}
@@ -440,7 +646,9 @@ export default function ExplorarPage() {
         </label>
         <select
           value={categoriaSeleccionada}
-          onChange={(e) => setCategoriaSeleccionada(Number(e.target.value) || "")}
+          onChange={(e) =>
+            setCategoriaSeleccionada(Number(e.target.value) || "")
+          }
           className={`w-full appearance-none rounded-xl cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md ${styles.input}`}
           style={{ fontSize: "0.95em", padding: "0.8em 1em" }}
         >
@@ -453,46 +661,79 @@ export default function ExplorarPage() {
         </select>
       </div>
 
-      {/* Ubicación */}
+      {/* 🟢 Intereses */}
       <div className="flex flex-col">
         <label
           className={`flex items-center font-medium mb-2 gap-2 ${styles.textMuted}`}
           style={{ fontSize: "0.9em" }}
         >
-          <MapPin style={{ fontSize: "1.1em" }} /> Ubicación
+          <FaTags style={{ fontSize: "1.1em" }} /> Intereses Usuario
         </label>
         <select
+          value={interesSeleccionado}
+          onChange={(e) =>
+            setInteresSeleccionado(Number(e.target.value) || "")
+          }
           className={`w-full appearance-none rounded-xl cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md ${styles.input}`}
           style={{ fontSize: "0.95em", padding: "0.8em 1em" }}
         >
-          <option>Todo el país</option>
-          <option>Bogotá</option>
-          <option>Medellín</option>
-          <option>Cali</option>
-          <option>Barranquilla</option>
+          <option value="">Todos los intereses</option>
+          {interesesUsuario.map((interes) => (
+            <option key={interes.id} value={interes.id}>
+              {interes.name}
+            </option>
+          ))}
         </select>
       </div>
 
-      {/* Fecha */}
+      {/* 🟢 Público Objetivo */}
       <div className="flex flex-col">
         <label
           className={`flex items-center font-medium mb-2 gap-2 ${styles.textMuted}`}
           style={{ fontSize: "0.9em" }}
         >
-          <Calendar style={{ fontSize: "1.1em" }} /> Fecha de inicio
+          <FaBriefcase style={{ fontSize: "1.1em" }} /> Público Objetivo
         </label>
         <select
+          value={publicoObjetivoSeleccionado}
+          onChange={(e) =>
+            setPublicoObjetivoSeleccionado(Number(e.target.value) || "")
+          }
           className={`w-full appearance-none rounded-xl cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md ${styles.input}`}
           style={{ fontSize: "0.95em", padding: "0.8em 1em" }}
         >
-          <option>Cualquier fecha</option>
-          <option>Julio 2025</option>
-          <option>Agosto 2025</option>
-          <option>Septiembre 2025</option>
+          <option value="">Todos los públicos</option>
+          {publicosObjetivo.map((pub) => (
+            <option key={pub.id} value={pub.id}>
+              {pub.name}
+            </option>
+          ))}
         </select>
       </div>
 
-      {/* Visualización */}
+      {/* 🟢 Fecha */}
+      <div className="flex flex-col">
+        <label
+          className={`flex items-center font-medium mb-2 gap-2 ${styles.textMuted}`}
+          style={{ fontSize: "0.9em" }}
+        >
+          <Calendar style={{ fontSize: "1.1em" }} /> Filtrar por fecha
+        </label>
+        <select
+          value={fechaSeleccionada}
+          onChange={(e) => setFechaSeleccionada(e.target.value)}
+          className={`w-full appearance-none rounded-xl cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md ${styles.input}`}
+          style={{ fontSize: "0.95em", padding: "0.8em 1em" }}
+        >
+          <option value="">Cualquier fecha</option>
+          <option value="recientes">Recientes (últimos 15 días)</option>
+          <option value="vencer">Próximas a vencer (menos de 7 días)</option>
+          <option value="proximas">Próximas convocatorias</option>
+          <option value="finalizadas">Finalizadas</option>
+        </select>
+      </div>
+
+      {/* 🟢 Visualización */}
       <div className="flex flex-col">
         <label
           className={`flex items-center font-medium mb-2 gap-2 ${styles.textMuted}`}
@@ -512,790 +753,952 @@ export default function ExplorarPage() {
           <option value="Mosaico">Mosaico</option>
         </select>
       </div>
+
     </div>
   </div>
 </section>
 
-       {/* VISTA TARJETA */}
-{vista === "Tarjeta" && (
-  <div
-    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-0 mb-8"
-    style={{ fontSize: `${fontSize}px` }} // 🔹 Escala global
-  >
-    {convocatoriasPagina.map((c, i) => {
-      const key = `card-${indiceInicio + i}`;
-      const isExpanded = expandedKey === key;
-      return (
-        <div
-          key={c.id ?? key}
-          className={`rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all hover:-translate-y-2 flex flex-col ${styles.card}`}
-        >
-          {/* Imagen escalable */}
+
+        {/* 🔹 VISTA TARJETA (alineada y con Apertura/Cierre) */}
+        {vista === "Tarjeta" && (
           <div
-            className="overflow-hidden"
-            style={{
-              height: "13em",     // Escala relativa al texto
-              maxHeight: "20em",  // Límite superior
-            }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-0 mb-8"
+            style={{ fontSize: `${fontSize}px` }}
           >
-            <img
-              onClick={() => {
-                setConvocatoriaSeleccionada(c);
-                setModalAbierto(true);
-              }}
-              src={c.imageUrl || "/img/default.jpg"}
-              alt={c.title}
-              className="w-full h-full object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
-            />
-          </div>
-
-          {/* Contenido */}
-          <div className="p-5 flex flex-col justify-between flex-grow">
-            <div>
-              {/* 🔹 Título */}
-              <h4
-                className={`font-bold mb-3 flex items-center gap-2 ${
-                  modoOscuro ? "text-white" : "text-[#00324D]"
-                }`}
-                style={{ fontSize: "1.2em" }}
-              >
-                <FaMobileAlt
-                  className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                  style={{ fontSize: "1em" }}
-                />
-                {c.title}
-              </h4>
-
-              {/* 🔹 Descripción */}
-              <div className={`mb-2 flex items-start gap-3 ${styles.textMuted}`}>
-                <FaGraduationCap
-                  className={`flex-shrink-0 ${modoOscuro ? "text-white" : "text-[#00324D]"}`}
-                  style={{ fontSize: "1.1em" }}
-                />
-                <span className="relative" style={{ fontSize: "0.95em" }}>
-                  {isExpanded ? (
-                    <>
-                      {c.description}
-                      <button
-                        onClick={() => setExpandedKey(null)}
-                        className={`ml-2 font-bold hover:scale-110 transition-transform ${
-                          modoOscuro ? "text-white" : "text-[#00324D]"
-                        }`}
-                        style={{ fontSize: "0.9em" }}
-                        title="Ver menos"
-                      >
-                        ▲
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <span className="line-clamp-3">{c.description}</span>
-                      {c.description?.length > 100 && (
-                        <button
-                          onClick={() => setExpandedKey(key)}
-                          className="absolute bottom-0 right-0 bg-gradient-to-l dark:from-[#1a0526] px-1"
-                          style={{ fontSize: "1em" }}
-                          title="Mostrar más"
-                        >
-                          ...
-                        </button>
-                      )}
-                    </>
-                  )}
-                </span>
-              </div>
-
-              {/* 🔹 Fechas */}
-              <div
-                className={`flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4 ${styles.textMuted}`}
-                style={{ fontSize: "0.9em" }}
-              >
-                <span className="flex items-center gap-1.5">
-                  <FaCalendarAlt
-                    className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                    style={{ fontSize: "1em" }}
-                  />
-                  <strong>Apertura:</strong>{" "}
-                  {c.openDate ? new Date(c.openDate).toLocaleDateString() : "—"}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <FaCalendarTimes
-                    className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                    style={{ fontSize: "1em" }}
-                  />
-                  <strong>Cierre:</strong>{" "}
-                  {c.closeDate ? new Date(c.closeDate).toLocaleDateString() : "—"}
-                </span>
-              </div>
-            </div>
-
-            {/* Botones */}
-            <div
-              className={`pt-4 mt-auto flex items-center gap-2 border-t ${styles.divider}`}
-              style={{ fontSize: "0.9em" }}
-            >
-              <button
-                onClick={() => {
-                  setConvocatoriaSeleccionada(c);
-                  setModalAbierto(true);
-                }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold ${styles.primaryButton}`}
-              >
-                <FaRegFileAlt /> Detalles
-              </button>
-              <button
-                className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold ${styles.successButton}`}
-              >
-                <FaCheckCircle /> Inscribirse
-              </button>
-              <button
-                onClick={() => handleFavorito(c)}
-                className="group ml-auto relative p-2 rounded-md hover:bg-white/5 transition-colors"
-                title="Marcar como favorita"
-              >
-                {isFavByConv(c) ? (
-                  <FaStar
-                    className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125"
-                    style={{ fontSize: "1.5em" }}
-                  />
-                ) : (
-                  <FaRegStar
-                    className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${
-                      modoOscuro ? "text-yellow-400" : "text-yellow-500"
-                    }`}
-                    style={{
-                      stroke: "#FFD700",
-                      strokeWidth: "20",
-                      fill: "transparent",
-                      fontSize: "1.5em",
-                    }}
-                  />
-                )}
-
-                {/* 🌟 Estrellitas */}
-                <span
-                  className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
-                  style={{ fontSize: "0.7em" }}
-                >
-                  ✦
-                </span>
-                <span
-                  className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
-                  style={{ fontSize: "0.6em" }}
-                >
-                  ✧
-                </span>
-                <span
-                  className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
-                  style={{ fontSize: "0.7em" }}
-                >
-                  ✨
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    })}
-  </div>
-)}
-
-
-      {/* VISTA LISTA */}
-{vista === "Lista" && (
-  <div className="w-full" style={{ fontSize: `${fontSize}px` }}> {/* 🔹 Escala global */}
-    <div className="flex flex-col gap-6">
-      {convocatoriasPagina.map((c, i) => {
-        const key = `list-${indiceInicio + i}`;
-        const isExpanded = expandedKey === key;
-        return (
-          <div
-            key={c.id ?? key}
-            className={`relative flex flex-col md:flex-row rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all hover:-translate-y-2 ${styles.card}`}
-          >
-            {/* Imagen escalable */}
-            <div
-              className="w-full md:w-[400px] flex-shrink-0 overflow-hidden"
-              style={{
-                height: "16em",     // Escala proporcional al texto
-                maxHeight: "22em",  // Límite superior
-              }}
-            >
-              <img
-                onClick={() => {
-                  setConvocatoriaSeleccionada(c);
-                  setModalAbierto(true);
-                }}
-                src={c.imageUrl || "/img/default.jpg"}
-                alt={c.title}
-                className="w-full h-full object-cover cursor-pointer transition-transform duration-300 hover:scale-110"
-              />
-            </div>
-
-            {/* Contenido */}
-            <div className="flex flex-col flex-grow p-6">
-              <div className="flex-grow">
-                {/* 🔹 Título */}
-                <h4
-                  className={`font-bold flex items-center gap-3 ${
-                    modoOscuro ? "text-white" : "text-[#00324D]"
-                  }`}
-                  style={{ fontSize: "1.3em" }}
-                >
-                  <FaMobileAlt
-                    className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                    style={{ fontSize: "1em" }}
-                  />
-                  {c.title}
-                </h4>
-
-                <div className="my-4 border-t border-gray-300/60 dark:border-white/20" />
-
-                {/* 🔹 Descripción */}
-                <div className={`flex items-start gap-3 ${styles.textMuted}`}>
-                  <FaGraduationCap
-                    className={`flex-shrink-0 mt-0.5 ${modoOscuro ? "text-white" : "text-[#00324D]"}`}
-                    style={{ fontSize: "1.1em" }}
-                  />
-                  <span className="relative" style={{ fontSize: "0.95em" }}>
-                    {isExpanded ? (
-                      <>
-                        {c.description}
-                        <button
-                          onClick={() => setExpandedKey(null)}
-                          className={`ml-2 font-bold hover:scale-110 transition-transform ${
-                            modoOscuro ? "text-white" : "text-[#00324D]"
-                          }`}
-                          style={{ fontSize: "0.9em" }}
-                          title="Ver menos"
-                        >
-                          ▲
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <span className="line-clamp-3">{c.description}</span>
-                        {c.description?.length > 120 && (
-                          <button
-                            onClick={() => setExpandedKey(key)}
-                            className="absolute bottom-0 right-0 bg-gradient-to-l dark:from-[#1a0526] px-1"
-                            style={{ fontSize: "1em" }}
-                            title="Mostrar más"
-                          >
-                            ...
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </span>
-                </div>
-
-                {/* 🔹 Fechas */}
-                <div
-                  className={`flex flex-wrap gap-x-6 gap-y-2 ${styles.textMuted}`}
-                  style={{ fontSize: "0.9em" }}
-                >
-                  <span className="flex items-center gap-2">
-                    <FaCalendarAlt
-                      className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                      style={{ fontSize: "1em" }}
-                    />
-                    <strong>Apertura:</strong>{" "}
-                    {c.openDate ? new Date(c.openDate).toLocaleDateString() : "—"}
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <FaCalendarTimes
-                      className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                      style={{ fontSize: "1em" }}
-                    />
-                    <strong>Cierre:</strong>{" "}
-                    {c.closeDate ? new Date(c.closeDate).toLocaleDateString() : "—"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Botones */}
-              <div
-                className={`flex flex-wrap items-center gap-3 pt-4 mt-auto border-t ${styles.divider}`}
-                style={{ fontSize: "0.9em" }}
-              >
-                <button
-                  onClick={() => {
-                    setConvocatoriaSeleccionada(c);
-                    setModalAbierto(true);
-                  }}
-                  className={`flex items-center gap-2 px-5 py-2 rounded-md font-semibold ${styles.primaryButton}`}
-                >
-                  <FaRegFileAlt /> Detalles
-                </button>
-                <button
-                  className={`flex items-center gap-2 px-5 py-2 rounded-md font-semibold ${styles.successButton}`}
-                >
-                  <FaCheckCircle /> Inscribirse
-                </button>
-                <button
-                  onClick={() => handleFavorito(c)}
-                  className="group ml-auto relative p-2 rounded-md hover:bg-white/5 transition-colors"
-                  title="Marcar como favorita"
-                >
-                  {isFavByConv(c) ? (
-                    <FaStar
-                      className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125"
-                      style={{ fontSize: "1.5em" }}
-                    />
-                  ) : (
-                    <FaRegStar
-                      className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${
-                        modoOscuro ? "text-yellow-400" : "text-yellow-500"
-                      }`}
-                      style={{
-                        stroke: "#FFD700",
-                        strokeWidth: "20",
-                        fill: "transparent",
-                        fontSize: "1.5em",
-                      }}
-                    />
-                  )}
-
-                  {/* 🌟 Estrellitas */}
-                  <span
-                    className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
-                    style={{ fontSize: "0.7em" }}
-                  >
-                    ✦
-                  </span>
-                  <span
-                    className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
-                    style={{ fontSize: "0.6em" }}
-                  >
-                    ✧
-                  </span>
-                  <span
-                    className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
-                    style={{ fontSize: "0.7em" }}
-                  >
-                    ✨
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  </div>
-)}
-
-      {/* VISTA TABLA */}
-{vista === "Tabla" && (
-  <div
-    className={`rounded-2xl shadow-lg mt-6 overflow-x-auto border ${styles.divider}`}
-    style={{ fontSize: `${fontSize}px` }} // 🔹 Escala global
-  >
-    <table className="w-full text-left border-collapse min-w-[1200px]">
-      {/* 🔹 Encabezado */}
-      <thead
-        className={`${modoOscuro ? "bg-[#0e1626]" : "bg-[#00324D]"} text-white`}
-      >
-        <tr>
-          <th className="px-6 py-4 font-medium uppercase tracking-wider border w-[280px]" style={{ fontSize: "0.9em" }}>
-            <span className="flex items-center gap-2">
-              <FaImage /> Convocatoria
-            </span>
-          </th>
-          <th className="px-6 py-4 font-medium uppercase tracking-wider border w-[400px]" style={{ fontSize: "0.9em" }}>
-            <span className="flex items-center gap-2">
-              <FaInfoCircle /> Descripción
-            </span>
-          </th>
-          <th className="px-6 py-4 font-medium uppercase tracking-wider border text-center w-[150px]" style={{ fontSize: "0.9em" }}>
-            <span className="flex items-center justify-center gap-2">
-              <FaCalendarAlt /> Apertura
-            </span>
-          </th>
-          <th className="px-6 py-4 font-medium uppercase tracking-wider border text-center w-[150px]" style={{ fontSize: "0.9em" }}>
-            <span className="flex items-center justify-center gap-2">
-              <FaCalendarTimes /> Cierre
-            </span>
-          </th>
-          <th className="px-6 py-4 font-medium uppercase tracking-wider border text-center w-[220px]" style={{ fontSize: "0.9em" }}>
-            <span className="flex items-center justify-center gap-2">
-              <FaCog /> Acciones
-            </span>
-          </th>
-        </tr>
-      </thead>
-
-      {/* 🔹 Cuerpo */}
-      <tbody className={`${styles.textMuted}`}>
-        {convocatoriasPagina.map((c, i) => {
-          const key = `table-${i}`;
-          const isExpanded = expandedKey === key;
-
-          return (
-            <tr
-              key={c.id ?? key}
-              className={`${modoOscuro ? "hover:bg-white/5" : "hover:bg-gray-50"} transition-colors`}
-            >
-              {/* Convocatoria + título */}
-              <td className="px-6 py-4 align-middle border">
-                <div className="flex items-center gap-4">
+            {convocatoriasPagina
+              // ✅ Filtro por interés seleccionado
+              .filter((c) => {
+                if (!interesSeleccionado) return true;
+                return c.interestId === interesSeleccionado;
+              })
+              .map((c, i) => {
+                const key = `card-${indiceInicio + i}`;
+                const isExpanded = expandedKey === key;
+                return (
                   <div
-                    className="rounded-md overflow-hidden flex-shrink-0"
-                    style={{
-                      width: "8.5em",
-                      height: "5.5em",
-                    }}
+                    key={c.id ?? key}
+                    className={`rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all hover:-translate-y-2 flex flex-col ${styles.card}`}
                   >
-                    <img
-                      onClick={() => {
-                        setConvocatoriaSeleccionada(c);
-                        setModalAbierto(true);
+                    {/* Imagen escalable */}
+                    <div
+                      className="overflow-hidden"
+                      style={{
+                        height: "13em",
+                        maxHeight: "20em",
                       }}
-                      src={c.imageUrl || "/img/default.jpg"}
-                      alt={c.title}
-                      className="w-full h-full object-cover cursor-pointer transition-transform duration-300 hover:scale-110"
-                    />
-                  </div>
-                  <span
-                    className={`font-semibold ${modoOscuro ? "text-white" : "text-[#00324D]"}`}
-                    style={{ fontSize: "1em" }}
-                  >
-                    {c.title}
-                  </span>
-                </div>
-              </td>
-
-              {/* Descripción */}
-              <td className="px-6 py-4 align-middle border">
-                <div className="relative" style={{ fontSize: "0.95em" }}>
-                  {isExpanded ? (
-                    <>
-                      {c.description}
-                      <button
-                        onClick={() => setExpandedKey(null)}
-                        className={`ml-2 font-bold hover:scale-110 transition-transform ${modoOscuro ? "text-white" : "text-[#00324D]"}`}
-                        style={{ fontSize: "0.85em" }}
-                        title="Ver menos"
-                      >
-                        ▲
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <span className="line-clamp-3">{c.description}</span>
-                      {c.description?.length > 120 && (
-                        <button
-                          onClick={() => setExpandedKey(key)}
-                          className="absolute bottom-0 right-0 bg-gradient-to-l dark:from-[#0e1626] px-1"
-                          style={{ fontSize: "0.85em" }}
-                          title="Mostrar más"
-                        >
-                          ...
-                        </button>
-                      )}
-                    </>
-                  )}
-                </div>
-              </td>
-
-              {/* Apertura */}
-              <td className="px-6 py-4 align-middle border text-center" style={{ fontSize: "0.9em" }}>
-                <span className="flex items-center justify-center gap-2">
-                  <FaCalendarAlt className={modoOscuro ? "text-white" : "text-[#00324D]"} style={{ fontSize: "1em" }} />
-                  {c.openDate ? new Date(c.openDate).toLocaleDateString() : "—"}
-                </span>
-              </td>
-
-              {/* Cierre */}
-              <td className="px-6 py-4 align-middle border text-center" style={{ fontSize: "0.9em" }}>
-                <span className="flex items-center justify-center gap-2">
-                  <FaCalendarTimes className={modoOscuro ? "text-white" : "text-[#00324D]"} style={{ fontSize: "1em" }} />
-                  {c.closeDate ? new Date(c.closeDate).toLocaleDateString() : "—"}
-                </span>
-              </td>
-
-              {/* Acciones */}
-              <td className="px-6 py-4 align-middle border">
-                <div className="flex items-center justify-center gap-2" style={{ fontSize: "0.9em" }}>
-                  <button
-                    onClick={() => {
-                      setConvocatoriaSeleccionada(c);
-                      setModalAbierto(true);
-                    }}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg font-semibold ${styles.primaryButton}`}
-                  >
-                    <FaRegFileAlt /> Detalles
-                  </button>
-                  <button
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg font-semibold ${styles.successButton}`}
-                  >
-                    <FaCheckCircle /> Inscribirse
-                  </button>
-                  <button
-                    onClick={() => handleFavorito(c)}
-                    className="group ml-auto relative p-2 rounded-md hover:bg-white/5 transition-colors"
-                    title="Marcar como favorita"
-                  >
-                    {isFavByConv(c) ? (
-                      <FaStar
-                        className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125"
-                        style={{ fontSize: "1.5em" }}
-                      />
-                    ) : (
-                      <FaRegStar
-                        className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${
-                          modoOscuro ? "text-yellow-400" : "text-yellow-500"
-                        }`}
-                        style={{
-                          stroke: "#FFD700",
-                          strokeWidth: "20",
-                          fill: "transparent",
-                          fontSize: "1.5em",
+                    >
+                      <img
+                        onClick={() => {
+                          setConvocatoriaSeleccionada(c);
+                          setModalAbierto(true);
                         }}
+                        src={c.imageUrl || "/img/default.jpg"}
+                        alt={c.title}
+                        className="w-full h-full object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
                       />
-                    )}
+                    </div>
 
-                    {/* 🌟 Estrellitas */}
-                    <span className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping" style={{ fontSize: "0.7em" }}>
-                      ✦
-                    </span>
-                    <span className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce" style={{ fontSize: "0.6em" }}>
-                      ✧
-                    </span>
-                    <span className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse" style={{ fontSize: "0.7em" }}>
-                      ✨
-                    </span>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  </div>
-)}
+                    {/* Contenido */}
+                    <div className="p-5 flex flex-col justify-between flex-grow">
+                      <div className="flex-grow space-y-3">
+                        {/* 🔹 Título con ícono y altura fija */}
+                        <div className="flex items-start gap-2 min-h-[3.5rem]">
+                          <FaMobileAlt
+                            className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                            style={{ fontSize: "1.1em", marginTop: "0.15em" }}
+                          />
+                          <h4
+                            className={`font-bold leading-snug ${modoOscuro ? "text-white" : "text-[#00324D]"
+                              }`}
+                            style={{
+                              fontSize: "1.2em",
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              lineHeight: "1.3",
+                            }}
+                          >
+                            {c.title}
+                          </h4>
+                        </div>
+
+                        {/* 🔹 Descripción */}
+                        <div className={`flex items-start gap-3 ${styles.textMuted}`}>
+                          <FaGraduationCap
+                            className={`flex-shrink-0 mt-0.5 ${modoOscuro ? "text-white" : "text-[#00324D]"
+                              }`}
+                            style={{ fontSize: "1.1em" }}
+                          />
+                          <span
+                            className="relative flex-grow"
+                            style={{ fontSize: "0.95em", lineHeight: "1.3" }}
+                          >
+                            {isExpanded ? (
+                              <>
+                                {c.description}
+                                <button
+                                  onClick={() => setExpandedKey(null)}
+                                  className={`ml-2 font-bold hover:scale-110 transition-transform ${modoOscuro ? "text-white" : "text-[#00324D]"
+                                    }`}
+                                  style={{ fontSize: "0.9em" }}
+                                  title="Ver menos"
+                                >
+                                  ▲
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <span className="line-clamp-3">{c.description}</span>
+                                {c.description?.length > 100 && (
+                                  <button
+                                    onClick={() => setExpandedKey(key)}
+                                    className="absolute bottom-0 right-0 bg-gradient-to-l dark:from-[#1a0526] px-1"
+                                    style={{ fontSize: "1em" }}
+                                    title="Mostrar más"
+                                  >
+                                    ...
+                                  </button>
+                                )}
+                              </>
+                            )}
+                          </span>
+                        </div>
+
+                        {/* 🔹 Fechas alineadas (Apertura / Cierre) */}
+                        <div
+                          className={`flex items-center justify-between mt-3 ${styles.textMuted} ${modoOscuro ? "bg-white/5" : "bg-gray-50"
+                            } p-2 rounded`}
+                          style={{ fontSize: "0.9em" }}
+                        >
+                          <div className="flex items-center gap-2 whitespace-nowrap">
+                            <FaCalendarAlt
+                              className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                              style={{ fontSize: "1em" }}
+                            />
+                            <span>
+                              <strong></strong>{" "}
+                              {c.openDate
+                                ? new Date(c.openDate).toLocaleDateString("es-ES", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                })
+                                : "—"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 whitespace-nowrap">
+                            <FaCalendarTimes
+                              className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                              style={{ fontSize: "1em" }}
+                            />
+                            <span>
+                              <strong></strong>{" "}
+                              {c.closeDate
+                                ? new Date(c.closeDate).toLocaleDateString("es-ES", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                })
+                                : "—"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 🔹 Botones */}
+                      <div
+                        className={`pt-4 mt-4 flex items-center gap-2 border-t ${styles.divider}`}
+                        style={{ fontSize: "0.9em" }}
+                      >
+                        <button
+                          onClick={() => {
+                            setConvocatoriaSeleccionada(c);
+                            setModalAbierto(true);
+                          }}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold ${styles.primaryButton}`}
+                        >
+                          <FaRegFileAlt /> Detalles
+                        </button>
+
+                        <button
+                          className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold ${styles.successButton}`}
+                        >
+                          <FaCheckCircle /> Inscribirse
+                        </button>
+
+                        {/* 🔹 Favorito con animaciones */}
+                        <button
+                              onClick={() => handleFavorito(c)}
+                              className="group ml-auto relative p-2 rounded-md hover:bg-white/5 transition-colors"
+                              title="Marcar como favorita"
+                            >
+                              {isFavByConv(c) ? (
+                                <FaStar
+                                  className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125"
+                                  style={{ fontSize: "1.5em" }}
+                                />
+                              ) : (
+                                <FaRegStar
+                                  className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${modoOscuro
+                                    ? "text-yellow-400"
+                                    : "text-yellow-500"
+                                    }`}
+                                  style={{
+                                    stroke: "#FFD700",
+                                    strokeWidth: "20",
+                                    fill: "transparent",
+                                    fontSize: "1.5em",
+                                  }}
+                                />
+                              )}
+
+                              {/* 🌟 Estrellitas */}
+                              <span
+                                className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
+                                style={{ fontSize: "0.7em" }}
+                              >
+                                ✦
+                              </span>
+                              <span
+                                className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
+                                style={{ fontSize: "0.6em" }}
+                              >
+                                ✧
+                              </span>
+                              <span
+                                className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
+                                style={{ fontSize: "0.7em" }}
+                              >
+                                ✨
+                              </span>
+                            </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        )}
 
 
 
-       {/* VISTA MOSAICO */}
-{vista === "Mosaico" && (
-  <div
-    className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 max-w-[2300px] mx-auto my-8 px-0"
-    style={{ fontSize: `${fontSize}px` }} // 🔹 Escala global
-  >
-    {convocatoriasPagina.map((c, i) => {
-      const key = `mosaic-${indiceInicio + i}`;
-      const isExpanded = expandedKey === key;
-      return (
-        <div
-          key={c.id ?? key}
-          className={`rounded-xl overflow-hidden transition-all hover:shadow-2xl hover:scale-105 flex flex-col h-full min-h-[320px] ${styles.card}`}
-        >
-          {/* Imagen escalable */}
+
+        {/* VISTA LISTA */}
+        {vista === "Lista" && (
+          <div className="w-full" style={{ fontSize: `${fontSize * 0.9}px` }}> {/* 🔹 escala global reducida */}
+            <div className="flex flex-col gap-5">
+              {convocatoriasPagina
+                .filter((c) => {
+                  if (!interesSeleccionado) return true;
+                  return c.interestId === interesSeleccionado;
+                })
+                .map((c, i) => {
+                  const key = `list-${indiceInicio + i}`;
+                  const isExpanded = expandedKey === key;
+
+                  return (
+                    <div
+                      key={c.id ?? key}
+                      className={`relative flex flex-col md:flex-row rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all hover:-translate-y-1 ${styles.card}`}
+                      style={{
+                        minHeight: `${12 + fontSize * 0.1}em`, // 🔹 más pequeño
+                      }}
+                    >
+                      {/* Imagen ajustada al alto del contenedor */}
+                      <div
+                        className="flex-shrink-0 w-full md:w-[35%] relative"
+                        style={{
+                          height: "auto",
+                          maxHeight: "16em",
+                        }}
+                      >
+                        <img
+                          onClick={() => {
+                            setConvocatoriaSeleccionada(c);
+                            setModalAbierto(true);
+                          }}
+                          src={c.imageUrl || "/img/default.jpg"}
+                          alt={c.title}
+                          className="w-full h-full object-cover cursor-pointer transition-transform duration-500 hover:scale-105"
+                          style={{
+                            aspectRatio: "16 / 9",
+                            objectFit: "cover",
+                          }}
+                        />
+                      </div>
+
+                      {/* Contenido */}
+                      <div
+                        className="flex flex-col flex-grow p-4 justify-between"
+                        style={{
+                          fontSize: `${fontSize * 0.9}px`,
+                          lineHeight: "1.5",
+                        }}
+                      >
+                        <div>
+                          {/* 🔹 Título */}
+                          <h4
+                            className={`font-semibold flex items-center gap-2 mb-2 ${modoOscuro ? "text-white" : "text-[#00324D]"
+                              }`}
+                            style={{
+                              fontSize: `${1.1 + fontSize * 0.015}em`,
+                            }}
+                          >
+                            <FaMobileAlt
+                              className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                              style={{ fontSize: "0.9em" }}
+                            />
+                            {c.title}
+                          </h4>
+
+                          {/* Línea divisoria */}
+                          <div className="my-2 border-t border-gray-300/40 dark:border-white/20" />
+
+                          {/* 🔹 Descripción */}
+                          <div className={`flex items-start gap-2 ${styles.textMuted}`}>
+                            <FaGraduationCap
+                              className={`flex-shrink-0 mt-0.5 ${modoOscuro ? "text-white" : "text-[#00324D]"
+                                }`}
+                              style={{ fontSize: "1em" }}
+                            />
+                            <span className="relative" style={{ fontSize: "0.9em" }}>
+                              {isExpanded ? (
+                                <>
+                                  {c.description}
+                                  <button
+                                    onClick={() => setExpandedKey(null)}
+                                    className={`ml-2 font-bold hover:scale-105 transition-transform ${modoOscuro ? "text-white" : "text-[#00324D]"
+                                      }`}
+                                    style={{ fontSize: "0.85em" }}
+                                    title="Ver menos"
+                                  >
+                                    ▲
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <span className="line-clamp-2">{c.description}</span>
+                                  {c.description?.length > 100 && (
+                                    <button
+                                      onClick={() => setExpandedKey(key)}
+                                      className="absolute bottom-0 right-0 bg-gradient-to-l dark:from-[#1a0526] px-1"
+                                      style={{ fontSize: "0.9em" }}
+                                      title="Mostrar más"
+                                    >
+                                      ...
+                                    </button>
+                                  )}
+                                </>
+                              )}
+                            </span>
+                          </div>
+
+                          {/* 🔹 Fechas */}
+                          <div
+                            className={`flex flex-wrap gap-x-5 gap-y-1 mt-3 ${styles.textMuted}`}
+                            style={{ fontSize: "0.85em" }}
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <FaCalendarAlt
+                                className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                                style={{ fontSize: "0.9em" }}
+                              />
+                              <strong>Apertura:</strong>{" "}
+                              {c.openDate
+                                ? new Date(c.openDate).toLocaleDateString()
+                                : "—"}
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                              <FaCalendarTimes
+                                className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                                style={{ fontSize: "0.9em" }}
+                              />
+                              <strong>Cierre:</strong>{" "}
+                              {c.closeDate
+                                ? new Date(c.closeDate).toLocaleDateString()
+                                : "—"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* 🔹 Botones */}
+                        <div
+                          className={`flex flex-wrap items-center gap-2 pt-3 mt-4 border-t ${styles.divider}`}
+                          style={{ fontSize: "0.85em" }}
+                        >
+                          <button
+                            onClick={() => {
+                              setConvocatoriaSeleccionada(c);
+                              setModalAbierto(true);
+                            }}
+                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md font-semibold ${styles.primaryButton}`}
+                          >
+                            <FaRegFileAlt /> Detalles
+                          </button>
+                          <button
+                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md font-semibold ${styles.successButton}`}
+                          >
+                            <FaCheckCircle /> Inscribirse
+                          </button>
+                         <button
+                              onClick={() => handleFavorito(c)}
+                              className="group ml-auto relative p-2 rounded-md hover:bg-white/5 transition-colors"
+                              title="Marcar como favorita"
+                            >
+                              {isFavByConv(c) ? (
+                                <FaStar
+                                  className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125"
+                                  style={{ fontSize: "1.5em" }}
+                                />
+                              ) : (
+                                <FaRegStar
+                                  className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${modoOscuro
+                                    ? "text-yellow-400"
+                                    : "text-yellow-500"
+                                    }`}
+                                  style={{
+                                    stroke: "#FFD700",
+                                    strokeWidth: "20",
+                                    fill: "transparent",
+                                    fontSize: "1.5em",
+                                  }}
+                                />
+                              )}
+
+                              {/* 🌟 Estrellitas */}
+                              <span
+                                className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
+                                style={{ fontSize: "0.7em" }}
+                              >
+                                ✦
+                              </span>
+                              <span
+                                className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
+                                style={{ fontSize: "0.6em" }}
+                              >
+                                ✧
+                              </span>
+                              <span
+                                className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
+                                style={{ fontSize: "0.7em" }}
+                              >
+                                ✨
+                              </span>
+                            </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
+
+
+        {/* VISTA TABLA */}
+        {vista === "Tabla" && (
           <div
-            className="w-full overflow-hidden"
+            className={`rounded-2xl shadow-lg mt-6 overflow-x-auto border ${styles.divider}`}
+            style={{ fontSize: `${fontSize}px` }} // 🔹 Escala global
+          >
+            <table className="w-full text-left border-collapse min-w-[1200px]">
+              {/* 🔹 Encabezado */}
+              <thead
+                className={`${modoOscuro ? "bg-[#0e1626]" : "bg-[#00324D]"} text-white`}
+              >
+                <tr>
+                  <th
+                    className="px-6 py-4 font-medium uppercase tracking-wider border w-[240px]"
+                    style={{ fontSize: "0.9em" }}
+                  >
+                    <span className="flex items-center gap-2">
+                      <FaImage /> Convocatoria
+                    </span>
+                  </th>
+
+                  <th
+                    className="px-6 py-4 font-medium uppercase tracking-wider border w-[400px]"
+                    style={{ fontSize: "0.9em" }}
+                  >
+                    <span className="flex items-center gap-2">
+                      <FaInfoCircle /> Descripción
+                    </span>
+                  </th>
+                  <th
+                    className="px-6 py-4 font-medium uppercase tracking-wider border text-center w-[150px]"
+                    style={{ fontSize: "0.9em" }}
+                  >
+                    <span className="flex items-center justify-center gap-2">
+                      <FaCalendarAlt /> Apertura
+                    </span>
+                  </th>
+                  <th
+                    className="px-6 py-4 font-medium uppercase tracking-wider border text-center w-[150px]"
+                    style={{ fontSize: "0.9em" }}
+                  >
+                    <span className="flex items-center justify-center gap-2">
+                      <FaCalendarTimes /> Cierre
+                    </span>
+                  </th>
+                  <th
+                    className="px-6 py-4 font-medium uppercase tracking-wider border text-center w-[220px]"
+                    style={{ fontSize: "0.9em" }}
+                  >
+                    <span className="flex items-center justify-center gap-2">
+                      <FaCog /> Acciones
+                    </span>
+                  </th>
+                </tr>
+              </thead>
+
+              {/* 🔹 Cuerpo */}
+              <tbody className={`${styles.textMuted}`}>
+                {convocatoriasPagina
+                  // ✅ FILTRO por interés seleccionado
+                  .filter((c) => {
+                    if (!interesSeleccionado) return true;
+                    return c.interestId === interesSeleccionado;
+                  })
+                  .map((c, i) => {
+                    const key = `table-${i}`;
+                    const isExpanded = expandedKey === key;
+
+                    return (
+                      <tr
+                        key={c.id ?? key}
+                        className={`${modoOscuro ? "hover:bg-white/5" : "hover:bg-gray-50"
+                          } transition-colors`}
+                      >
+                        {/* Convocatoria + título */}
+                        <td className="px-6 py-4 align-middle border">
+                          <div className="flex items-center gap-4">
+                            <div
+                              className="rounded-md overflow-hidden flex-shrink-0"
+                              style={{
+                                width: "8.5em",
+                                height: "5.5em",
+                              }}
+                            >
+                              <img
+                                onClick={() => {
+                                  setConvocatoriaSeleccionada(c);
+                                  setModalAbierto(true);
+                                }}
+                                src={c.imageUrl || "/img/default.jpg"}
+                                alt={c.title}
+                                className="w-full h-full object-cover cursor-pointer transition-transform duration-300 hover:scale-110"
+                              />
+                            </div>
+                            <span
+                              className={`font-semibold ${modoOscuro ? "text-white" : "text-[#00324D]"
+                                }`}
+                              style={{ fontSize: "1em" }}
+                            >
+                              {c.title}
+                            </span>
+                          </div>
+                        </td>
+
+
+
+                        {/* Descripción */}
+                        <td className="px-6 py-4 align-middle border">
+                          <div className="relative" style={{ fontSize: "0.95em" }}>
+                            {isExpanded ? (
+                              <>
+                                {c.description}
+                                <button
+                                  onClick={() => setExpandedKey(null)}
+                                  className={`ml-2 font-bold hover:scale-110 transition-transform ${modoOscuro ? "text-white" : "text-[#00324D]"
+                                    }`}
+                                  style={{ fontSize: "0.85em" }}
+                                  title="Ver menos"
+                                >
+                                  ▲
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <span className="line-clamp-3">{c.description}</span>
+                                {c.description?.length > 120 && (
+                                  <button
+                                    onClick={() => setExpandedKey(key)}
+                                    className="absolute bottom-0 right-0 bg-gradient-to-l dark:from-[#0e1626] px-1"
+                                    style={{ fontSize: "0.85em" }}
+                                    title="Mostrar más"
+                                  >
+                                    ...
+                                  </button>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Apertura */}
+                        <td
+                          className="px-6 py-4 align-middle border text-center"
+                          style={{ fontSize: "0.9em" }}
+                        >
+                          <span className="flex items-center justify-center gap-2">
+                            <FaCalendarAlt
+                              className={
+                                modoOscuro ? "text-white" : "text-[#00324D]"
+                              }
+                              style={{ fontSize: "1em" }}
+                            />
+                            {c.openDate
+                              ? new Date(c.openDate).toLocaleDateString()
+                              : "—"}
+                          </span>
+                        </td>
+
+                        {/* Cierre */}
+                        <td
+                          className="px-6 py-4 align-middle border text-center"
+                          style={{ fontSize: "0.9em" }}
+                        >
+                          <span className="flex items-center justify-center gap-2">
+                            <FaCalendarTimes
+                              className={
+                                modoOscuro ? "text-white" : "text-[#00324D]"
+                              }
+                              style={{ fontSize: "1em" }}
+                            />
+                            {c.closeDate
+                              ? new Date(c.closeDate).toLocaleDateString()
+                              : "—"}
+                          </span>
+                        </td>
+
+                        {/* Acciones */}
+                        <td className="px-6 py-4 align-middle border">
+                          <div
+                            className="flex items-center justify-center gap-2"
+                            style={{ fontSize: "0.9em" }}
+                          >
+                            <button
+                              onClick={() => {
+                                setConvocatoriaSeleccionada(c);
+                                setModalAbierto(true);
+                              }}
+                              className={`flex items-center gap-2 px-3 py-2 rounded-lg font-semibold ${styles.primaryButton}`}
+                            >
+                              <FaRegFileAlt /> Detalles
+                            </button>
+                            <button
+                              className={`flex items-center gap-2 px-3 py-2 rounded-lg font-semibold ${styles.successButton}`}
+                            >
+                              <FaCheckCircle /> Inscribirse
+                            </button>
+                            <button
+                              onClick={() => handleFavorito(c)}
+                              className="group ml-auto relative p-2 rounded-md hover:bg-white/5 transition-colors"
+                              title="Marcar como favorita"
+                            >
+                              {isFavByConv(c) ? (
+                                <FaStar
+                                  className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125"
+                                  style={{ fontSize: "1.5em" }}
+                                />
+                              ) : (
+                                <FaRegStar
+                                  className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${modoOscuro
+                                    ? "text-yellow-400"
+                                    : "text-yellow-500"
+                                    }`}
+                                  style={{
+                                    stroke: "#FFD700",
+                                    strokeWidth: "20",
+                                    fill: "transparent",
+                                    fontSize: "1.5em",
+                                  }}
+                                />
+                              )}
+
+                              {/* 🌟 Estrellitas */}
+                              <span
+                                className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
+                                style={{ fontSize: "0.7em" }}
+                              >
+                                ✦
+                              </span>
+                              <span
+                                className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
+                                style={{ fontSize: "0.6em" }}
+                              >
+                                ✧
+                              </span>
+                              <span
+                                className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
+                                style={{ fontSize: "0.7em" }}
+                              >
+                                ✨
+                              </span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+
+        {/* 🔹 VISTA MOSAICO (alineada, con puntos sin botón Ver más) */}
+        {vista === "Mosaico" && (
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 max-w-[2300px] mx-auto my-8 px-0"
             style={{
-              height: "11em",     // Escala proporcional al texto
-              maxHeight: "16em",  // Límite superior
+              fontSize: `${fontSize}px`,
+              gridAutoRows: "1fr",
             }}
           >
-            <img
-              onClick={() => {
-                setConvocatoriaSeleccionada(c);
-                setModalAbierto(true);
-              }}
-              src={c.imageUrl || "/img/default.jpg"}
-              alt={c.title}
-              className="w-full h-full object-cover cursor-pointer transition-transform duration-300 hover:scale-110"
-            />
-          </div>
+            {convocatoriasPagina
+              .filter((c) => {
+                if (!interesSeleccionado) return true;
+                return c.interestId === interesSeleccionado;
+              })
+              .map((c, i) => {
+                const key = `mosaic-${indiceInicio + i}`;
 
-          {/* Contenido */}
-          <div className="p-4 flex flex-col flex-grow">
-            <div className="flex-grow space-y-2">
-              {/* Título */}
-              <h4
-                className={`font-semibold flex items-center gap-2 ${modoOscuro ? "text-white" : "text-[#00324D]"}`}
-                style={{ fontSize: "1.1em" }}
-              >
-                <FaMobileAlt
-                  className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                  style={{ fontSize: "1em" }}
-                />
-                {c.title}
-              </h4>
+                return (
+                  <div
+                    key={c.id ?? key}
+                    className={`rounded-xl overflow-hidden transition-all hover:shadow-2xl hover:scale-[1.02] flex flex-col h-full min-h-[420px] ${styles.card}`}
+                  >
+                    {/* 🖼 Imagen superior completamente adaptada */}
+                    <div className="relative w-full h-[10em] overflow-hidden">
+                      <img
+                        onClick={() => {
+                          setConvocatoriaSeleccionada(c);
+                          setModalAbierto(true);
+                        }}
+                        src={c.imageUrl || "/img/default.jpg"}
+                        alt={c.title}
+                        className="absolute inset-0 w-full h-full object-cover cursor-pointer transition-transform duration-500 hover:scale-110"
+                      />
+                    </div>
 
-              {/* Descripción */}
-              <div className="relative" style={{ fontSize: "0.95em" }}>
-                {isExpanded ? (
-                  <>
-                    {c.description}
-                    <button
-                      onClick={() => setExpandedKey(null)}
-                      className={`ml-2 font-bold hover:scale-110 transition-transform ${modoOscuro ? "text-white" : "text-[#00324D]"}`}
-                      style={{ fontSize: "0.85em" }}
-                      title="Ver menos"
-                    >
-                      ▲
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <span className="line-clamp-3">{c.description}</span>
-                    {c.description?.length > 120 && (
-                      <button
-                        onClick={() => setExpandedKey(key)}
-                        className="absolute bottom-0 right-0 bg-gradient-to-l dark:from-[#1a0526] px-1"
-                        style={{ fontSize: "0.85em" }}
-                        title="Mostrar más"
+                    {/* 📄 Contenido */}
+                    <div className="flex flex-col flex-grow p-4 justify-between">
+                      <div className="flex-grow flex flex-col justify-between space-y-2">
+                        {/* 🔹 Título con ícono alineado */}
+                        <div className="flex items-start gap-2 min-h-[3rem]">
+                          <FaMobileAlt
+                            className={`flex-shrink-0 mt-0.5 ${modoOscuro ? "text-white" : "text-[#00324D]"
+                              }`}
+                            style={{ fontSize: "1em" }}
+                          />
+                          <h4
+                            className={`font-semibold leading-snug ${modoOscuro ? "text-white" : "text-[#00324D]"
+                              }`}
+                            style={{
+                              fontSize: "1.05em",
+                              display: "-webkit-box",
+                              WebkitBoxOrient: "vertical",
+                              WebkitLineClamp: 2,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              lineHeight: "1.3",
+                            }}
+                          >
+                            {c.title}
+                          </h4>
+                        </div>
+
+                        {/* 🔹 Descripción truncada con puntos suspensivos */}
+                        <div className={`relative ${styles.textMuted}`} style={{ fontSize: "0.9em" }}>
+                          <div className="flex items-start gap-2">
+                            <FaGraduationCap
+                              className={`flex-shrink-0 mt-0.5 ${modoOscuro ? "text-white" : "text-[#00324D]"
+                                }`}
+                              style={{ fontSize: "1.1em" }}
+                            />
+                            <span
+                              className="line-clamp-3"
+                              style={{
+                                flex: 1,
+                                display: "-webkit-box",
+                                WebkitBoxOrient: "vertical",
+                                WebkitLineClamp: 3,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                lineHeight: "1.4em",
+                              }}
+                            >
+                              {c.description || "Sin descripción disponible."}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* 🔹 Fechas perfectamente alineadas */}
+                        <div
+                          className={`mt-2 flex items-center justify-between rounded-md p-2 ${styles.textMuted} ${modoOscuro ? "bg-white/5" : "bg-gray-50"
+                            }`}
+                          style={{
+                            fontSize: "0.85em",
+                            marginTop: "0.5em",
+                          }}
+                        >
+                          <div className="flex items-center gap-1.5 whitespace-nowrap">
+                            <FaCalendarAlt
+                              className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                              style={{ fontSize: "1em" }}
+                            />
+                            <span>
+                              <strong></strong>{" "}
+                              {c.openDate
+                                ? new Date(c.openDate).toLocaleDateString("es-ES", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                })
+                                : "—"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 whitespace-nowrap">
+                            <FaCalendarTimes
+                              className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                              style={{ fontSize: "1em" }}
+                            />
+                            <span>
+                              <strong></strong>{" "}
+                              {c.closeDate
+                                ? new Date(c.closeDate).toLocaleDateString("es-ES", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                })
+                                : "—"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 🔹 Botones inferiores alineados */}
+                      <div
+                        className={`pt-3 mt-3 flex items-center gap-2 border-t ${styles.divider}`}
+                        style={{ fontSize: "0.9em" }}
                       >
-                        ...
-                      </button>
-                    )}
-                  </>
-                )}
-              </div>
+                        <button
+                          onClick={() => {
+                            setConvocatoriaSeleccionada(c);
+                            setModalAbierto(true);
+                          }}
+                          className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md ${styles.primaryButton}`}
+                        >
+                          <FaRegFileAlt /> Detalles
+                        </button>
 
-              {/* Fechas */}
-              <div
-                className={`mt-3 flex items-center justify-between rounded p-2 ${styles.textMuted} ${
-                  modoOscuro ? "bg-white/5" : "bg-gray-50"
-                }`}
-                style={{ fontSize: "0.85em" }}
-              >
-                <span className="flex items-center gap-1">
-                  <FaCalendarAlt
-                    className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                    style={{ fontSize: "1em" }}
-                  />
-                  <span>{c.openDate ? new Date(c.openDate).toLocaleDateString() : "—"}</span>
-                </span>
-                <span className="flex items-center gap-1">
-                  <FaClock
-                    className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                    style={{ fontSize: "1em" }}
-                  />
-                  <span>{c.closeDate ? new Date(c.closeDate).toLocaleDateString() : "—"}</span>
-                </span>
-              </div>
-            </div>
+                        <button
+                          className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md ${styles.successButton}`}
+                        >
+                          <FaCheckCircle /> Inscribirse
+                        </button>
 
-            {/* Botones */}
-            <div
-              className={`mt-3 pt-3 flex items-center gap-2 border-t ${styles.divider}`}
-              style={{ fontSize: "0.9em" }}
-            >
-              <button
-                onClick={() => {
-                  setConvocatoriaSeleccionada(c);
-                  setModalAbierto(true);
-                }}
-                className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md ${styles.primaryButton}`}
-              >
-                <FaRegFileAlt /> Detalles
-              </button>
+                        {/* 🌟 Favorito con animación */}
+                        <button
+                              onClick={() => handleFavorito(c)}
+                              className="group ml-auto relative p-2 rounded-md hover:bg-white/5 transition-colors"
+                              title="Marcar como favorita"
+                            >
+                              {isFavByConv(c) ? (
+                                <FaStar
+                                  className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125"
+                                  style={{ fontSize: "1.5em" }}
+                                />
+                              ) : (
+                                <FaRegStar
+                                  className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${modoOscuro
+                                    ? "text-yellow-400"
+                                    : "text-yellow-500"
+                                    }`}
+                                  style={{
+                                    stroke: "#FFD700",
+                                    strokeWidth: "20",
+                                    fill: "transparent",
+                                    fontSize: "1.5em",
+                                  }}
+                                />
+                              )}
 
-              <button
-                className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md ${styles.successButton}`}
-              >
-                <FaCheckCircle /> Inscribirse
-              </button>
-
-              <button
-                onClick={() => handleFavorito(c)}
-                className="group ml-auto relative p-2 rounded-md hover:bg-white/5 transition-colors"
-                title="Marcar como favorita"
-              >
-                {isFavByConv(c) ? (
-                  <FaStar
-                    className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125"
-                    style={{ fontSize: "1.5em" }}
-                  />
-                ) : (
-                  <FaRegStar
-                    className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${
-                      modoOscuro ? "text-yellow-400" : "text-yellow-500"
-                    }`}
-                    style={{
-                      stroke: "#FFD700",
-                      strokeWidth: "20",
-                      fill: "transparent",
-                      fontSize: "1.5em",
-                    }}
-                  />
-                )}
-
-                {/* 🌟 Estrellitas */}
-                <span
-                  className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
-                  style={{ fontSize: "0.7em" }}
-                >
-                  ✦
-                </span>
-                <span
-                  className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
-                  style={{ fontSize: "0.6em" }}
-                >
-                  ✧
-                </span>
-                <span
-                  className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
-                  style={{ fontSize: "0.7em" }}
-                >
-                  ✨
-                </span>
-              </button>
-            </div>
+                              {/* 🌟 Estrellitas */}
+                              <span
+                                className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
+                                style={{ fontSize: "0.7em" }}
+                              >
+                                ✦
+                              </span>
+                              <span
+                                className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
+                                style={{ fontSize: "0.6em" }}
+                              >
+                                ✧
+                              </span>
+                              <span
+                                className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
+                                style={{ fontSize: "0.7em" }}
+                              >
+                                ✨
+                              </span>
+                            </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
           </div>
-        </div>
-      );
-    })}
-  </div>
-)}
+        )}
+
+
+
+
 
         {/* PAGINACIÓN */}
-       {/* PAGINACIÓN */}
-<div
-  className="flex justify-center items-center gap-3 mt-8 flex-wrap"
-  style={{ fontSize: `${fontSize}px` }} // 🔹 Escala global
->
-  <button
-    className={`flex items-center justify-center gap-2 px-4 py-2 font-semibold rounded-xl shadow-sm transition-all disabled:opacity-50 ${styles.button}`}
-    disabled={paginaActual === 1}
-    onClick={() => setPaginaActual(paginaActual - 1)}
-    style={{ fontSize: "0.95em" }}
-  >
-    <ChevronLeft style={{ fontSize: "1em" }} /> Anterior
-  </button>
+        {/* PAGINACIÓN */}
+        <div
+          className="flex justify-center items-center gap-3 mt-8 flex-wrap"
+          style={{ fontSize: `${fontSize}px` }} // 🔹 Escala global
+        >
+          <button
+            className={`flex items-center justify-center gap-2 px-4 py-2 font-semibold rounded-xl shadow-sm transition-all disabled:opacity-50 ${styles.button}`}
+            disabled={paginaActual === 1}
+            onClick={() => setPaginaActual(paginaActual - 1)}
+            style={{ fontSize: "0.95em" }}
+          >
+            <ChevronLeft style={{ fontSize: "1em" }} /> Anterior
+          </button>
 
-  {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((num) => (
-    <button
-      key={num}
-      className={`flex items-center justify-center font-bold rounded-xl transition-all ${
-        paginaActual === num ? styles.primaryButton : styles.button
-      }`}
-      onClick={() => setPaginaActual(num)}
-      style={{
-        width: "2.6em",
-        height: "2.6em",
-        fontSize: "1em",
-      }}
-    >
-      {num}
-    </button>
-  ))}
+          {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((num) => (
+            <button
+              key={num}
+              className={`flex items-center justify-center font-bold rounded-xl transition-all ${paginaActual === num ? styles.primaryButton : styles.button
+                }`}
+              onClick={() => setPaginaActual(num)}
+              style={{
+                width: "2.6em",
+                height: "2.6em",
+                fontSize: "1em",
+              }}
+            >
+              {num}
+            </button>
+          ))}
 
-  <button
-    className={`flex items-center justify-center gap-2 px-4 py-2 font-semibold rounded-xl shadow-sm transition-all disabled:opacity-50 ${styles.button}`}
-    disabled={paginaActual === totalPaginas}
-    onClick={() => setPaginaActual(paginaActual + 1)}
-    style={{ fontSize: "0.95em" }}
-  >
-    Siguiente <ChevronRight style={{ fontSize: "1em" }} />
-  </button>
-</div>
+          <button
+            className={`flex items-center justify-center gap-2 px-4 py-2 font-semibold rounded-xl shadow-sm transition-all disabled:opacity-50 ${styles.button}`}
+            disabled={paginaActual === totalPaginas}
+            onClick={() => setPaginaActual(paginaActual + 1)}
+            style={{ fontSize: "0.95em" }}
+          >
+            Siguiente <ChevronRight style={{ fontSize: "1em" }} />
+          </button>
+        </div>
 
       </div>
 

@@ -6,12 +6,13 @@ import {
 } from 'react-icons/fa';
 import { Sun, Moon, RefreshCcw, ZoomOut, ZoomIn } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Swal from "sweetalert2";
-
-// 👇 Tema
+// ðŸ‘‡ Tema
 import { useTheme } from '../../ThemeContext';
 import { getThemeStyles } from '../../themeStyles';
+import { useFontSize } from '../../../../FontSizeContext';
+import { MdAccessibility } from 'react-icons/md';
 
 // TIPOS
 interface ProfileData {
@@ -43,6 +44,10 @@ interface Ciudad {
   departmentId: number;
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+
+
 export default function PerfilEmpresa() {
   const router = useRouter();
   const { modoOscuro, toggleModoOscuro } = useTheme();
@@ -54,15 +59,14 @@ export default function PerfilEmpresa() {
   const [filteredCities, setFilteredCities] = useState<Ciudad[]>([]);
   const [selectedDept, setSelectedDept] = useState<string>('');
 
-  // 👇 Add missing state variables here
+  // ðŸ‘‡ Add missing state variables here
   const [mostrarZoom, setMostrarZoom] = useState(false);
-  const [fontSize, setFontSize] = useState(16);
 
+  const [interestsList, setInterestsList] = useState<any[]>([]);
+
+  const { fontSize, aumentarTexto, disminuirTexto, resetTexto } = useFontSize();
   // Zoom functions
   const toggleZoomMenu = () => setMostrarZoom(!mostrarZoom);
-  const aumentarTexto = () => setFontSize((prev) => prev + 2);
-  const disminuirTexto = () => setFontSize((prev) => Math.max(10, prev - 2));
-  const resetTexto = () => setFontSize(16);
 
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editedValue, setEditedValue] = useState('');
@@ -86,7 +90,7 @@ export default function PerfilEmpresa() {
 
     const fetchAuthUser = async () => {
       try {
-        const res = await fetch("http://localhost:4000/api/v1/auths/authenticated", {
+        const res = await fetch(`${API_URL}/auths/authenticated`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
         });
         if (!res.ok) throw new Error("No autenticado");
@@ -104,13 +108,21 @@ export default function PerfilEmpresa() {
   }, [router]);
 
 
+  const [mostrarSelector, setMostrarSelector] = useState(false);
+  const selectRef = useRef<HTMLSelectElement | null>(null);
 
-  // 🔹 Cargar departamentos y ciudades desde las APIs
+  // ðŸ”¹ Cuando el selector se muestra, hacer focus automÃ¡tico
+  useEffect(() => {
+    if (mostrarSelector && selectRef.current) {
+      selectRef.current.focus();
+    }
+  }, [mostrarSelector]);
+  // ðŸ”¹ Cargar departamentos y ciudades desde las APIs
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const depRes = await fetch('http://localhost:4000/api/v1/departments');
-        const cityRes = await fetch('http://localhost:4000/api/v1/cities');
+        const depRes = await fetch(`${API_URL}/departments`);
+        const cityRes = await fetch(`${API_URL}/cities`);
         const depData = await depRes.json();
         const cityData = await cityRes.json();
         setDepartamentos(depData.data || []);
@@ -123,7 +135,7 @@ export default function PerfilEmpresa() {
   }, []);
 
 
-  // 🔹 Filtrar ciudades según el departamento seleccionado
+  // ðŸ”¹ Filtrar ciudades segÃºn el departamento seleccionado
   useEffect(() => {
     if (selectedDept) {
       const dept = departamentos.find(d => d.name === selectedDept);
@@ -135,16 +147,27 @@ export default function PerfilEmpresa() {
   }, [selectedDept, ciudades, departamentos]);
 
 
-
-
-
-
-
+  // ðŸ”¹ Cargar todos los intereses disponibles
+  useEffect(() => {
+    const fetchAllInterests = async () => {
+      try {
+        const res = await fetch(`${API_URL}/interests`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+        });
+        if (!res.ok) throw new Error("Error al cargar lista de intereses");
+        const data = await res.json();
+        setInterestsList(data.data || []);
+      } catch (err: any) {
+        console.error("Error al cargar lista de intereses:", err.message);
+      }
+    };
+    fetchAllInterests();
+  }, []);
 
   // --- Estados ---
   const [newInterest, setNewInterest] = useState('');
 
-  // Estado inicial vacío, sin datos quemados
+  // Estado inicial vacÃ­o, sin datos quemados
   const [profileData, setProfileData] = useState<ProfileData>({
     nombre: '',
     email: '',
@@ -162,7 +185,7 @@ export default function PerfilEmpresa() {
     descripcion: ''
   });
 
-  // Placeholders de ejemplo para mostrar si el campo está vacío
+  // Placeholders de ejemplo para mostrar si el campo estÃ¡ vacÃ­o
   const empresaPlaceholders: Record<keyof ProfileData, string> = {
     nombre: "Ejemplo: Empresa de Software",
     email: "Ejemplo: Eje@gmail.com",
@@ -174,9 +197,9 @@ export default function PerfilEmpresa() {
     departamento: "Ejemplo: Antioquia",
     telefono: "Ejemplo: 6043456789",
     numEmpleados: "Ejemplo: 50",
-    ciudad: "Ejemplo: Medellín",
+    ciudad: "Ejemplo: Medelli­n",
     paginaWeb: "Ejemplo: https://miempresa.com",
-    sector: "Ejemplo: Tecnología",
+    sector: "Ejemplo: Tecnolog­0",
     descripcion: "Ejemplo: Somos una empresa dedicada a..."
   };
 
@@ -184,56 +207,76 @@ export default function PerfilEmpresa() {
   useEffect(() => {
     const fetchUserInterests = async () => {
       try {
-        if (!userId) return;
-        const res = await fetch("http://localhost:4000/api/v1/userInterests", {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-        });
-        if (!res.ok) throw new Error("Error al cargar intereses");
+        if (!userId) return console.log("⚠️ userId no disponible");
+        console.log("🔐 Token:", localStorage.getItem("token"));
+        console.log("👤 userId:", userId);
 
+        const res = await fetch(`${API_URL}/userInterests`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+
+        console.log("📡 Estado:", res.status);
         const data = await res.json();
-        const interesesUsuario = data.data
-          .filter((i: any) => i.userId === Number(userId))
-          .map((i: any) => ({
-            userInterestId: i.id,
-            id: i.interest?.id,
-            name: i.interest?.name,
-            description: i.interest?.description,
-          }));
-        setProfileData(prev => ({ ...prev, intereses: interesesUsuario }));
+        console.log("📦 Datos recibidos:", data);
+
+        if (!res.ok) throw new Error("Error al cargar los intereses del usuario");
+
+        const interesesUsuario =
+          data.data
+            ?.filter((i: any) => i.userId === Number(userId))
+            ?.map((i: any) => ({
+              userInterestId: i.id,
+              id: i.interest?.id,
+              name: i.interest?.name,
+              description: i.interest?.description,
+            })) ?? [];
+
+        setProfileData((prev) => ({ ...prev, intereses: interesesUsuario }));
       } catch (err: any) {
-        console.error("⚠️ Error al cargar intereses:", err.message);
-        setProfileData(prev => ({ ...prev, intereses: [] }));
+        console.error("❌ Error al cargar los intereses:", err.message);
+        setProfileData((prev) => ({ ...prev, intereses: [] }));
       }
     };
+
     fetchUserInterests();
   }, [userId]);
 
+
+
   // --- Agregar interés (NO TOCAR) ---
   const addInterest = async () => {
-    if (!newInterest.trim()) return Swal.fire("Atención", "Debes escribir un interés válido", "warning");
-    if (!userId) return Swal.fire("Error", "Usuario no identificado", "error");
+    if (!newInterest.trim())
+      return Swal.fire("Atención", "Debes escribir un interés válido.", "warning");
+
+    if (!userId)
+      return Swal.fire("Error", "Usuario no identificado.", "error");
 
     try {
-      const resInterest = await fetch("http://localhost:4000/api/v1/interests", {
+      const resInterest = await fetch(`${API_URL}/interests`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ name: newInterest.trim(), description: "Interés agregado por el usuario" })
+        body: JSON.stringify({
+          name: newInterest.trim(),
+          description: "Interés agregado por el usuario.",
+        }),
       });
+
       const interestData = await resInterest.json();
       if (!resInterest.ok) throw new Error(interestData.message);
       const interestId = interestData.data?.id;
 
-      const resUserInterest = await fetch("http://localhost:4000/api/v1/userInterests", {
+      const resUserInterest = await fetch(`${API_URL}/userInterests`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ userId, interestId })
+        body: JSON.stringify({ userId, interestId }),
       });
+
       const userInterestResp = await resUserInterest.json();
       if (!resUserInterest.ok) throw new Error(userInterestResp.message);
 
@@ -241,52 +284,59 @@ export default function PerfilEmpresa() {
         userInterestId: userInterestResp.data?.id,
         id: interestId,
         name: newInterest.trim(),
-        description: "Interés agregado por el usuario",
+        description: "Interés agregado por el usuario.",
       };
-      setProfileData(prev => ({ ...prev, intereses: [...prev.intereses, nuevo] }));
+
+      setProfileData((prev) => ({
+        ...prev,
+        intereses: [...prev.intereses, nuevo],
+      }));
+
       setNewInterest("");
-      Swal.fire("Éxito", "Interés agregado correctamente", "success");
+      Swal.fire("Éxito", "Interés agregado correctamente.", "success");
     } catch (err: any) {
       Swal.fire("Error", err.message, "error");
     }
   };
+
 
   // --- Editar interés (NO TOCAR) ---
   const updateInterest = async (interest: any, newName: string) => {
     try {
-      const res = await fetch(`http://localhost:4000/api/v1/interests/${interest.id}`, {
+      const res = await fetch(`${API_URL}/userInterests/${interest.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ name: newName })
+        body: JSON.stringify({ name: newName }),
       });
 
-      if (!res.ok) throw new Error("Error al actualizar interés");
+      if (!res.ok) throw new Error("Error al actualizar el interés.");
 
       const data = await res.json();
 
-      const actualizados = profileData.intereses.map(i =>
+      const actualizados = profileData.intereses.map((i) =>
         i.id === interest.id ? { ...i, name: data.data.name } : i
       );
 
-      setProfileData(prev => ({ ...prev, intereses: actualizados }));
-      Swal.fire("Éxito", "Interés actualizado en la base de datos", "success");
+      setProfileData((prev) => ({ ...prev, intereses: actualizados }));
+      Swal.fire("Éxito", "Interés actualizado en la base de datos.", "success");
     } catch (err: any) {
       Swal.fire("Error", err.message, "error");
     }
   };
 
-  // --- Eliminar interés (NO TOCAR) ---
+
+  // --- Eliminar interÃ©s (NO TOCAR) ---
   const removeInterest = async (interest: any) => {
     try {
-      const res = await fetch(`http://localhost:4000/api/v1/userInterests/${userId}/${interest.id}`, {
+      const res = await fetch(`${API_URL}/userInterests/${userId}/${interest.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
       });
 
-      if (!res.ok) throw new Error("Error al eliminar interés");
+      if (!res.ok) throw new Error("Error al eliminar interÃ©s");
 
       const restantes = profileData.intereses.filter(i => i.id !== interest.id);
       setProfileData(prev => ({ ...prev, intereses: restantes }));
@@ -301,7 +351,7 @@ export default function PerfilEmpresa() {
   const [empresaId, setEmpresaId] = useState<number | null>(null);
 
   const toCompanyPayload = (p: ProfileData) => {
-    // 🔹 Buscar ciudad seleccionada
+    // ðŸ”¹ Buscar ciudad seleccionada
     const ciudadSeleccionada = ciudades.find(c => c.name === p.ciudad);
 
     return {
@@ -316,8 +366,8 @@ export default function PerfilEmpresa() {
         : undefined,
       economicSector: p.sector || undefined,
       description: p.descripcion || undefined,
-      email: p.email || undefined,              // ✅ Guarda email
-      cityId: ciudadSeleccionada?.id || null,   // ✅ Envía id correcto
+      email: p.email || undefined,              // âœ… Guarda email
+      cityId: ciudadSeleccionada?.id || null,   // âœ… EnvÃ­a id correcto
     };
   };
 
@@ -325,7 +375,7 @@ export default function PerfilEmpresa() {
   useEffect(() => {
     const fetchEmpresa = async () => {
       try {
-        const res = await fetch("http://localhost:4000/api/v1/companies", {
+        const res = await fetch(`${API_URL}/companies`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
         });
         if (!res.ok) throw new Error("Error al cargar empresas");
@@ -341,7 +391,7 @@ export default function PerfilEmpresa() {
           setEmpresaId(mine.id);
           localStorage.setItem("empresa", JSON.stringify(mine));
 
-          // ✅ Bloque corregido
+          // âœ… Bloque corregido
           setProfileData(prev => {
             const ciudadNombre = mine.city?.name ?? '';
             const departamentoNombre =
@@ -371,11 +421,29 @@ export default function PerfilEmpresa() {
           setProfileData(prev => ({ ...prev }));
         }
       } catch (err: any) {
-        console.error("⚠️ Error al cargar empresa:", err.message);
+        console.error("⚠️ Error al cargar la empresa:", err.message);
+
       }
     };
     fetchEmpresa();
   }, [user]);
+
+  // ðŸ” Cuando los departamentos estÃ©n cargados, actualiza el departamento si la empresa ya existe
+  useEffect(() => {
+    if (!empresa || !empresa.city || !departamentos.length) return;
+
+    const departamentoObj = departamentos.find(
+      (d) => d.id === empresa.city.departmentId
+    );
+
+    if (departamentoObj) {
+      setProfileData((prev) => ({
+        ...prev,
+        departamento: departamentoObj.name,
+      }));
+    }
+  }, [departamentos, empresa]);
+
 
   const handleEditClick = (fieldKey: string, currentValue: string) => {
     setEditingField(fieldKey);
@@ -406,7 +474,7 @@ export default function PerfilEmpresa() {
     try {
       let res: Response;
       if (empresaId) {
-        res = await fetch(`http://localhost:4000/api/v1/companies/${empresaId}`, {
+        res = await fetch(`${API_URL}/companies/${empresaId}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -415,7 +483,7 @@ export default function PerfilEmpresa() {
           body: JSON.stringify(payload)
         });
       } else {
-        res = await fetch("http://localhost:4000/api/v1/companies", {
+        res = await fetch(`${API_URL}/companies`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -431,11 +499,21 @@ export default function PerfilEmpresa() {
       if (!empresaId && data?.data?.id) setEmpresaId(data.data.id);
       if (data?.data) setEmpresa(data.data);
 
-      Swal.fire("Éxito", "Datos de la empresa guardados correctamente", "success");
+      Swal.fire("Exito", "Datos de la empresa guardados correctamente", "success");
     } catch (err: any) {
       Swal.fire("Error", err.message, "error");
     }
   };
+
+  // âœ… Nombre del usuario y empresa (mostrar ambos si existen)
+  const userName =
+    user?.fullName || user?.username || user?.name || profileData.nombre || "Usuario";
+
+  const empresaName = empresa?.name || profileData.razonSocial || "";
+
+  const displayName = empresaName
+    ? `${userName} - ${empresaName}`
+    : userName;
 
   // --- Cerrar sesión ---
   const handleLogout = () => {
@@ -445,7 +523,8 @@ export default function PerfilEmpresa() {
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
-      cancelButtonText: "Cancelar"
+      confirmButtonText: "Cerrar sesión",
+      cancelButtonText: "Cancelar",
     }).then((r) => {
       if (r.isConfirmed) {
         localStorage.removeItem("token");
@@ -455,27 +534,28 @@ export default function PerfilEmpresa() {
     });
   };
 
-  // 🔹 Filtrar ciudades según el departamento seleccionado
- useEffect(() => {
-  if (selectedDept) {
-    const dept = departamentos.find(d => d.name === selectedDept);
-    if (dept) {
-      const filtered = ciudades.filter(
-        (c) => c.departmentId === dept.id
-      );
-      setFilteredCities(filtered);
+
+  // ðŸ”¹ Filtrar ciudades segÃºn el departamento seleccionado
+  useEffect(() => {
+    if (selectedDept) {
+      const dept = departamentos.find(d => d.name === selectedDept);
+      if (dept) {
+        const filtered = ciudades.filter(
+          (c) => c.departmentId === dept.id
+        );
+        setFilteredCities(filtered);
+      } else {
+        // Si no hay departamento, mostrar todas las ciudades sin departmentId
+        setFilteredCities(ciudades.filter(c => !c.departmentId));
+      }
     } else {
-      // Si no hay departamento, mostrar todas las ciudades sin departmentId
-      setFilteredCities(ciudades.filter(c => !c.departmentId));
+      // Si no se selecciona ningÃºn depto, mostrar todas
+      setFilteredCities(ciudades);
     }
-  } else {
-    // Si no se selecciona ningún depto, mostrar todas
-    setFilteredCities(ciudades);
-  }
-}, [selectedDept, ciudades, departamentos]);
+  }, [selectedDept, ciudades, departamentos]);
 
 
-  // 👇 InfoField con soporte para selects dinámicos (departamento y ciudad)
+  // ðŸ‘‡ InfoField con soporte para selects dinÃ¡micos (departamento y ciudad)
   const InfoField = ({
     icon,
     label,
@@ -508,75 +588,91 @@ export default function PerfilEmpresa() {
 
           {editingField === fieldKey ? (
             <div className="flex gap-2 mt-1">
-              {/* 🔽 SELECT DE DEPARTAMENTO */}
+              {/* ðŸ”½ SELECT DE DEPARTAMENTO */}
               {isDept ? (
-                <select
-                  value={selectedDept}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setSelectedDept(value);
-                    setEditedValue(value);
-
-                    // Filtrar las ciudades que pertenecen a ese departamento
-                    const dept = departamentos.find((d) => d.name === value);
-                    if (dept) {
-                      const filtered = ciudades.filter(
-                        (c) => c.departmentId === dept.id
-                      );
-                      setFilteredCities(filtered);
-                    }
-
-                    // Si el usuario cambia de departamento, limpiamos la ciudad
-                    setProfileData((prev) => ({ ...prev, ciudad: "" }));
-                  }}
-                  className="border rounded-lg p-2 w-full bg-white text-black"
-                  disabled={profileData.ciudad !== ""} // 🧾 Desactiva si ya hay una ciudad seleccionada
-                >
-                  <option value="">Seleccione un departamento</option>
-                  {departamentos.map((d) => (
-                    <option key={d.id} value={d.name}>
-                      {d.name}
-                    </option>
-                  ))}
-                </select>
+                /* ðŸ”¹ Departamento solo mostrado, dependiente de la ciudad */
+                <input
+                  type="text"
+                  value={profileData.departamento || ""}
+                  readOnly
+                  className="border rounded-lg p-2 w-full bg-gray-100 text-gray-700 cursor-not-allowed"
+                  placeholder="Elige primero una ciudad"
+                />
               ) : isCity ? (
-                /* 🔽 SELECT DE CIUDAD FILTRADA */
+                /* ðŸ”¹ Selector de ciudad: al elegir una ciudad, se completa el departamento */
                 <select
                   value={editedValue}
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const ciudadSeleccionada = e.target.value;
                     setEditedValue(ciudadSeleccionada);
 
                     // Buscar la ciudad y su departamento
-                    const ciudadObj = ciudades.find(
-                      (c) => c.name === ciudadSeleccionada
-                    );
-                    if (ciudadObj) {
-                      const departamentoObj = departamentos.find(
-                        (d) => d.id === ciudadObj.departmentId
-                      );
+                    const ciudadObj = ciudades.find((c) => c.name === ciudadSeleccionada);
+                    if (!ciudadObj) return;
 
-                      if (departamentoObj) {
-                        // ✅ Actualizar automáticamente el campo departamento
-                        setSelectedDept(departamentoObj.name);
-                        setProfileData((prev) => ({
-                          ...prev,
-                          departamento: departamentoObj.name,
-                        }));
-                      }
+                    const departamentoObj = departamentos.find(
+                      (d) => d.id === ciudadObj.departmentId
+                    );
+
+                    const departamentoName = departamentoObj?.name || "";
+
+                    // Actualizar estados locales
+                    setProfileData((prev) => ({
+                      ...prev,
+                      ciudad: ciudadSeleccionada,
+                      departamento: departamentoName,
+                    }));
+
+                    // ðŸ”¹ Guardar automÃ¡ticamente en el backend
+                    try {
+                      const payload = toCompanyPayload({
+                        ...profileData,
+                        ciudad: ciudadSeleccionada,
+                        departamento: departamentoName,
+                      });
+
+                      const res = empresaId
+                        ? await fetch(`${API_URL}/companies/${empresaId}`, {
+                          method: "PUT",
+                          headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${localStorage.getItem("token")}`,
+                          },
+                          body: JSON.stringify(payload),
+                        })
+                        : await fetch(`${API_URL}/companies`, {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${localStorage.getItem("token")}`,
+                          },
+                          body: JSON.stringify(payload),
+                        });
+
+                      const data = await res.json();
+                      if (!res.ok)
+                        throw new Error(data?.message || "Error al guardar empresa");
+
+                      Swal.fire(
+                        "exito",
+                        `Ciudad (${ciudadSeleccionada}) y departamento (${departamentoName}) actualizados correctamente.`,
+                        "success"
+                      );
+                    } catch (err: any) {
+                      Swal.fire("Error", err.message, "error");
                     }
                   }}
                   className="border rounded-lg p-2 w-full bg-white text-black"
                 >
                   <option value="">Seleccione una ciudad</option>
-                  {filteredCities.map((c) => (
+                  {ciudades.map((c) => (
                     <option key={c.id} value={c.name}>
                       {c.name}
                     </option>
                   ))}
                 </select>
               ) : (
-                /* 🔤 CAMPOS NORMALES */
+                /* ðŸ”¤ Campos normales */
                 <input
                   value={editedValue}
                   onChange={(e) => setEditedValue(e.target.value)}
@@ -587,7 +683,8 @@ export default function PerfilEmpresa() {
                 />
               )}
 
-              {/* ✅ Botones de guardar y cancelar */}
+
+              {/* âœ… Botones de guardar y cancelar */}
               <button
                 onClick={handleSave}
                 className="bg-green-600 text-white px-2 rounded"
@@ -602,15 +699,15 @@ export default function PerfilEmpresa() {
               </button>
             </div>
           ) : (
-            /* 👇 Valor mostrado normalmente */
+            /* ðŸ‘‡ Valor mostrado normalmente */
             <span
               className={`inline-block px-4 py-2 rounded-lg font-medium mt-1 ${modoOscuro
-                  ? isPlaceholder
-                    ? "bg-white/10 text-white/60 italic"
-                    : "bg-white/5 text-white"
-                  : isPlaceholder
-                    ? "bg-[#00324D]/5 text-[#00324D]/60 italic"
-                    : "bg-[#00324D]/10 text-[#00324D]"
+                ? isPlaceholder
+                  ? "bg-white/10 text-white/60 italic"
+                  : "bg-white/5 text-white"
+                : isPlaceholder
+                  ? "bg-[#00324D]/5 text-[#00324D]/60 italic"
+                  : "bg-[#00324D]/10 text-[#00324D]"
                 }`}
               style={{ fontSize: `${fontSize}px` }}
             >
@@ -619,7 +716,7 @@ export default function PerfilEmpresa() {
           )}
         </div>
 
-        {/* ✏️ Botón de edición */}
+        {/* âœï¸ BotÃ³n de ediciÃ³n */}
         {editingField !== fieldKey && (
           <button
             onClick={() =>
@@ -632,6 +729,39 @@ export default function PerfilEmpresa() {
         )}
       </div>
     );
+  };
+
+
+  // ðŸ”¹ Agregar interÃ©s desde lista (sin escribir)
+  const addInterestFromSelect = async (interestObj: any) => {
+    if (!userId) return Swal.fire("Error", "Usuario no identificado", "error");
+
+    try {
+      const resUserInterest = await fetch(`${API_URL}/userInterests`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify({ userId, interestId: interestObj.id })
+      });
+
+      const userInterestResp = await resUserInterest.json();
+      if (!resUserInterest.ok) throw new Error(userInterestResp.message);
+
+      const nuevo = {
+        userInterestId: userInterestResp.data?.id,
+        id: interestObj.id,
+        name: interestObj.name,
+        description: interestObj.description || "",
+      };
+
+      setProfileData(prev => ({ ...prev, intereses: [...prev.intereses, nuevo] }));
+      setNewInterest("");
+      Swal.fire("Exito", "Interes agregado correctamente", "success");
+    } catch (err: any) {
+      Swal.fire("Error", err.message, "error");
+    }
   };
 
 
@@ -649,7 +779,7 @@ export default function PerfilEmpresa() {
 
           {/* Botones flotantes (modo oscuro + zoom) */}
           <div className="fixed top-6 right-6 z-50 flex flex-col space-y-3 items-end">
-            {/* Botón modo oscuro */}
+            {/* BotÃ³n modo oscuro */}
             <button
               onClick={toggleModoOscuro}
               className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
@@ -661,7 +791,7 @@ export default function PerfilEmpresa() {
               {modoOscuro ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
             </button>
 
-            {/* Botón principal menú de zoom */}
+            {/* BotÃ³n principal menÃº de zoom */}
             <button
               onClick={toggleZoomMenu}
               className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
@@ -670,7 +800,7 @@ export default function PerfilEmpresa() {
                 }`}
               title="Opciones de texto"
             >
-              <ZoomIn className="h-6 w-6" />
+              <MdAccessibility className="h-6 w-6" />
             </button>
 
             {/* Botones secundarios (se muestran solo si mostrarZoom = true) */}
@@ -712,26 +842,92 @@ export default function PerfilEmpresa() {
             )}
           </div>
 
-          <div className="w-36 h-36 mt-4 rounded-full border-4 border-white shadow-lg overflow-hidden mx-auto">
-            {profileData.logo ? (
-              <img
-                src={profileData.logo}
+          {/* Ã°Å¸â€Â¹ Imagen de perfil con URL editable */}
+          <div className="relative w-36 h-36 mt-4 mx-auto">
+            {/* CÃƒÂ­rculo con imagen */}
+            <div
+              className="cursor-pointer w-full h-full rounded-full border-4 border-white shadow-lg overflow-hidden hover:opacity-80 transition-all"
+              title="Editar URL de imagen"
+              onClick={() => setEditingField("logo")}
+            >
+              <img src={user?.imgUser || profileData.logo || "/img/eco.jpeg"}
                 alt="Logo"
                 className="w-full h-full object-cover"
               />
-            ) : (
-              <img
-                src="../../../../public/img/eco.jpeg"
-                alt="Sin logo"
-                className="w-full h-full object-cover"
-              />
+            </div>
+
+            {/* Ã¢Å“ÂÃ¯Â¸Â BotÃƒÂ³n de ediciÃƒÂ³n en la esquina */}
+            <button
+              onClick={() => setEditingField("logo")}
+              className="absolute bottom-2 right-2 bg-yellow-400 text-[#00324D] p-2 rounded-full shadow-md hover:bg-yellow-300 transition"
+              title="Editar URL de imagen"
+            >
+              <FaEdit size={16} />
+            </button>
+
+            {/* Ã°Å¸â€Â¹ Campo de ediciÃƒÂ³n de la URL */}
+            {editingField === "logo" && (
+              <div className="absolute top-40 left-1/2 transform -translate-x-1/2 bg-white text-black p-4 rounded-lg shadow-lg w-80 z-50">
+                <label className="block font-semibold mb-2 text-sm">URL de la imagen:</label>
+                <input
+                  type="text"
+                  value={editedValue}
+                  onChange={(e) => setEditedValue(e.target.value)}
+                  placeholder="https://ejemplo.com/imagen.jpg"
+                  className="border p-2 rounded w-full mb-3"
+                />
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={async () => {
+                      if (!editedValue.trim()) {
+                        Swal.fire("AtenciÃƒÂ³n", "Por favor escribe una URL vÃƒÂ¡lida", "warning");
+                        return;
+                      }
+
+                      // Ã¢Å“â€¦ Actualiza la vista
+                      setProfileData((prev) => ({ ...prev, logo: editedValue }));
+                      setEditingField(null);
+
+                      // Ã¢Å“â€¦ EnvÃƒÂ­a al backend
+                      try {
+                        const res = await fetch(`${API_URL}/users/${userId}`, {
+                          method: "PUT",
+                          headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${localStorage.getItem("token")}`,
+                          },
+                          body: JSON.stringify({ imgUser: editedValue }),
+
+                        });
+
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.message || "Error al actualizar imagen");
+                        Swal.fire("Agregada", "Imagen actualizada correctamente", "success");
+                      } catch (err: any) {
+                        Swal.fire("Error", err.message, "error");
+                      }
+                    }}
+                    className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                  >
+                    Guardar
+                  </button>
+                  <button
+                    onClick={() => setEditingField(null)}
+                    className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
             )}
           </div>
 
-          {/* Nombre, email y nit editables con tamaño dinámico */}
+
+          {/* Nombre, email y nit editables con tamaÃ±o dinÃ¡mico */}
           <div className="relative group max-w-2xl mx-auto">
             <h1 className="font-bold mt-4" style={{ fontSize: `${fontSize * 2}px` }}>
               {editingField === 'nombre' ? (
+                /* tu input de ediciÃ³n existente (no cambia) */
                 <div className="flex gap-2 justify-center items-center">
                   <input
                     value={editedValue}
@@ -741,27 +937,20 @@ export default function PerfilEmpresa() {
                     autoFocus
                     placeholder={empresaPlaceholders.nombre}
                   />
-                  <button
-                    onClick={handleSave}
-                    className="bg-green-600 text-white px-3 py-2 rounded"
-                    style={{ fontSize: `${fontSize}px` }}
-                  >
+                  <button onClick={handleSave} className="bg-green-600 text-white px-3 py-2 rounded" style={{ fontSize: `${fontSize}px` }}>
                     <FaCheck />
                   </button>
-                  <button
-                    onClick={handleCancel}
-                    className="bg-red-600 text-white px-3 py-2 rounded"
-                    style={{ fontSize: `${fontSize}px` }}
-                  >
+                  <button onClick={handleCancel} className="bg-red-600 text-white px-3 py-2 rounded" style={{ fontSize: `${fontSize}px` }}>
                     <FaTimes />
                   </button>
                 </div>
               ) : (
                 <span className={!profileData.nombre ? 'italic opacity-80' : ''}>
-                  {user?.fullName || user?.username || user?.name || profileData.nombre || empresaPlaceholders.nombre}
+                  {displayName}
                 </span>
               )}
             </h1>
+
 
             {editingField !== 'nombre' && (
               <button
@@ -866,17 +1055,15 @@ export default function PerfilEmpresa() {
           </div>
 
 
-          {/* Intereses con tamaño dinámico */}
+          {/* ðŸ”¹ INTERESES DEL USUARIO */}
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             {profileData.intereses.map((interest, i) => (
               <span
                 key={i}
-                className={`px-4 py-2 rounded-full font-semibold shadow-sm flex items-center gap-2 ${modoOscuro
-                  ? 'bg-yellow-400 text-[#00324D]'
-                  : 'bg-white text-[#00324D] border border-[#00324D]/20'
-                  }`}
+                className="px-4 py-2 rounded-full font-semibold shadow-sm flex items-center gap-2 bg-yellow-400 text-[#00324D]"
                 style={{ fontSize: `${fontSize}px` }}
               >
+
                 {editingField === `interest-${i}` ? (
                   <>
                     <input
@@ -887,7 +1074,10 @@ export default function PerfilEmpresa() {
                       autoFocus
                     />
                     <button
-                      onClick={() => { updateInterest(interest, editedValue); setEditingField(null); }}
+                      onClick={() => {
+                        updateInterest(interest, editedValue);
+                        setEditingField(null);
+                      }}
                       className="bg-green-600 text-white w-5 h-5 rounded-full flex justify-center items-center hover:bg-green-700"
                     >
                       <FaCheck size={10} />
@@ -902,51 +1092,100 @@ export default function PerfilEmpresa() {
                 ) : (
                   <>
                     {interest.name}
-                    <button
-                      onClick={() => handleEditClick(`interest-${i}`, interest.name)}
-                      className={`ml-1 ${modoOscuro ? 'text-blue-900 hover:text-blue-700' : 'text-[#00324D] hover:text-[#001a27]'
-                        }`}
-                    >
-                      <FaEdit size={12} />
-                    </button>
+                    {/* <button
+            onClick={() => handleEditClick(`interest-${i}`, interest.name)}
+            className={`ml-1 ${
+              modoOscuro
+                ? "text-blue-900 hover:text-blue-700"
+                : "text-[#00324D] hover:text-[#001a27]"
+            }`}
+          >
+            <FaEdit size={12} />
+          </button> */}
                     <button
                       onClick={() => removeInterest(interest)}
-                      className="ml-1 bg-red-600 text-white w-5 h-5 rounded-full flex justify-center items-center hover:bg-red-700"
+                      className="ml-1 bg-[#00324D] text-yellow-400 w-5 h-5 rounded-full flex justify-center items-center hover:bg-[#001a27] transition-all duration-300"
+                      title="Eliminar interés"
                     >
-                      <FaMinus size={10} />
+                      <FaTimes size={10} />
                     </button>
+
+
                   </>
                 )}
               </span>
             ))}
           </div>
 
+
+          {/* 🔹 ICONO PARA DESPLEGAR SELECT DE INTERESES (solo visible si hay menos de 5) */}
           {profileData.intereses.length < 5 && (
-            <div className="mt-4 flex justify-center gap-2">
-              <input
-                type="text"
-                value={newInterest}
-                onChange={(e) => setNewInterest(e.target.value)}
-                placeholder="Nuevo interés"
-                className={`px-4 py-2 rounded-full w-44 outline-none transition-all ${modoOscuro
-                  ? 'bg-white/10 text-white placeholder-white/60 focus:bg-white/20'
-                  : 'bg-white text-[#00324D] placeholder-gray-500 border border-[#00324D]/30 focus:border-[#00324D] focus:ring-2 focus:ring-[#00324D]/20'
-                  }`}
-                style={{ fontSize: `${fontSize}px` }}
+            <div className="flex justify-center mt-4 relative">
+              <FaPlus
+                className="text-yellow-400 text-2xl cursor-pointer hover:scale-125 transition-transform drop-shadow-md"
+                onClick={() => setMostrarSelector((prev) => !prev)} // ✅ alterna abrir/cerrar
+                title="Agregar intereses"
               />
-              <button
-                onClick={addInterest}
-                disabled={!userId}
-                className={`${modoOscuro
-                  ? 'bg-yellow-400 text-black hover:bg-yellow-300'
-                  : 'bg-[#00324D] text-white hover:bg-[#002337]'
-                  } w-8 h-8 rounded-full flex items-center justify-center transition-all ${!userId && 'opacity-50 cursor-not-allowed'
-                  }`}
-              >
-                <FaPlus size={14} />
-              </button>
+
+              {/* 🔹 SELECTOR DESPLEGABLE DE INTERESES */}
+              {mostrarSelector && (
+                <div
+                  className="absolute top-10 left-1/2 transform -translate-x-1/2 mt-2 z-50"
+                >
+                  <select
+                    ref={selectRef}
+                    className={`w-72 border rounded-lg p-2 focus:ring-2 focus:ring-white-400 transition-all duration-300
+            ${modoOscuro
+                        ? "bg-[#0f172a] text-white border-gray-600"
+                        : "bg-white text-[#00324D] border-gray-300"
+                      }`}
+                    onChange={(e) => {
+                      const selected = interestsList.find(
+                        (int) => int.id === Number(e.target.value)
+                      );
+
+                      if (selected) {
+                        addInterestFromSelect(selected);
+                      }
+
+                      // ✅ cierre automático incluso si no selecciona nada
+                      setMostrarSelector(false);
+                    }}
+                    onBlur={() => setMostrarSelector(false)} // ✅ cierra al perder el foco
+                  >
+                    <option value="">
+                      {modoOscuro ? "🌕 Seleccionar interés..." : "Seleccionar interés..."}
+                    </option>
+
+                    {interestsList
+                      .filter(
+                        (int) =>
+                          !profileData.intereses.some((uInt) => uInt.id === int.id)
+                      )
+                      .map((interes) => (
+                        <option
+                          key={interes.id}
+                          value={interes.id}
+                          className={`${modoOscuro
+                            ? "bg-[#1e293b] text-white"
+                            : "bg-white text-[#00324D]"
+                            }`}
+                        >
+                          {interes.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
             </div>
           )}
+
+
+
+
+
+
+
         </header>
 
         {/* MAIN */}
@@ -954,7 +1193,7 @@ export default function PerfilEmpresa() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-8">
             {/* Columna 1 */}
             <div className="space-y-8">
-              <InfoField icon={<FaBuilding />} label="Razón Social:" fieldKey="razonSocial" />
+              <InfoField icon={<FaBuilding />} label="Razón social:" fieldKey="razonSocial" />
               <InfoField icon={<FaMapMarkedAlt />} label="Dirección:" fieldKey="direccion" />
               <InfoField icon={<FaLayerGroup />} label="Departamento:" fieldKey="departamento" />
               <InfoField icon={<FaPhone />} label="Teléfono:" fieldKey="telefono" />
@@ -962,13 +1201,14 @@ export default function PerfilEmpresa() {
 
             {/* Columna 2 */}
             <div className="space-y-8">
-              <InfoField icon={<FaUsers />} label="Número Empleados:" fieldKey="numEmpleados" />
+              <InfoField icon={<FaUsers />} label="Número de empleados:" fieldKey="numEmpleados" />
               <InfoField icon={<FaCity />} label="Ciudad:" fieldKey="ciudad" />
-              <InfoField icon={<FaGlobe />} label="Página Web:" fieldKey="paginaWeb" />
-              <InfoField icon={<FaLaptopCode />} label="Sector Económico:" fieldKey="sector" />
+              <InfoField icon={<FaGlobe />} label="Página web:" fieldKey="paginaWeb" />
+              <InfoField icon={<FaLaptopCode />} label="Sector económico:" fieldKey="sector" />
             </div>
 
-            {/* Descripción con tamaño dinámico */}
+
+            {/* DescripciÃ³n con tamaÃ±o dinÃ¡mico */}
             <div className="relative group md:col-span-3 lg:col-span-1">
               <div className="flex items-start gap-5">
                 <div className={`w-10 text-center mt-1 ${styles.text}`} style={{ fontSize: `${fontSize * 1.5}px` }}>
@@ -1022,7 +1262,7 @@ export default function PerfilEmpresa() {
             </div>
           </div>
 
-          {/* Botones de acción con tamaño dinámico */}
+          {/* Botones de acciÃ³n con tamaÃ±o dinÃ¡mico */}
           <div className="mt-12 flex justify-center gap-6">
             <a
               href="/requisitos"

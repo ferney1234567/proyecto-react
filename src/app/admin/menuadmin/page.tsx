@@ -22,7 +22,7 @@ import Interes from "../intereses/Intereses";
 import Chequeo from "../checkeo/checkeo";
 import Favorito from "../favoritos/favoritos";
 import RequisitosCategoria from "../requisitosCategoria/requisitosCategoria";
-import ConvocatoriaHistorial from "../convocatoriaHistorial/convocatoriaHistorial";
+
 import UsuarioInteres from "../usuarioInteres/usuarioInteres";
 import InteresAdicionalConvocatoria from "../interesAdicionalConvocatorias/interesAdicionalConvocatorias";
 import ProfileAvatar from "../modaluserAdmin/modalAdmin";
@@ -110,6 +110,8 @@ const ComponentesCards = () => {
   const toggleProfileModal = () => setShowProfileModal(!showProfileModal);
   const toggleLogoutModal = () => setShowLogoutModal(!showLogoutModal);
 
+
+  
   // Contadores
   const [counts, setCounts] = useState<any>({
     lineas: 0,
@@ -134,62 +136,63 @@ const ComponentesCards = () => {
     favoritos: 0, // si lo expones por otra ruta, cámbialo aquí
   });
 
-  useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        const [
-          lineas, convocatorias, empresas, usuarios, ciudades,
-          departamentos, intereses, requisitos, categorias, roles,
-          requirementGroups, requirementChecks, userInterests, callAdditionalInterests, favoritos, publicoObjetivo, entidadInstitucion
-        ] = await Promise.all([
-          getLineas(),
-          getConvocatorias(),
-          getEmpresas(),
-          getUsers(),
-          fetchCiudades(),
-          fetchDepartamentos(),
-          getIntereses(),
-          getRequisitos(),
-          getCategorias(),
-          getRoles(),
-          getRequirementGroups(),
-          getRequirementChecks(),
-          getUserInterests(),
-          getCallAdditionalInterests(),
-          getFavoritos(),
-          getPublicos(),        // ✅ nuevo
-          getEntidades(),     // ✅ nuevo // si lo expones por otra ruta, cámbialo aquí
-        ]);
+ const fetchAll = async () => {
+  try {
+    const [
+      lineas, convocatorias, empresas, usuarios, ciudades,
+      departamentos, intereses, requisitos, categorias, roles,
+      requirementGroups, requirementChecks, userInterests, favoritos,
+      publicoObjetivo, entidadInstitucion, callAdditionalInterests
+    ] = await Promise.all([
+      getLineas(),
+      getConvocatorias(),
+      getEmpresas(),
+      getUsers(),
+      fetchCiudades(),
+      fetchDepartamentos(),
+      getIntereses(),
+      getRequisitos(),
+      getCategorias(),
+      getRoles(),
+      getRequirementGroups(),
+      getRequirementChecks(),
+      getUserInterests(),
+      getFavoritos(),
+      getPublicos(),
+      getEntidades(),
+      getCallAdditionalInterests(),
+    ]);
 
-        setCounts((prev: any) => ({
-          ...prev,
-          lineas: normalizeCount(lineas),
-          convocatorias: normalizeCount(convocatorias),
-          empresas: normalizeCount(empresas),
-          usuarios: normalizeCount(usuarios),
-          ciudades: normalizeCount(ciudades),
-          departamentos: normalizeCount(departamentos),
-          intereses: normalizeCount(intereses),
-          requisitos: normalizeCount(requisitos),
-          categorias: normalizeCount(categorias),
-          roles: normalizeCount(roles),
-          requirementGroups: normalizeCount(requirementGroups),
-          requirementChecks: normalizeCount(requirementChecks),
-          userInterests: normalizeCount(userInterests),
-          callAdditionalInterests: normalizeCount(callAdditionalInterests),
-          favoritos: normalizeCount(favoritos),
-          publicoObjetivo: normalizeCount(publicoObjetivo),     // ✅
-          entidadInstitucion: normalizeCount(entidadInstitucion), // ✅
-          // ✅
-          chequeos: normalizeCount(requirementChecks),          // ✅
-        }));
+    setCounts({
+      lineas: normalizeCount(lineas),
+      convocatorias: normalizeCount(convocatorias),
+      empresas: normalizeCount(empresas),
+      usuarios: normalizeCount(usuarios),
+      ciudades: normalizeCount(ciudades),
+      departamentos: normalizeCount(departamentos),
+      intereses: normalizeCount(intereses),
+      requisitos: normalizeCount(requisitos),
+      categorias: normalizeCount(categorias),
+      roles: normalizeCount(roles),
+      requirementGroups: normalizeCount(requirementGroups),
+      requirementChecks: normalizeCount(requirementChecks),
+      userInterests: normalizeCount(userInterests),
+      callAdditionalInterests: normalizeCount(callAdditionalInterests),
+      favoritos: normalizeCount(favoritos),
+      publicoObjetivo: normalizeCount(publicoObjetivo),
+      entidadInstitucion: normalizeCount(entidadInstitucion),
+      chequeos: normalizeCount(requirementChecks),
+    });
+  } catch (e) {
+    console.error("Error cargando conteos", e);
+  }
+};
 
-      } catch (e) {
-        console.error("Error cargando conteos", e);
-      }
-    };
-    fetchAll();
-  }, []);
+// ✅ Llamada inicial
+useEffect(() => {
+  fetchAll();
+}, []);
+
 
   const colorPalette = [
     "from-blue-500 to-blue-600",
@@ -346,13 +349,7 @@ const ComponentesCards = () => {
       descripcion: "Categoría o línea específica en la que se enmarca la convocatoria.",
       component: (m: boolean) => <RequisitosCategoria modoOscuro={m} />,
     },
-    {
-      id: "convocatoriaHistorial",
-      icon: FaClipboardList,
-      name: "Convocatoria Historial",
-      descripcion: "Registro histórico de convocatorias pasadas y resultados.",
-      component: (m: boolean) => <ConvocatoriaHistorial modoOscuro={m} />,
-    },
+   
     {
       id: "usuarioInteres",
       icon: FaUserTag,
@@ -374,7 +371,11 @@ const ComponentesCards = () => {
   }));
 
   const handleCardClick = (id: string) => setActiveComponent(id);
-  const handleCloseModal = () => setActiveComponent(null);
+  
+  const handleCloseModal = () => {
+  setActiveComponent(null);
+  fetchAll(); // 🔄 recarga los conteos
+};
 
   const filteredComponents = components.filter(
     (component) =>
@@ -431,42 +432,43 @@ const ComponentesCards = () => {
           {/* Statistics (placeholder visual - puedes conectar a KPIs si quieres) */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             {[
-              {
-                value: formatNumber(
-                  counts.lineas + counts.convocatorias + counts.empresas + counts.usuarios +
-                  counts.ciudades + counts.departamentos + counts.intereses + counts.requisitos
-                ),
-                label: "Total Registros",
-                icon: FileText,
-                change: "+12%",
-                changeType: "increase",
-                color: "from-blue-500 to-cyan-500",
-              },
-              {
-                value: formatNumber(counts.convocatorias),
-                label: "Total Convocatorias",
-                icon: Users,
-                change: "+5%",
-                changeType: "increase",
-                color: "from-purple-500 to-pink-500",
-              },
-              {
-                value: formatNumber(counts.usuarios),
-                label: "Usuarios",
-                icon: Star,
-                change: "+8%",
-                changeType: "increase",
-                color: "from-emerald-500 to-teal-500",
-              },
-              {
-                value: formatNumber(counts.requirementChecks + counts.userInterests),
-                label: "Alertas",
-                icon: Bell,
-                change: "+2",
-                changeType: "alert",
-                color: "from-orange-500 to-red-500",
-              },
-            ].map((stat, idx) => {
+  {
+    value: formatNumber(
+      counts.lineas + counts.convocatorias + counts.empresas + counts.usuarios +
+      counts.ciudades + counts.departamentos + counts.intereses + counts.requisitos
+    ),
+    label: "Total Registros",
+    icon: FileText,
+    change: "+12%",       // 🔹 ← Valor estático
+    changeType: "increase",
+    color: "from-blue-500 to-cyan-500",
+  },
+  {
+    value: formatNumber(counts.convocatorias),
+    label: "Total Convocatorias",
+    icon: Users,
+    change: "+5%",        // 🔹 ← Valor estático
+    changeType: "increase",
+    color: "from-purple-500 to-pink-500",
+  },
+  {
+    value: formatNumber(counts.usuarios),
+    label: "Usuarios",
+    icon: Star,
+    change: "+8%",        // 🔹 ← Valor estático
+    changeType: "increase",
+    color: "from-emerald-500 to-teal-500",
+  },
+  {
+    value: formatNumber(counts.requirementChecks + counts.userInterests),
+    label: "Alertas",
+    icon: Bell,
+    change: "+2",         // 🔹 ← Valor estático
+    changeType: "alert",
+    color: "from-orange-500 to-red-500",
+  },
+]
+.map((stat, idx) => {
               const Icon = stat.icon;
               return (
                 <div

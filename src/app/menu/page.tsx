@@ -17,22 +17,24 @@ import {
   FaTractor,
   FaUserShield
 } from 'react-icons/fa';
-import { MdWorkspacePremium } from 'react-icons/md';
+import { MdAccessibility, MdWorkspacePremium } from 'react-icons/md';
 import Link from "next/link";
 import Carousel from "../../components/carrucel/Carousel";
 import ModalConvocatoria from '../../components/detalleConvo/detalleConvo';
-import { ChevronLeft, ChevronRight, Moon, RefreshCcw, Sun, ZoomIn, ZoomOut } from 'lucide-react';
+import { Accessibility, ChevronLeft, ChevronRight, Moon, RefreshCcw, Sun, ZoomIn, ZoomOut } from 'lucide-react';
 import { getConvocatorias } from "../api/convocatorias/routes";
 import { getLineas } from "../api/linea/routes";
 import Swal from "sweetalert2";
 import confetti from "canvas-confetti";
 import { getFavoritos, createFavorito, deleteFavorito } from "../api/favoritos/routes";
-
+import { useFontSize } from '../../../FontSizeContext';
 // Tema
 import { useTheme } from "../ThemeContext";
 import { getThemeStyles } from "../themeStyles";
 import React from 'react';
 import { useRouter } from "next/navigation";
+import { asignarImagenesPorDefecto } from "@/utils/asignarImagenesPorDefecto";
+import 'animate.css';
 
 
 // Tipado base
@@ -102,7 +104,6 @@ const normalizeFav = (f: any): Favorito | null => {
 export default function HomePage() {
 
   const [mostrarZoom, setMostrarZoom] = useState(false);
-  const [fontSize, setFontSize] = useState(16);
 
   // Paginación
   const [paginaActual, setPaginaActual] = useState(1);
@@ -114,9 +115,8 @@ export default function HomePage() {
 
   const toggleZoomMenu = () => setMostrarZoom(!mostrarZoom);
 
-  const aumentarTexto = () => setFontSize((prev) => prev + 2);
-  const disminuirTexto = () => setFontSize((prev) => Math.max(10, prev - 2));
-  const resetTexto = () => setFontSize(16);
+  // ✅ Usamos el contexto global (no definas useState aquí)
+  const { fontSize, aumentarTexto, disminuirTexto, resetTexto } = useFontSize();
 
 
   const router = useRouter();
@@ -137,6 +137,8 @@ export default function HomePage() {
   const [convocatoriaSeleccionada, setConvocatoriaSeleccionada] = useState<Convocatoria | null>(null);
   const [expandida, setExpandida] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+
 
   // Tema
   const { modoOscuro, toggleModoOscuro } = useTheme();
@@ -160,19 +162,23 @@ export default function HomePage() {
   const obtenerInicial = (nombre?: string) =>
     (nombre?.charAt(0)?.toUpperCase() || "?");
 
-  // Carga de datos
   useEffect(() => {
     (async () => {
       try {
         const data = await getConvocatorias();
-        setConvocatorias(data?.data ?? data ?? []);
+        // ✅ Aplica la función global que ya evita repeticiones
+        const listaConImagenes = asignarImagenesPorDefecto(data?.data || []);
+        setConvocatorias(listaConImagenes);
       } catch (err) {
-        console.error("Error al cargar convocatorias", err);
+        console.error("❌ Error al cargar convocatorias:", err);
+        Swal.fire("Error", "No se pudieron cargar las convocatorias.", "error");
       }
     })();
   }, []);
 
-  
+
+
+
 
   useEffect(() => {
     (async () => {
@@ -184,7 +190,7 @@ export default function HomePage() {
       }
     })();
   }, []);
- 
+
   // Efecto decorativo
   useEffect(() => {
     const linea = document.getElementById('lineaGradiente');
@@ -205,7 +211,7 @@ export default function HomePage() {
     const intervalo = setInterval(actualizarColores, 3000);
     return () => clearInterval(intervalo);
   }, []);
-  
+
 
   // Favoritos
   const [favoritos, setFavoritos] = useState<Favorito[]>([]);
@@ -234,16 +240,23 @@ export default function HomePage() {
     return cid != null && favoritos.some(f => Number(f.callId) === Number(cid));
   };
 
-  const handleFavorito = async (convocatoria: Convocatoria) => {
+const handleFavorito = async (convocatoria: Convocatoria) => {
   const uid = getUserId(usuario);
   const cid = getConvocatoriaCallId(convocatoria);
 
   if (!uid) {
-    Swal.fire("⚠️ Atención", "Debes iniciar sesión para guardar favoritos", "warning");
+    Swal.fire({
+      title: "⚠️ Atención",
+      text: "Debes iniciar sesión para guardar favoritos",
+      icon: "warning",
+      background: modoOscuro ? "#1a0526" : "#fff",
+      color: modoOscuro ? "#fff" : "#333",
+      confirmButtonColor: modoOscuro ? "#39A900" : "#2d8500",
+    });
     return;
   }
+
   if (!cid) {
-    console.error("No se pudo determinar el callId de la convocatoria", convocatoria);
     Swal.fire("Error", "No se pudo identificar la convocatoria (callId).", "error");
     return;
   }
@@ -251,44 +264,110 @@ export default function HomePage() {
   try {
     const favoritoExistente = favoritos.find((f) => Number(f.callId) === Number(cid));
 
+    // === 🗑️ Eliminar favorito ===
     if (favoritoExistente?.id) {
-      // Eliminar
       await deleteFavorito(favoritoExistente.id);
       setFavoritos((prev) => prev.filter((f) => Number(f.callId) !== Number(cid)));
 
       Swal.fire({
-        title: "Eliminado",
-        text: "Este elemento fue eliminado de tus favoritos.",
-        icon: "info",
-        confirmButtonText: "OK",
+        title: "Eliminado de favoritos",
+        html: `
+          <div style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+            <div style="
+              font-size:60px;
+              color:#e63946;
+              margin-bottom:10px;
+              animation: pulse 1s ease-in-out infinite alternate;
+            ">🗑️</div>
+            <p style="font-size:17px;">Este elemento fue eliminado correctamente.</p>
+            <button id="ok-btn" style="
+              margin-top:12px;
+              background-color:#e63946;
+              color:#fff;
+              border:none;
+              border-radius:10px;
+              padding:8px 18px;
+              font-weight:bold;
+              cursor:pointer;
+            ">OK</button>
+          </div>
+          <style>
+            @keyframes pulse {
+              0% { transform: scale(1); opacity:0.9; }
+              100% { transform: scale(1.1); opacity:1; }
+            }
+          </style>
+        `,
+        background: modoOscuro ? "#1a0526" : "#fff",
+        color: modoOscuro ? "#fff" : "#333",
+        showConfirmButton: false,
+        width: 400,
+        padding: "1.6em",
+        didOpen: () => {
+          const okBtn = document.getElementById("ok-btn");
+          if (okBtn) okBtn.addEventListener("click", () => Swal.close());
+        },
       });
+    }
 
-    } else {
-      // Crear
+    // === ⭐ Agregar favorito ===
+    else {
       const payload = { userId: uid, callId: cid };
       const nuevoFav = await createFavorito(payload);
-      const creadoRaw = (nuevoFav?.data ?? nuevoFav);
-      const creado = normalizeFav(creadoRaw) ?? { userId: uid, callId: cid, id: creadoRaw?.id };
+      const creadoRaw = nuevoFav?.data ?? nuevoFav;
+      const creado =
+        normalizeFav(creadoRaw) ?? { userId: uid, callId: cid, id: creadoRaw?.id };
 
       setFavoritos((prev) => [...prev, creado]);
 
+      // ✨ SweetAlert estilizado con estrella
       Swal.fire({
-        title: "Agregado",
-        text: "Este elemento fue agregado a tus favoritos.",
-        icon: "success",
-        confirmButtonText: "OK",
+        title: "¡Agregado a Favoritos!",
+        html: `
+          <div style="display:flex; justify-content:center; align-items:center; flex-direction:column;">
+            <div style="
+              font-size:50px;
+              color:${modoOscuro ? '#FFD700' : '#ffcc00'};
+              animation: glow 1.4s ease-in-out infinite alternate;
+              margin-bottom:6px;
+            ">⭐</div>
+            <p style="font-size:16px;">Esta convocatoria ha sido destacada.</p>
+            <button id="ok-btn-add" style="
+              margin-top:12px;
+              background-color:${modoOscuro ? '#39A900' : '#2d8500'};
+              color:#fff;
+              border:none;
+              border-radius:10px;
+              padding:8px 18px;
+              font-weight:bold;
+              cursor:pointer;
+            ">OK</button>
+          </div>
+          <style>
+            @keyframes glow {
+              0% { text-shadow: 0 0 8px ${modoOscuro ? '#FFD700' : '#ffcc00'}; transform: scale(1); }
+              100% { text-shadow: 0 0 20px ${modoOscuro ? '#FFF176' : '#FFEB3B'}; transform: scale(1.15); }
+            }
+          </style>
+        `,
+        background: modoOscuro ? "#1a0526" : "#fff",
+        color: modoOscuro ? "#fff" : "#333",
+        showConfirmButton: false,
+        width: 400,
+        padding: "1.6em",
+        didOpen: () => {
+          const okBtn = document.getElementById("ok-btn-add");
+          if (okBtn) okBtn.addEventListener("click", () => Swal.close());
+        },
       });
     }
   } catch (err: any) {
     console.error("❌ Error al actualizar favoritos:", err);
-    const msg = String(err?.message ?? "");
-    if (msg.includes("Faltan campos obligatorios")) {
-      Swal.fire("Error", "Faltan userId o callId en la petición. Revisa el usuario en localStorage y la convocatoria.", "error");
-    } else {
-      Swal.fire("Error", "No se pudo actualizar favoritos", "error");
-    }
+    Swal.fire("Error", "No se pudo actualizar tus favoritos.", "error");
   }
 };
+
+
 
   // Scroll del carrusel
   const scroll = (direccion: "left" | "right") => {
@@ -380,28 +459,28 @@ export default function HomePage() {
 
                 <Link href="/usuario/perfilUser">
                   <div
-  onClick={() => {
-    if (usuario && (usuario as any)?.name) {
-      Swal.fire({
-        title: `👋 Bienvenido ${(usuario as any).name}`,
-        html: "<p style='margin-top:8px;font-size:14px;'>Este es tu perfil.<br/>Completa tus datos y conoce nuestra plataforma.</p>",
-        icon: "info",
-        position: "top-end",
-        toast: true,
-        showConfirmButton: false,
-        timer: 4000,
-        background: modoOscuro ? "#1f2937" : "#ffffff",
-        color: modoOscuro ? "#f3f4f6" : "#111827",
-      });
-    }
-    // Redirección al perfil
-    router.push("/usuario/perfilUser");
-  }}
-  className={`h-10 w-10 rounded-full flex items-center justify-center font-bold shadow-md cursor-pointer
+                    onClick={() => {
+                      if (usuario && (usuario as any)?.name) {
+                        Swal.fire({
+                          title: `👋 Bienvenido ${(usuario as any).name}`,
+                          html: "<p style='margin-top:8px;font-size:14px;'>Este es tu perfil.<br/>Completa tus datos y conoce nuestra plataforma.</p>",
+                          icon: "info",
+                          position: "top-end",
+                          toast: true,
+                          showConfirmButton: false,
+                          timer: 4000,
+                          background: modoOscuro ? "#1f2937" : "#ffffff",
+                          color: modoOscuro ? "#f3f4f6" : "#111827",
+                        });
+                      }
+                      // Redirección al perfil
+                      router.push("/usuario/perfilUser");
+                    }}
+                    className={`h-10 w-10 rounded-full flex items-center justify-center font-bold shadow-md cursor-pointer
     ${modoOscuro ? "bg-gray-600 text-white" : "bg-[#8f928f] text-white"}`}
->
-  {obtenerInicial((usuario as any)?.name)}
-</div>
+                  >
+                    {obtenerInicial((usuario as any)?.name)}
+                  </div>
 
                 </Link>
               </nav>
@@ -429,7 +508,7 @@ export default function HomePage() {
                     }`}
                   title="Opciones de texto"
                 >
-                  <ZoomIn className="h-6 w-6" />
+                  <MdAccessibility className="h-6 w-6" />
                 </button>
 
 
@@ -485,7 +564,7 @@ export default function HomePage() {
 
           <section
             className="group"
-            style={{ fontSize: `${fontSize}px` }} // 🔹 Escala global aplicada aquí
+            style={{ fontSize: `${fontSize}px` }}
           >
             <h2
               className={`text-3xl font-bold mt-8 mb-2 flex items-center gap-2 ${styles.text}`}
@@ -505,21 +584,24 @@ export default function HomePage() {
             />
 
             <div className="relative w-full py-0">
-              {/* Botón scroll izquierda */}
+              {/* 🔹 Botón scroll izquierda */}
               <button
                 onClick={() => scroll("left")}
-                className="absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-white/80 dark:bg-gray-700/80 p-2 rounded-full shadow hover:scale-110 transition"
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-white/70 dark:bg-gray-700/60 p-2 rounded-full shadow-sm hover:scale-110 transition
+                 hover:bg-white/80 dark:hover:bg-gray-600/70"
                 style={{ fontSize: "0.9em" }}
               >
-                <ChevronLeft style={{ fontSize: "1em" }} />
+                <ChevronLeft className="text-gray-700 dark:text-gray-300" style={{ fontSize: "1em" }} />
               </button>
 
-              {/* Lista de filtros */}
+              {/* 🔹 Lista de filtros */}
               <div
                 ref={scrollRef}
-                className="flex gap-3 overflow-x-auto px-16 scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden h-[65px] items-center"
+                className="flex gap-3 overflow-x-auto px-16 scroll-smooth [scrollbar-width:none] 
+                 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden 
+                 h-[65px] items-center"
               >
-                {/* Botón "Todos" */}
+                {/* 🔹 Botón “Todos” */}
                 <button
                   key="todos"
                   onClick={() => {
@@ -527,18 +609,18 @@ export default function HomePage() {
                     setPaginaActual(1);
                   }}
                   className={`flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-full transition-all duration-300 hover:scale-105 shadow-sm origin-center
-          ${lineaSeleccionada === null ? "ring-2 ring-[#39A900]" : ""}
-          ${modoOscuro
-                      ? "bg-[#0e1626] border border-white/10 text-gray-200"
-                      : "bg-gray-100 border border-gray-200 text-gray-700"
-                    } hover:bg-gradient-to-r hover:from-green-200 hover:to-emerald-300 hover:text-gray-900`}
+        ${lineaSeleccionada === null ? "ring-2 ring-[#39A900]" : ""}
+        ${modoOscuro
+                      ? "bg-[#0e1626] border border-white/10 text-gray-200 hover:bg-[#1a2335] hover:text-emerald-300"
+                      : "bg-gray-100 border border-gray-200 text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-200 hover:text-gray-900"
+                    }`}
                   style={{ fontSize: "0.95em" }}
                 >
                   <FaGlobe style={{ fontSize: "1em" }} />
                   <span className="font-medium">Todos</span>
                 </button>
 
-                {/* Botones dinámicos de líneas */}
+                {/* 🔹 Botones dinámicos */}
                 {lineas.map((linea, index) => {
                   const iconos = [
                     <FaBriefcase key="brief" />,
@@ -557,30 +639,33 @@ export default function HomePage() {
                     <FaPaintBrush key="art" />,
                     <FaTractor key="agri" />,
                   ];
-                  const colores = [
-                    "hover:from-blue-200 hover:to-blue-400",
-                    "hover:from-green-200 hover:to-green-400",
-                    "hover:from-purple-200 hover:to-purple-400",
-                    "hover:from-yellow-200 hover:to-yellow-400",
-                    "hover:from-pink-200 hover:to-pink-400",
-                    "hover:from-red-200 hover:to-red-400",
-                    "hover:from-indigo-200 hover:to-indigo-400",
-                    "hover:from-teal-200 hover:to-teal-400",
-                    "hover:from-cyan-200 hover:to-cyan-400",
-                    "hover:from-orange-200 hover:to-orange-400",
-                    "hover:from-lime-200 hover:to-lime-400",
-                    "hover:from-rose-200 hover:to-rose-400",
-                    "hover:from-amber-200 hover:to-amber-400",
-                    "hover:from-fuchsia-200 hover:to-fuchsia-400",
-                    "hover:from-emerald-200 hover:to-emerald-400",
-                    "hover:from-sky-200 hover:to-sky-400",
-                    "hover:from-violet-200 hover:to-violet-400",
-                    "hover:from-stone-200 hover:to-stone-400",
-                    "hover:from-gray-200 hover:to-gray-400",
-                    "hover:from-slate-200 hover:to-slate-400",
+
+                  // 🔹 Colores más suaves y controlados (sin brillos intensos)
+                  const coloresSuaves = [
+                    "hover:from-blue-100 hover:to-blue-200",
+                    "hover:from-green-100 hover:to-green-200",
+                    "hover:from-purple-100 hover:to-purple-200",
+                    "hover:from-yellow-100 hover:to-yellow-200",
+                    "hover:from-pink-100 hover:to-pink-200",
+                    "hover:from-red-100 hover:to-red-200",
+                    "hover:from-indigo-100 hover:to-indigo-200",
+                    "hover:from-teal-100 hover:to-teal-200",
+                    "hover:from-cyan-100 hover:to-cyan-200",
+                    "hover:from-orange-100 hover:to-orange-200",
+                    "hover:from-lime-100 hover:to-lime-200",
+                    "hover:from-rose-100 hover:to-rose-200",
+                    "hover:from-amber-100 hover:to-amber-200",
+                    "hover:from-fuchsia-100 hover:to-fuchsia-200",
+                    "hover:from-emerald-100 hover:to-emerald-200",
+                    "hover:from-sky-100 hover:to-sky-200",
+                    "hover:from-violet-100 hover:to-violet-200",
+                    "hover:from-stone-100 hover:to-stone-200",
+                    "hover:from-gray-100 hover:to-gray-200",
+                    "hover:from-slate-100 hover:to-slate-200",
                   ];
+
                   const icono = iconos[index % iconos.length];
-                  const colorHover = colores[index % colores.length];
+                  const colorHover = coloresSuaves[index % coloresSuaves.length];
 
                   return (
                     <button
@@ -590,13 +675,16 @@ export default function HomePage() {
                         setPaginaActual(1);
                       }}
                       className={`flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-full transition-all duration-300 hover:scale-105 shadow-sm hover:bg-gradient-to-r origin-center
-              ${colorHover}
-              ${lineaSeleccionada === linea.id ? "ring-2 ring-[#39A900]" : ""}
-              ${modoOscuro
-                          ? "bg-[#0e1626] border border-white/10 text-gray-200"
+            ${colorHover}
+            ${lineaSeleccionada === linea.id ? "ring-2 ring-[#39A900]" : ""}
+            ${modoOscuro
+                          ? "bg-[#0e1626] border border-white/10 text-gray-200 hover:bg-[#1a2335] hover:text-emerald-300"
                           : "bg-gray-100 border border-gray-200 text-gray-700"
                         }`}
-                      style={{ fontSize: "0.95em" }}
+                      style={{
+                        fontSize: "0.95em",
+                        transition: "background-color 0.3s ease, color 0.3s ease",
+                      }}
                     >
                       {React.cloneElement(icono, { style: { fontSize: "1em" } })}
                       <span className="font-medium">{linea.name}</span>
@@ -605,16 +693,18 @@ export default function HomePage() {
                 })}
               </div>
 
-              {/* Botón scroll derecha */}
+              {/* 🔹 Botón scroll derecha */}
               <button
                 onClick={() => scroll("right")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-white/80 dark:bg-gray-700/80 p-2 rounded-full shadow hover:scale-110 transition"
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-white/70 dark:bg-gray-700/60 p-2 rounded-full shadow-sm hover:scale-110 transition
+                 hover:bg-white/80 dark:hover:bg-gray-600/70"
                 style={{ fontSize: "0.9em" }}
               >
-                <ChevronRight style={{ fontSize: "1em" }} />
+                <ChevronRight className="text-gray-700 dark:text-gray-300" style={{ fontSize: "1em" }} />
               </button>
             </div>
           </section>
+
 
           <section className="mt-10 space-y-8">
             {convocatoriasFiltradas.length === 0 && (
@@ -624,158 +714,212 @@ export default function HomePage() {
 
           <section className="mt-10 space-y-8">
             {/* Tarjeta destacada */}
+            {/* 🔹 Tarjeta destacada adaptable con descripción limitada */}
             {convocatoriasPagina.length > 0 && (
               <div
-                className={`relative rounded-lg overflow-hidden transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2 flex flex-col ${styles.card}`}
-                style={{ fontSize: `${fontSize}px` }} // 🔹 Escala global
+                className={`relative rounded-xl overflow-hidden transition-all duration-500 ease-in-out hover:shadow-2xl hover:-translate-y-2 flex flex-col md:flex-row ${styles.card}`}
+                style={{
+                  fontSize: `${fontSize}px`,
+                }}
               >
-                <span
-                  className={`absolute top-1 right-3 px-2 py-1 rounded-full font-bold z-10 flex items-center gap-1 shadow-md ${styles.badge}`}
-                  style={{ fontSize: "0.75em" }}
+                {/* 🔹 Imagen adaptable */}
+                <div
+                  className="w-full md:w-1/2 relative overflow-hidden bg-gray-200 flex-shrink-0 flex self-stretch"
+                  style={{
+                    height: "auto",
+                    minHeight: `${200 + (fontSize - 16) * 1.2}px`,
+                    transition: "all 0.4s ease",
+                    maxHeight: "400px",
+                  }}
                 >
-                  <MdWorkspacePremium className="text-black -mt-0.5" style={{ fontSize: "0.85em" }} />
-                  Destacada
-                </span>
+                  <img
+                    onClick={() => {
+                      setConvocatoriaSeleccionada(convocatoriasPagina[0]);
+                      setModalAbierto(true);
+                    }}
+                    src={convocatoriasPagina[0].imageUrl || "/img/default.jpg"}
+                    alt={convocatoriasPagina[0].title}
+                    className="w-full h-full object-cover object-center transition-transform duration-500 hover:scale-105 cursor-pointer"
+                    style={{
+                      aspectRatio: "16/9",
+                      maxHeight: "100%",
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none"></div>
+                </div>
 
-                <div className="flex flex-col md:flex-row items-stretch">
-                  {/* Imagen escalable que llena el contenedor */}
-                  <div
-                    className="w-full md:w-1/2 flex"
-                  // Eliminado height y maxHeight fijos aquí para que la imagen se ajuste automáticamente
+                {/* 🔹 Contenido textual adaptable */}
+                <div className="w-full md:w-1/2 p-6 flex flex-col justify-between relative">
+                  {/* 🔸 Etiqueta */}
+                  <span
+                    className={`absolute top-4 right-6 px-3 py-1.5 rounded-full font-bold z-10 flex items-center gap-1 shadow-md ${styles.badge}`}
+                    style={{
+                      fontSize: `${0.85 + (fontSize - 16) * 0.03}em`,
+                      backgroundColor: "#facc15",
+                      color: "#1f2937",
+                    }}
                   >
-                    <img
+                    <MdWorkspacePremium
+                      className="text-yellow-700"
+                      style={{ fontSize: `${1.1 + (fontSize - 16) * 0.03}em` }}
+                    />
+                    Destacada
+                  </span>
+
+                  <div className="space-y-3 mt-8 flex-grow">
+                    {/* 🔹 Título */}
+                    <h3
+                      className={`font-bold flex items-center gap-2 leading-tight ${modoOscuro ? "text-white" : "text-[#00324D]"
+                        }`}
+                      style={{
+                        fontSize: `${1.2 + (fontSize - 16) * 0.05}em`,
+                        lineHeight: "1.3em",
+                      }}
+                    >
+                      <FaMobileAlt
+                        className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                        style={{
+                          fontSize: `${1 + (fontSize - 16) * 0.05}em`,
+                        }}
+                      />
+                      {convocatoriasPagina[0].title}
+                    </h3>
+
+                    {/* 🔹 Descripción limitada a 4 párrafos */}
+                    <div className="flex items-start gap-2">
+                      <FaGraduationCap
+                        className={`flex-shrink-0 mt-1 ${modoOscuro ? "text-white" : "text-[#00324D]"
+                          }`}
+                        style={{ fontSize: `${1 + (fontSize - 16) * 0.04}em` }}
+                      />
+                      <div
+                        className={`leading-snug ${styles.textMuted} relative overflow-hidden`}
+                        style={{
+                          fontSize: `${0.95 + (fontSize - 16) * 0.03}em`,
+                          display: "-webkit-box",
+                          WebkitLineClamp: 4, // 🔹 Solo muestra 4 párrafos o líneas principales
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          maxHeight: `${fontSize * 7.5}px`,
+                          lineHeight: "1.5em",
+                          transition: "all 0.3s ease",
+                        }}
+                      >
+                        {convocatoriasPagina[0].description || "Sin descripción disponible."}
+                      </div>
+                    </div>
+
+                    {/* 🔹 Fechas */}
+                    <div
+                      className={`flex flex-wrap gap-x-5 gap-y-2 pt-1 ${styles.textMuted}`}
+                      style={{
+                        fontSize: `${0.9 + (fontSize - 16) * 0.03}em`,
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <FaCalendarAlt
+                          className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                          style={{ fontSize: "1em" }}
+                        />
+                        <span>
+                          <strong>Apertura:</strong>{" "}
+                          {new Date(convocatoriasPagina[0].openDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <FaCalendarTimes
+                          className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                          style={{ fontSize: "1em" }}
+                        />
+                        <span>
+                          <strong>Cierre:</strong>{" "}
+                          {new Date(convocatoriasPagina[0].closeDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 🔹 Botones adaptables */}
+                  <div
+                    className={`mt-5 pt-3 flex items-center gap-3 flex-wrap ${styles.divider} border-t`}
+                    style={{
+                      fontSize: `${0.95 + (fontSize - 16) * 0.03}em`,
+                    }}
+                  >
+                    <button
                       onClick={() => {
                         setConvocatoriaSeleccionada(convocatoriasPagina[0]);
                         setModalAbierto(true);
                       }}
-                      src={convocatoriasPagina[0].imageUrl || "/img/default.jpg"}
-                      alt={convocatoriasPagina[0].title}
-                      // Asegura que la imagen ocupe todo el espacio disponible y cubra el área
-                      className="w-full h-full object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
-                    />
-                  </div>
-
-                  {/* Contenido */}
-                  <div className="w-full md:w-1/2 p-4 md:p-5 flex flex-col justify-between">
-                    <div className="space-y-2">
-                      {/* Título */}
-                      <h3
-                        className={`font-bold flex items-center gap-2 ${modoOscuro ? "text-white" : "text-[#00324D]"
-                          }`}
-                        style={{ fontSize: "1.3em" }}
-                      >
-                        <FaMobileAlt
-                          className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                          style={{ fontSize: "1em" }}
-                        />
-                        {convocatoriasPagina[0].title}
-                      </h3>
-
-                      {/* Descripción */}
-                      <div className="flex items-start gap-2">
-                        <FaGraduationCap
-                          className={`flex-shrink-0 ${modoOscuro ? "text-white" : "text-[#00324D]"}`}
-                          style={{ fontSize: "1.2em" }}
-                        />
-                        <p
-                          className={`leading-snug line-clamp-3 ${styles.textMuted}`}
-                          style={{ fontSize: "0.95em" }}
-                        >
-                          {convocatoriasPagina[0].description}
-                        </p>
-                      </div>
-
-                      {/* Fechas */}
-                      <div
-                        className={`flex flex-col sm:flex-row gap-x-4 gap-y-1 pt-1 ${styles.textMuted}`}
-                        style={{ fontSize: "0.85em" }}
-                      >
-                        <div className="flex items-center gap-1">
-                          <FaCalendarAlt
-                            className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                            style={{ fontSize: "1em" }}
-                          />
-                          <span>
-                            <strong>Apertura:</strong>{" "}
-                            {new Date(convocatoriasPagina[0].openDate).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <FaCalendarTimes
-                            className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                            style={{ fontSize: "1em" }}
-                          />
-                          <span>
-                            <strong>Cierre:</strong>{" "}
-                            {new Date(convocatoriasPagina[0].closeDate).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Botones */}
-                    <div
-                      className={`mt-3 pt-3 flex items-center gap-2 flex-wrap ${styles.divider} border-t`}
-                      style={{ fontSize: "0.9em" }}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold transition-all ${styles.primaryButton}`}
                     >
-                      <button
-                        onClick={() => {
-                          setConvocatoriaSeleccionada(convocatoriasPagina[0]);
-                          setModalAbierto(true);
+                      <FaRegFileAlt /> Detalles
+                    </button>
+
+                    <button
+                      className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold transition-all ${styles.successButton}`}
+                    >
+                      <FaCheckCircle /> Inscribirse
+                    </button>
+
+                    {/* ⭐ Favorito */}
+                    <button
+                      onClick={() => handleFavorito(convocatoriasPagina[0])}
+                      className="group ml-auto relative p-2 rounded-md hover:bg-white/5 transition-all duration-300"
+                      title="Marcar como favorita"
+                    >
+                      {/* 🌟 Estrella principal */}
+                      {isFavByConv(convocatoriasPagina[0]) ? (
+                        <FaStar
+                          className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 drop-shadow-[0_0_6px_#FFD700]"
+                          style={{
+                            fontSize: `${1.4 + (fontSize - 16) * 0.05}em`,
+                          }}
+                        />
+                      ) : (
+                        <FaRegStar
+                          className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${modoOscuro ? "text-yellow-400" : "text-yellow-500"
+                            } drop-shadow-[0_0_4px_#FFD700]`}
+                          style={{
+                            stroke: "#FFD700",
+                            strokeWidth: "20",
+                            fill: "transparent",
+                            fontSize: `${1.4 + (fontSize - 16) * 0.05}em`,
+                          }}
+                        />
+                      )}
+
+                      {/* ✨ Estrellitas brillantes */}
+                      <span
+                        className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
+                        style={{
+                          fontSize: "0.7em",
+                          filter: "drop-shadow(0 0 6px #FFD700)",
                         }}
-                        className={`flex items-center gap-1 px-4 py-2 rounded-md font-semibold transition-all ${styles.primaryButton}`}
                       >
-                        <FaRegFileAlt /> Detalles
-                      </button>
+                        ✦
+                      </span>
+                      <span
+                        className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
+                        style={{
+                          fontSize: "0.6em",
+                          filter: "drop-shadow(0 0 8px #FFFACD)",
+                        }}
+                      >
+                        ✧
+                      </span>
+                      <span
+                        className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
+                        style={{
+                          fontSize: "0.8em",
+                          filter: "drop-shadow(0 0 10px #FFD700)",
+                        }}
+                      >
+                        ✨
+                      </span>
+                    </button>
 
-                      <button
-                        className={`flex items-center gap-1 px-4 py-2 rounded-md font-semibold transition-all ${styles.successButton}`}
-                      >
-                        <FaCheckCircle /> Inscribirse
-                      </button>
-
-                      <button
-                        onClick={() => handleFavorito(convocatoriasPagina[0])}
-                        className="group ml-auto relative p-2 rounded-md hover:bg-white/5 transition-colors"
-                        title="Marcar como favorita"
-                      >
-                        {isFavByConv(convocatoriasPagina[0]) ? (
-                          <FaStar
-                            className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125"
-                            style={{ fontSize: "1.6em" }}
-                          />
-                        ) : (
-                          <FaRegStar
-                            className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${modoOscuro ? "text-yellow-400" : "text-yellow-500"
-                              }`}
-                            style={{
-                              stroke: "#FFD700",
-                              strokeWidth: "30",
-                              fill: "transparent",
-                              fontSize: "1.6em",
-                            }}
-                          />
-                        )}
-                        <span
-                          className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
-                          style={{ fontSize: "0.7em" }}
-                        >
-                          ✦
-                        </span>
-                        <span
-                          className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
-                          style={{ fontSize: "0.6em" }}
-                        >
-                          ✧
-                        </span>
-                        <span
-                          className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
-                          style={{ fontSize: "0.7em" }}
-                        >
-                          ✨
-                        </span>
-                      </button>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -788,7 +932,11 @@ export default function HomePage() {
               convocatoria={convocatoriaSeleccionada}
             />
 
-            {/* 3 tarjetas */}
+
+
+
+
+            {/* 🔹 Cuadrícula de 3 tarjetas perfectamente alineadas */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
               {convocatoriasPagina.slice(1, 4).map((convocatoria, index) => {
                 const isExpandida = expandida === String(convocatoria.id ?? convocatoria.callId);
@@ -796,14 +944,14 @@ export default function HomePage() {
                   <div
                     key={(convocatoria.id ?? convocatoria.callId ?? index) as number}
                     className={`rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all hover:-translate-y-2 flex flex-col ${styles.card}`}
-                    style={{ fontSize: `${fontSize}px` }} // 🔹 Escala global
+                    style={{ fontSize: `${fontSize}px` }}
                   >
                     {/* Imagen escalable */}
                     <div
                       className="overflow-hidden"
                       style={{
-                        height: "14em",     // Escala con fontSize
-                        maxHeight: "20em",  // Límite en pantallas grandes
+                        height: "14em",
+                        maxHeight: "20em",
                       }}
                     >
                       <img
@@ -819,27 +967,48 @@ export default function HomePage() {
 
                     {/* Contenido */}
                     <div className="p-5 flex flex-col justify-between flex-grow">
-                      <div>
-                        {/* Título */}
-                        <h4
-                          className={`font-bold mb-3 flex items-center gap-2 ${modoOscuro ? "text-white" : "text-[#00324D]"
-                            }`}
-                          style={{ fontSize: "1.2em" }}
-                        >
+                      <div className="flex-grow space-y-3">
+                        {/* 🔹 Título con ícono alineado y altura uniforme */}
+                        <div className="flex items-start gap-2 min-h-[3.5rem]">
                           <FaMobileAlt
                             className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                            style={{ fontSize: "1em" }}
+                            style={{
+                              fontSize: "1.1em",
+                              flexShrink: 0,
+                              marginTop: "0.15em",
+                            }}
                           />
-                          {convocatoria.title}
-                        </h4>
+                          <h4
+                            className={`font-bold leading-snug ${modoOscuro ? "text-white" : "text-[#00324D]"
+                              }`}
+                            style={{
+                              fontSize: "1.2em",
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              lineHeight: "1.3",
+                            }}
+                          >
+                            {convocatoria.title}
+                          </h4>
+                        </div>
 
                         {/* Descripción */}
-                        <div className={`mb-2 flex items-start gap-3 ${styles.textMuted}`}>
+                        <div className={`flex items-start gap-3 ${styles.textMuted}`}>
                           <FaGraduationCap
-                            className={`flex-shrink-0 ${modoOscuro ? "text-white" : "text-[#00324D]"}`}
+                            className={`flex-shrink-0 mt-0.5 ${modoOscuro ? "text-white" : "text-[#00324D]"
+                              }`}
                             style={{ fontSize: "1.1em" }}
                           />
-                          <span className="relative" style={{ fontSize: "0.95em" }}>
+                          <span
+                            className="relative flex-grow"
+                            style={{
+                              fontSize: "0.95em",
+                              lineHeight: "1.3",
+                            }}
+                          >
                             {isExpandida ? (
                               <>
                                 {convocatoria.description}
@@ -861,7 +1030,7 @@ export default function HomePage() {
                                     onClick={() =>
                                       setExpandida(String(convocatoria.id ?? convocatoria.callId))
                                     }
-                                    className="absolute bottom-0 right-0 bg-gradient-to-l dark:from-[#1a0526] px-1"
+                                    className="absolute bottom-0 right-0 bg-gradient-to-l from-transparent dark:from-[#1a0526] px-1"
                                     style={{ fontSize: "1em" }}
                                     title="Mostrar más"
                                   >
@@ -873,33 +1042,44 @@ export default function HomePage() {
                           </span>
                         </div>
 
-                        {/* Fechas */}
+                        {/* 🔹 Fechas alineadas */}
                         <div
-                          className={`flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4 ${styles.textMuted}`}
+                          className={`flex items-center justify-between mt-3 ${styles.textMuted} ${modoOscuro ? "bg-white/5" : "bg-gray-50"
+                            } p-2 rounded`}
                           style={{ fontSize: "0.9em" }}
                         >
-                          <span className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-2 whitespace-nowrap">
                             <FaCalendarAlt
                               className={modoOscuro ? "text-white" : "text-[#00324D]"}
                               style={{ fontSize: "1em" }}
                             />
-                            <strong>Apertura:</strong>{" "}
-                            {new Date(convocatoria.openDate).toLocaleDateString()}
-                          </span>
-                          <span className="flex items-center gap-1.5">
+                            <span>
+                              {new Date(convocatoria.openDate).toLocaleDateString("es-ES", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 whitespace-nowrap">
                             <FaCalendarTimes
                               className={modoOscuro ? "text-white" : "text-[#00324D]"}
                               style={{ fontSize: "1em" }}
                             />
-                            <strong>Cierre:</strong>{" "}
-                            {new Date(convocatoria.closeDate).toLocaleDateString()}
-                          </span>
+                            <span>
+                              {new Date(convocatoria.closeDate).toLocaleDateString("es-ES", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                            </span>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Botones */}
+                      {/* 🔹 Botones alineados */}
                       <div
-                        className={`pt-4 mt-auto flex items-center gap-2 border-t ${styles.divider}`}
+                        className={`pt-4 mt-4 flex items-center gap-2 border-t ${styles.divider}`}
                         style={{ fontSize: "0.9em" }}
                       >
                         <button
@@ -907,57 +1087,74 @@ export default function HomePage() {
                             setConvocatoriaSeleccionada(convocatoria);
                             setModalAbierto(true);
                           }}
-                          className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold ${styles.primaryButton}`}
+                          className={`flex-1 flex items-center justify-center gap-1 px-4 py-2 rounded-md font-semibold ${styles.primaryButton}`}
                         >
                           <FaRegFileAlt /> Detalles
                         </button>
+
                         <button
-                          className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold ${styles.successButton}`}
+                          className={`flex-1 flex items-center justify-center gap-1 px-4 py-2 rounded-md font-semibold ${styles.successButton}`}
                         >
                           <FaCheckCircle /> Inscribirse
                         </button>
 
-                        <button
-                          onClick={() => handleFavorito(convocatoria)}
-                          className="group ml-auto relative p-2 rounded-md hover:bg-white/5 transition-colors"
-                          title="Marcar como favorita"
-                        >
-                          {isFavByConv(convocatoria) ? (
-                            <FaStar
-                              className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125"
-                              style={{ fontSize: "1.5em" }}
-                            />
-                          ) : (
-                            <FaRegStar
-                              className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${modoOscuro ? "text-yellow-400" : "text-yellow-500"
-                                }`}
-                              style={{
-                                stroke: "#FFD700",
-                                strokeWidth: "30",
-                                fill: "transparent",
-                                fontSize: "1.5em",
-                              }}
-                            />
-                          )}
-                          <span
-                            className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
-                            style={{ fontSize: "0.7em" }}
-                          >
-                            ✦
-                          </span>
-                          <span
-                            className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
-                            style={{ fontSize: "0.6em" }}
-                          >
-                            ✧
-                          </span>
-                          <span
-                            className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
-                            style={{ fontSize: "0.7em" }}
-                          >
-                            ✨
-                          </span>
-                        </button>
+                        {/* Favorito */}
+                       {/* ⭐ Botón de favorito con brillo y estrellitas */}
+<button
+  onClick={() => handleFavorito(convocatoria)}
+  className="group relative p-2 rounded-md hover:bg-white/5 transition-all duration-300"
+  title="Marcar como favorita"
+>
+  {/* 🌟 Estrella principal */}
+  {isFavByConv(convocatoria) ? (
+    <FaStar
+      className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 drop-shadow-[0_0_6px_#FFD700]"
+      style={{ fontSize: "1.5em" }}
+    />
+  ) : (
+    <FaRegStar
+      className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${
+        modoOscuro ? "text-yellow-400" : "text-yellow-500"
+      } drop-shadow-[0_0_4px_#FFD700]`}
+      style={{
+        stroke: "#FFD700",
+        strokeWidth: "20",
+        fill: "transparent",
+        fontSize: "1.5em",
+      }}
+    />
+  )}
+
+  {/* ✨ Mini estrellitas decorativas */}
+  <span
+    className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
+    style={{
+      fontSize: "0.7em",
+      filter: "drop-shadow(0 0 6px #FFD700)",
+    }}
+  >
+    ✦
+  </span>
+  <span
+    className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
+    style={{
+      fontSize: "0.6em",
+      filter: "drop-shadow(0 0 8px #FFFACD)",
+    }}
+  >
+    ✧
+  </span>
+  <span
+    className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
+    style={{
+      fontSize: "0.8em",
+      filter: "drop-shadow(0 0 10px #FFD700)",
+    }}
+  >
+    ✨
+  </span>
+</button>
+
                       </div>
                     </div>
                   </div>
@@ -966,7 +1163,8 @@ export default function HomePage() {
             </div>
 
 
-            {/* 2 tarjetas */}
+
+            {/* 🔹 Cuadrícula de 2 tarjetas perfectamente alineadas */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-8 mb-8">
               {convocatoriasPagina.slice(4, 8).map((convocatoria, index) => {
                 const isExpandida = expandida === String(convocatoria.id ?? convocatoria.callId);
@@ -974,14 +1172,14 @@ export default function HomePage() {
                   <div
                     key={(convocatoria.id ?? convocatoria.callId ?? index) as number}
                     className={`rounded-lg overflow-hidden border transition-all hover:-translate-y-2 hover:shadow-2xl flex flex-col ${styles.card}`}
-                    style={{ fontSize: `${fontSize}px` }} // 🔹 Escala global
+                    style={{ fontSize: `${fontSize}px` }}
                   >
-                    {/* Imagen escalable */}
+                    {/* Imagen */}
                     <div
                       className="w-full overflow-hidden"
                       style={{
-                        height: "15em",     // Escala relativa al fontSize
-                        maxHeight: "22em",  // Límite superior
+                        height: "15em",
+                        maxHeight: "22em",
                       }}
                     >
                       <img
@@ -996,28 +1194,51 @@ export default function HomePage() {
                     </div>
 
                     {/* Contenido */}
-                    <div className="p-5 flex flex-col flex-grow">
-                      <div className="flex-grow">
-                        {/* Título */}
-                        <h4
-                          className={`font-bold flex items-center gap-2 mb-3 ${modoOscuro ? "text-white" : "text-[#00324D]"
-                            }`}
-                          style={{ fontSize: "1.2em" }}
+                    <div className="p-5 flex flex-col flex-grow justify-between">
+                      <div className="flex-grow space-y-3">
+                        {/* 🔹 Título con ícono alineado y altura uniforme */}
+                        <div
+                          className="flex items-start gap-2 min-h-[3.5rem]" // 🔹 misma altura para todos los títulos
                         >
                           <FaMobileAlt
                             className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                            style={{ fontSize: "1em" }}
+                            style={{
+                              fontSize: "1.1em",
+                              flexShrink: 0,
+                              marginTop: "0.15em",
+                            }}
                           />
-                          {convocatoria.title}
-                        </h4>
+                          <h4
+                            className={`font-bold leading-snug ${modoOscuro ? "text-white" : "text-[#00324D]"
+                              }`}
+                            style={{
+                              fontSize: "1.2em",
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              lineHeight: "1.3",
+                            }}
+                          >
+                            {convocatoria.title}
+                          </h4>
+                        </div>
 
                         {/* Descripción */}
-                        <div className={`flex items-start gap-3 mb-2 ${styles.textMuted}`}>
+                        <div className={`flex items-start gap-3 ${styles.textMuted}`}>
                           <FaGraduationCap
-                            className={`flex-shrink-0 ${modoOscuro ? "text-white" : "text-[#00324D]"}`}
+                            className={`flex-shrink-0 mt-0.5 ${modoOscuro ? "text-white" : "text-[#00324D]"
+                              }`}
                             style={{ fontSize: "1.1em" }}
                           />
-                          <span className="relative" style={{ fontSize: "0.95em" }}>
+                          <span
+                            className="relative flex-grow"
+                            style={{
+                              fontSize: "0.95em",
+                              lineHeight: "1.3",
+                            }}
+                          >
                             {isExpandida ? (
                               <>
                                 {convocatoria.description}
@@ -1036,8 +1257,10 @@ export default function HomePage() {
                                 <span className="line-clamp-3">{convocatoria.description}</span>
                                 {convocatoria.description?.length > 100 && (
                                   <button
-                                    onClick={() => setExpandida(String(convocatoria.id ?? convocatoria.callId))}
-                                    className="absolute bottom-0 right-0 bg-gradient-to-l dark:from-[#1a0526] px-1"
+                                    onClick={() =>
+                                      setExpandida(String(convocatoria.id ?? convocatoria.callId))
+                                    }
+                                    className="absolute bottom-0 right-0 bg-gradient-to-l from-transparent dark:from-[#1a0526] px-1"
                                     style={{ fontSize: "1em" }}
                                     title="Mostrar más"
                                   >
@@ -1049,31 +1272,42 @@ export default function HomePage() {
                           </span>
                         </div>
 
-                        {/* Fechas */}
+                        {/* 🔹 Fechas alineadas */}
                         <div
-                          className={`flex flex-wrap items-center gap-x-6 gap-y-2 ${styles.textMuted}`}
+                          className={`flex items-center justify-between mt-3 ${styles.textMuted} ${modoOscuro ? "bg-white/5" : "bg-gray-50"
+                            } p-2 rounded`}
                           style={{ fontSize: "0.9em" }}
                         >
-                          <p className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 whitespace-nowrap">
                             <FaCalendarAlt
                               className={modoOscuro ? "text-white" : "text-[#00324D]"}
                               style={{ fontSize: "1em" }}
                             />
-                            <strong>Apertura:</strong>{" "}
-                            {new Date(convocatoria.openDate).toLocaleDateString()}
-                          </p>
-                          <p className="flex items-center gap-2">
+                            <span>
+                              {new Date(convocatoria.openDate).toLocaleDateString("es-ES", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 whitespace-nowrap">
                             <FaCalendarTimes
                               className={modoOscuro ? "text-white" : "text-[#00324D]"}
                               style={{ fontSize: "1em" }}
                             />
-                            <strong>Cierre:</strong>{" "}
-                            {new Date(convocatoria.closeDate).toLocaleDateString()}
-                          </p>
+                            <span>
+                              {new Date(convocatoria.closeDate).toLocaleDateString("es-ES", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                            </span>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Botones */}
+                      {/* 🔹 Botones alineados */}
                       <div
                         className={`pt-4 mt-4 flex items-center gap-2 border-t ${styles.divider}`}
                         style={{ fontSize: "0.9em" }}
@@ -1083,57 +1317,74 @@ export default function HomePage() {
                             setConvocatoriaSeleccionada(convocatoria);
                             setModalAbierto(true);
                           }}
-                          className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold ${styles.primaryButton}`}
+                          className={`flex-1 flex items-center justify-center gap-1 px-4 py-2 rounded-md font-semibold ${styles.primaryButton}`}
                         >
                           <FaRegFileAlt /> Detalles
                         </button>
+
                         <button
-                          className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold ${styles.successButton}`}
+                          className={`flex-1 flex items-center justify-center gap-1 px-4 py-2 rounded-md font-semibold ${styles.successButton}`}
                         >
                           <FaCheckCircle /> Inscribirse
                         </button>
 
-                        <button
-                          onClick={() => handleFavorito(convocatoria)}
-                          className="group ml-auto relative p-2 rounded-md hover:bg-white/5 transition-colors"
-                          title="Marcar como favorita"
-                        >
-                          {isFavByConv(convocatoria) ? (
-                            <FaStar
-                              className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125"
-                              style={{ fontSize: "1.5em" }}
-                            />
-                          ) : (
-                            <FaRegStar
-                              className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${modoOscuro ? "text-yellow-400" : "text-yellow-500"
-                                }`}
-                              style={{
-                                stroke: "#FFD700",
-                                strokeWidth: "30",
-                                fill: "transparent",
-                                fontSize: "1.5em",
-                              }}
-                            />
-                          )}
-                          <span
-                            className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
-                            style={{ fontSize: "0.7em" }}
-                          >
-                            ✦
-                          </span>
-                          <span
-                            className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
-                            style={{ fontSize: "0.6em" }}
-                          >
-                            ✧
-                          </span>
-                          <span
-                            className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
-                            style={{ fontSize: "0.7em" }}
-                          >
-                            ✨
-                          </span>
-                        </button>
+                        {/* Favorito */}
+                        {/* ⭐ Botón de favorito con brillo y estrellitas animadas */}
+<button
+  onClick={() => handleFavorito(convocatoria)}
+  className="group relative p-2 rounded-md hover:bg-white/5 transition-all duration-300"
+  title="Marcar como favorita"
+>
+  {/* 🌟 Estrella principal */}
+  {isFavByConv(convocatoria) ? (
+    <FaStar
+      className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 drop-shadow-[0_0_6px_#FFD700]"
+      style={{ fontSize: "1.5em" }}
+    />
+  ) : (
+    <FaRegStar
+      className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${
+        modoOscuro ? "text-yellow-400" : "text-yellow-500"
+      } drop-shadow-[0_0_4px_#FFD700]`}
+      style={{
+        stroke: "#FFD700",
+        strokeWidth: "20",
+        fill: "transparent",
+        fontSize: "1.5em",
+      }}
+    />
+  )}
+
+  {/* ✨ Miniestrellas brillantes */}
+  <span
+    className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
+    style={{
+      fontSize: "0.7em",
+      filter: "drop-shadow(0 0 6px #FFD700)",
+    }}
+  >
+    ✦
+  </span>
+  <span
+    className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
+    style={{
+      fontSize: "0.6em",
+      filter: "drop-shadow(0 0 8px #FFFACD)",
+    }}
+  >
+    ✧
+  </span>
+  <span
+    className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
+    style={{
+      fontSize: "0.8em",
+      filter: "drop-shadow(0 0 10px #FFD700)",
+    }}
+  >
+    ✨
+  </span>
+</button>
+
                       </div>
                     </div>
                   </div>
@@ -1141,22 +1392,23 @@ export default function HomePage() {
               })}
             </div>
 
-            {/* 4 tarjetas */}
+
+            {/* 🔹 Cuadrícula de 4 tarjetas perfectamente alineadas */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-[2800px] mx-auto my-8 px-0">
               {convocatoriasPagina.slice(8, 12).map((convocatoria, index) => {
                 const isExpandida = expandida === String(convocatoria.id ?? convocatoria.callId);
                 return (
                   <div
                     key={(convocatoria.id ?? convocatoria.callId ?? index) as number}
-                    className={`rounded-xl overflow-hidden border transition-all hover:shadow-2xl hover:scale-105 flex flex-col h-full min-h-[320px] ${styles.card}`}
-                    style={{ fontSize: `${fontSize}px` }} // 🔹 Escala global
+                    className={`rounded-xl overflow-hidden border transition-all hover:shadow-2xl hover:scale-105 flex flex-col h-full min-h-[340px] ${styles.card}`}
+                    style={{ fontSize: `${fontSize}px` }}
                   >
-                    {/* Imagen escalable */}
+                    {/* Imagen */}
                     <div
                       className="w-full overflow-hidden"
                       style={{
-                        height: "12em",     // Escala relativa al fontSize
-                        maxHeight: "18em",  // Límite superior
+                        height: "11.5em",
+                        maxHeight: "17em",
                       }}
                     >
                       <img
@@ -1171,28 +1423,49 @@ export default function HomePage() {
                     </div>
 
                     {/* Contenido */}
-                    <div className="p-4 flex flex-col flex-grow">
-                      <div className="flex-grow space-y-2">
-                        {/* Título */}
-                        <h4
-                          className={`font-semibold flex items-center gap-2 ${modoOscuro ? "text-white" : "text-[#00324D]"
-                            }`}
-                          style={{ fontSize: "1.1em" }}
-                        >
+                    <div className="p-4 flex flex-col justify-between flex-grow">
+                      <div className="space-y-2 flex-grow">
+                        {/* 🔹 Título (ícono perfectamente al lado del texto, máximo 2 líneas) */}
+                        <div className="flex items-start gap-2">
                           <FaMobileAlt
                             className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                            style={{ fontSize: "1em" }}
+                            style={{
+                              fontSize: "1.05em",
+                              flexShrink: 0,
+                              marginTop: "0.15em", // 🔹 Alinea el ícono con el inicio del texto
+                            }}
                           />
-                          {convocatoria.title}
-                        </h4>
+                          <h4
+                            className={`font-semibold leading-snug ${modoOscuro ? "text-white" : "text-[#00324D]"
+                              }`}
+                            style={{
+                              fontSize: "1.1em",
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              lineHeight: "1.3",
+                            }}
+                          >
+                            {convocatoria.title}
+                          </h4>
+                        </div>
 
                         {/* Descripción */}
                         <div className={`flex items-start gap-2 mb-2 ${styles.textMuted}`}>
                           <FaGraduationCap
-                            className={`flex-shrink-0 ${modoOscuro ? "text-white" : "text-[#00324D]"}`}
+                            className={`flex-shrink-0 mt-0.5 ${modoOscuro ? "text-white" : "text-[#00324D]"
+                              }`}
                             style={{ fontSize: "1em" }}
                           />
-                          <span className="relative" style={{ fontSize: "0.9em" }}>
+                          <span
+                            className="relative flex-grow"
+                            style={{
+                              fontSize: "0.9em",
+                              lineHeight: "1.3",
+                            }}
+                          >
                             {isExpandida ? (
                               <>
                                 {convocatoria.description}
@@ -1214,7 +1487,7 @@ export default function HomePage() {
                                     onClick={() =>
                                       setExpandida(String(convocatoria.id ?? convocatoria.callId))
                                     }
-                                    className="absolute bottom-0 right-0 bg-gradient-to-l dark:from-[#1a0526] px-1"
+                                    className="absolute bottom-0 right-0 bg-gradient-to-l from-transparent dark:from-[#1a0526] px-1"
                                     style={{ fontSize: "0.9em" }}
                                     title="Mostrar más"
                                   >
@@ -1225,98 +1498,128 @@ export default function HomePage() {
                             )}
                           </span>
                         </div>
+                      </div>
 
-                        {/* Fechas */}
+                      {/* 🔹 Fechas y botones alineados */}
+                      <div className="mt-auto">
                         <div
-                          className={`mt-3 flex items-center justify-between ${styles.textMuted} ${modoOscuro ? "bg-white/5" : "bg-gray-50"
-                            } p-2 rounded`}
+                          className={`flex items-center justify-between ${styles.textMuted} ${modoOscuro ? "bg-white/5" : "bg-gray-50"
+                            } p-2 rounded mb-3`}
                           style={{ fontSize: "0.85em" }}
                         >
-                          <span className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 whitespace-nowrap">
                             <FaCalendarAlt
                               className={modoOscuro ? "text-white" : "text-[#00324D]"}
                               style={{ fontSize: "1em" }}
                             />
-                            <span>{new Date(convocatoria.openDate).toLocaleDateString()}</span>
-                          </span>
-                          <span className="flex items-center gap-1">
+                            <span>
+                              {new Date(convocatoria.openDate).toLocaleDateString("es-ES", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 whitespace-nowrap">
                             <FaClock
                               className={modoOscuro ? "text-white" : "text-[#00324D]"}
                               style={{ fontSize: "1em" }}
                             />
-                            <span>{new Date(convocatoria.closeDate).toLocaleDateString()}</span>
-                          </span>
+                            <span>
+                              {new Date(convocatoria.closeDate).toLocaleDateString("es-ES", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                            </span>
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Botones */}
-                      <div
-                        className={`mt-3 pt-3 flex items-center gap-2 border-t ${styles.divider}`}
-                        style={{ fontSize: "0.85em" }}
-                      >
-                        <button
-                          onClick={() => {
-                            setConvocatoriaSeleccionada(convocatoria);
-                            setModalAbierto(true);
-                          }}
-                          className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md ${styles.primaryButton}`}
+                        {/* Botones */}
+                        <div
+                          className={`flex items-center justify-between gap-2 border-t pt-3 ${styles.divider}`}
+                          style={{ fontSize: "0.85em" }}
                         >
-                          <FaRegFileAlt /> Detalles
-                        </button>
+                          <button
+                            onClick={() => {
+                              setConvocatoriaSeleccionada(convocatoria);
+                              setModalAbierto(true);
+                            }}
+                            className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md ${styles.primaryButton}`}
+                          >
+                            <FaRegFileAlt /> Detalles
+                          </button>
 
-                        <button
-                          className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md ${styles.successButton}`}
-                        >
-                          <FaCheckCircle /> Inscribirse
-                        </button>
+                          <button
+                            className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md ${styles.successButton}`}
+                          >
+                            <FaCheckCircle /> Inscribirse
+                          </button>
 
-                        <button
-                          onClick={() => handleFavorito(convocatoria)}
-                          className="group ml-auto relative p-2 rounded-md hover:bg-white/5 transition-colors"
-                          title="Marcar como favorita"
-                        >
-                          {isFavByConv(convocatoria) ? (
-                            <FaStar
-                              className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125"
-                              style={{ fontSize: "1.4em" }}
-                            />
-                          ) : (
-                            <FaRegStar
-                              className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${modoOscuro ? "text-yellow-400" : "text-yellow-500"
-                                }`}
-                              style={{
-                                stroke: "#FFD700",
-                                strokeWidth: "30",
-                                fill: "transparent",
-                                fontSize: "1.4em",
-                              }}
-                            />
-                          )}
-                          <span
-                            className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
-                            style={{ fontSize: "0.7em" }}
-                          >
-                            ✦
-                          </span>
-                          <span
-                            className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
-                            style={{ fontSize: "0.6em" }}
-                          >
-                            ✧
-                          </span>
-                          <span
-                            className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
-                            style={{ fontSize: "0.7em" }}
-                          >
-                            ✨
-                          </span>
-                        </button>
+                          {/* ⭐ Botón de favorito con brillo y miniestrellas animadas */}
+<button
+  onClick={() => handleFavorito(convocatoria)}
+  className="group relative p-2 rounded-md hover:bg-white/5 transition-all duration-300"
+  title="Marcar como favorita"
+>
+  {/* 🌟 Estrella principal */}
+  {isFavByConv(convocatoria) ? (
+    <FaStar
+      className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 drop-shadow-[0_0_6px_#FFD700]"
+      style={{ fontSize: "1.4em" }}
+    />
+  ) : (
+    <FaRegStar
+      className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${
+        modoOscuro ? "text-yellow-400" : "text-yellow-500"
+      } drop-shadow-[0_0_4px_#FFD700]`}
+      style={{
+        stroke: "#FFD700",
+        strokeWidth: "20",
+        fill: "transparent",
+        fontSize: "1.4em",
+      }}
+    />
+  )}
+
+  {/* ✨ Miniestrellas decorativas */}
+  <span
+    className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
+    style={{
+      fontSize: "0.65em",
+      filter: "drop-shadow(0 0 6px #FFD700)",
+    }}
+  >
+    ✦
+  </span>
+  <span
+    className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
+    style={{
+      fontSize: "0.55em",
+      filter: "drop-shadow(0 0 8px #FFFACD)",
+    }}
+  >
+    ✧
+  </span>
+  <span
+    className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
+    style={{
+      fontSize: "0.7em",
+      filter: "drop-shadow(0 0 10px #FFD700)",
+    }}
+  >
+    ✨
+  </span>
+</button>
+
+                        </div>
                       </div>
                     </div>
                   </div>
                 );
               })}
             </div>
+
 
 
             {/* Paginación */}

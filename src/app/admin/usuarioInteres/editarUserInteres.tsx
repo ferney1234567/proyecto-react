@@ -19,6 +19,9 @@ interface ModalEditarUserInterestProps {
   modoOscuro: boolean;
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+
 export default function ModalEditarUserInterest({
   visible,
   onClose,
@@ -34,8 +37,8 @@ export default function ModalEditarUserInterest({
     if (visible) {
       const fetchData = async () => {
         try {
-          const resUsers = await fetch("http://localhost:4000/api/v1/users");
-          const resInterests = await fetch("http://localhost:4000/api/v1/interests");
+          const resUsers = await fetch(`${API_URL}/users`);
+          const resInterests = await fetch(`${API_URL}/interests`);
           const usersData = await resUsers.json();
           const interestsData = await resInterests.json();
           setUsers(usersData.data || []);

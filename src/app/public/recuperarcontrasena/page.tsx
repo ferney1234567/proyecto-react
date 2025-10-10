@@ -2,14 +2,21 @@
 
 import { useState, useRef, useEffect, RefObject } from "react";
 import Link from "next/link";
-import { Mail, Send, ArrowLeft, Moon, Sun, Eye, EyeOff } from "lucide-react";
+import { Mail, Send, ArrowLeft, Moon, Sun, Eye, EyeOff, ZoomOut, RefreshCcw, ZoomIn } from "lucide-react";
 import { useTheme } from "../../ThemeContext";
 import { getThemeStyles } from "../../themeStyles";
 import Swal from "sweetalert2";
+import { useFontSize } from "../../../../FontSizeContext";
+import { MdAccessibility } from "react-icons/md";
 
 export default function RecuperarContrasenaPage() {
   const { modoOscuro, toggleModoOscuro } = useTheme();
   const estilos = getThemeStyles(modoOscuro);
+   const { fontSize, aumentarTexto, disminuirTexto, resetTexto } = useFontSize();
+
+  const [mostrarZoom, setMostrarZoom] = useState(false);
+  const toggleZoomMenu = () => setMostrarZoom(!mostrarZoom);
+
 
   const [correo, setCorreo] = useState<string>("");
   const [codigo, setCodigo] = useState<string[]>(["", "", "", "", "", ""]);
@@ -180,7 +187,7 @@ export default function RecuperarContrasenaPage() {
             <img
               src="/img/convo2.png"
               alt="Logo Convocatorias"
-              className="w-40 h-auto mb-3 drop-shadow-lg"
+              className="w-45 h-auto mb-3 drop-shadow-lg"
             />
             <h1
               className={`text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r ${modoOscuro
@@ -247,19 +254,73 @@ export default function RecuperarContrasenaPage() {
         </div>
 
         {/* ☀️🌙 Botón modo oscuro */}
-        <div className="fixed top-4 right-4 z-50">
+        <div className="fixed top-4 right-4 z-50 flex flex-col space-y-3 items-end">
           <button
             onClick={toggleModoOscuro}
-            className={`p-2 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
+            className={`p-3 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
+              modoOscuro
                 ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
                 : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
-              }`}
+            }`}
             title="Cambiar modo"
           >
             {modoOscuro ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </button>
+
+          <button
+            onClick={toggleZoomMenu}
+            className={`p-3 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
+              modoOscuro
+                ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
+                : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
+            }`}
+            title="Opciones de texto"
+          >
+            <MdAccessibility className="h-5 w-5" />
+          </button>
+
+          {mostrarZoom && (
+            <div className="flex flex-col space-y-3 mt-2 animate-fade-in">
+              <button
+                onClick={aumentarTexto}
+                className={`p-3 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
+                  modoOscuro
+                    ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
+                    : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
+                }`}
+                title="Aumentar texto"
+              >
+                <ZoomIn className="h-5 w-5" />
+              </button>
+
+              <button
+                onClick={resetTexto}
+                className={`p-3 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
+                  modoOscuro
+                    ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
+                    : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
+                }`}
+                title="Restablecer tamaño"
+              >
+                <RefreshCcw className="h-5 w-5" />
+              </button>
+
+              <button
+                onClick={disminuirTexto}
+                className={`p-3 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
+                  modoOscuro
+                    ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
+                    : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
+                }`}
+                title="Disminuir texto"
+              >
+                <ZoomOut className="h-5 w-5" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
+    
 
       {/* Modal Código - Más compacto */}
       {mostrarCodigo && (

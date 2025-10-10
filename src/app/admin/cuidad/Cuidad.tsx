@@ -25,6 +25,9 @@ interface Ciudad {
   departamentoId: string;
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+
 export default function Ciudad({ modoOscuro }: CiudadProps) {
   const [ciudades, setCiudades] = useState<Ciudad[]>([]);
   const [nombreCiudad, setNombreCiudad] = useState("");
@@ -66,7 +69,14 @@ export default function Ciudad({ modoOscuro }: CiudadProps) {
       try {
         const data = await fetchCiudades();
 
-        const resDeps = await fetch("http://localhost:4000/api/v1/departments");
+        const token = localStorage.getItem("token");
+
+        const resDeps = await fetch(`${API_URL}/departments`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
         const jsonDeps = await resDeps.json();
         const departamentos = jsonDeps.data || [];
 

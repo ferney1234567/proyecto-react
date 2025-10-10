@@ -19,6 +19,7 @@ export interface Usuario {
   phone: string;
   is_active: boolean;
   role_id?: number | null;
+  imgUser?: string | null; // ✅ añadimos el campo de imagen
 }
 
 export default function Usuario({ modoOscuro }: UsuarioProps) {
@@ -33,6 +34,7 @@ export default function Usuario({ modoOscuro }: UsuarioProps) {
     phone: '',
     is_active: true,
     role_id: null,
+    imgUser: '',
   });
   const [mostrarModalEditar, setMostrarModalEditar] = useState(false);
   const [usuarioEditando, setUsuarioEditando] = useState<Usuario | null>(null);
@@ -97,7 +99,7 @@ export default function Usuario({ modoOscuro }: UsuarioProps) {
 
   const cerrarModalCrear = () => {
     setMostrarModalCrear(false);
-    setNuevoUsuario({ id: '', name: '', email: '', password: '', phone: '', is_active: true, role_id: null });
+    setNuevoUsuario({ id: '', name: '', email: '', password: '', phone: '', is_active: true, role_id: null, imgUser: '' });
   };
 
   const cerrarModalEditar = () => {
@@ -213,9 +215,15 @@ export default function Usuario({ modoOscuro }: UsuarioProps) {
                 className={`p-6 rounded-2xl border shadow-md hover:shadow-xl transition-all duration-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5 transform hover:-translate-y-1 ${cardBg} ${borderColor}`}
               >
                 <div className="flex items-start gap-4 w-full">
-                  <div className={`p-4 rounded-xl ${iconBg} text-[#39A900]`}>
-                    <FaUserTag size={28} />
+                  {/* ✅ Imagen del usuario */}
+                  <div className="relative w-16 h-16 flex-shrink-0">
+                    <img
+                      src={usuario.imgUser || '/img/eco.jpeg'}
+                      alt="Imagen usuario"
+                      className="w-16 h-16 rounded-full object-cover border-2 border-green-500 shadow-md"
+                    />
                   </div>
+
                   <div className="flex-1 space-y-2">
                     <h3
                       className={`text-xl font-semibold transition-colors ${

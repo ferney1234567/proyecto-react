@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Edit, Trash2, Plus, Search, Building2, Calendar, User } from 'lucide-react';
-import { FaClipboardCheck } from 'react-icons/fa';
+import { Edit, Trash2, Plus, Search, Building2, Calendar } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 import ModalChequeo from './crearChequeo';
@@ -15,6 +14,7 @@ import {
   deleteRequirementCheck,
 } from '../../api/requirementChecks/route';
 
+// === Interfaces ===
 interface ChequeosProps {
   modoOscuro: boolean;
 }
@@ -61,7 +61,10 @@ interface Requisito {
   name: string;
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL as string;
+
 export default function Chequeos({ modoOscuro }: ChequeosProps) {
+  const [token, setToken] = useState<string | null>(null);
   const [chequeos, setChequeos] = useState<Chequeo[]>([]);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [requisitos, setRequisitos] = useState<Requisito[]>([]);
@@ -79,7 +82,13 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
     requirementId: null as number | null,
   });
 
-  // === ALERTAS ===
+  // === Obtener token JWT desde localStorage ===
+  useEffect(() => {
+    const t = localStorage.getItem('token');
+    if (t) setToken(t);
+  }, []);
+
+  // === Alertas ===
   const showSuccess = (mensaje: string) =>
     Swal.fire({
       icon: 'success',
@@ -100,25 +109,33 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
       color: modoOscuro ? '#fff' : '#333',
     });
 
-  // === CARGAR DATOS DESDE API ===
+  // === Cargar chequeos ===
   const cargarChequeos = async () => {
+    if (!token) return;
     try {
-      const data = await getRequirementChecks();
-      if (data && Array.isArray(data)) {
-        setChequeos(data);
-      } else setChequeos([]);
+      const res = await fetch(`${API_URL}/requirementChecks`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok && Array.isArray(data.data)) setChequeos(data.data);
+      else setChequeos([]);
     } catch (error: any) {
       showWarning(error.message || 'Error al cargar los chequeos');
     }
   };
 
+  // === Cargar empresas y requisitos ===
   const cargarEmpresasRequisitos = async () => {
+    if (!token) return;
     try {
       const [resEmp, resReq] = await Promise.all([
-        fetch('http://localhost:4000/api/v1/companies').then((r) => r.json()),
-        fetch('http://localhost:4000/api/v1/requirements').then((r) => r.json()),
+        fetch(`${API_URL}/companies`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }).then((r) => r.json()),
+        fetch(`${API_URL}/requirements`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }).then((r) => r.json()),
       ]);
-
       setEmpresas(resEmp.data || []);
       setRequisitos(resReq.data || []);
     } catch {
@@ -126,12 +143,15 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
     }
   };
 
+  // === Ejecutar cargas cuando el token esté disponible ===
   useEffect(() => {
-    cargarChequeos();
-    cargarEmpresasRequisitos();
-  }, []);
+    if (token) {
+      cargarChequeos();
+      cargarEmpresasRequisitos();
+    }
+  }, [token]);
 
-  // === CREAR / EDITAR ===
+  // === Crear o editar chequeo ===
   const handleGuardar = async () => {
     try {
       if (!nuevoChequeo.companyId || !nuevoChequeo.requirementId) {
@@ -167,7 +187,7 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
     }
   };
 
-  // === ELIMINAR ===
+  // === Eliminar chequeo ===
   const handleDeleteChequeo = (id: number) => {
     Swal.fire({
       title: '¿Eliminar este chequeo?',
@@ -193,7 +213,7 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
     });
   };
 
-  // === EDITAR ===
+  // === Editar ===
   const handleEditChequeo = (chequeo: Chequeo) => {
     setEditandoId(chequeo.id);
     setNuevoChequeo({
@@ -220,27 +240,27 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
     setMostrarModal(true);
   };
 
-  // === FILTROS ===
+  // === Filtros ===
   const filteredChequeos = chequeos.filter(
     (c) =>
       c.company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.requirement.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.company.legalRepresentativeName.toLowerCase().includes(searchTerm.toLowerCase())
+      c.company.legalRepresentativeName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const aprobados = filteredChequeos.filter((c) => c.isChecked);
   const noAprobados = filteredChequeos.filter((c) => !c.isChecked);
 
-  const formatFecha = (fecha: string) => {
-    return new Date(fecha).toLocaleDateString('es-ES', {
+  const formatFecha = (fecha: string) =>
+    new Date(fecha).toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
     });
-  };
 
+  // === Estilos dinámicos ===
   const bgColor = modoOscuro ? 'bg-[#1a0526]' : 'bg-white';
   const textColor = modoOscuro ? 'text-white' : 'text-gray-900';
   const cardBg = modoOscuro ? 'bg-white/10' : 'bg-white';
@@ -267,7 +287,7 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
             <input
               type="text"
               placeholder="Buscar por empresa, requisito o representante..."
-              className={`border rounded-2xl px-5 py-3 text-lg pl-12 focus:outline-none w-full`}
+              className="border rounded-2xl px-5 py-3 text-lg pl-12 focus:outline-none w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />

@@ -9,7 +9,10 @@ import { ZoomIn, ZoomOut, RefreshCcw } from 'lucide-react';
 import Swal from "sweetalert2";
 import { useTheme } from '../ThemeContext';
 import { getThemeStyles } from '../themeStyles';
+import { useFontSize } from '../../../FontSizeContext';
+import { MdAccessibility } from 'react-icons/md';
 
+// ✅ Interfaces
 interface Categoria { id: number; name: string; }
 interface Grupo { id: number; name: string; categoryId: number; }
 interface Requisito {
@@ -25,6 +28,11 @@ export default function GestionRequisitos() {
   const { modoOscuro, toggleModoOscuro } = useTheme();
   const styles = getThemeStyles(modoOscuro);
 
+  const { fontSize, aumentarTexto, disminuirTexto, resetTexto } = useFontSize();
+  const [mostrarZoom, setMostrarZoom] = useState(false);
+  const toggleZoomMenu = () => setMostrarZoom(!mostrarZoom);
+
+  // Estados principales
   const [usuario, setUsuario] = useState<any>(null);
   const [empresa, setEmpresa] = useState<any>(null);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -36,14 +44,8 @@ export default function GestionRequisitos() {
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState<'todos' | 'completados' | 'pendientes'>('todos');
 
-  // === ZOOM ===
-  const [mostrarZoom, setMostrarZoom] = useState(false);
-  const [fontSize, setFontSize] = useState(16);
-
-  const toggleZoomMenu = () => setMostrarZoom(!mostrarZoom);
-  const aumentarTexto = () => setFontSize((prev) => prev + 2);
-  const disminuirTexto = () => setFontSize((prev) => Math.max(10, prev - 2));
-  const resetTexto = () => setFontSize(16);
+  // ✅ Cargar variable de entorno
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   // === Helper ===
   const getEntityId = (entidad: any) =>
@@ -68,10 +70,10 @@ export default function GestionRequisitos() {
         if (!uid) return;
 
         const [catsRes, groupsRes, reqsRes, checksRes] = await Promise.all([
-          fetch("http://localhost:4000/api/v1/requirementCategories").then(r => r.json()),
-          fetch("http://localhost:4000/api/v1/requirementGroups").then(r => r.json()),
-          fetch("http://localhost:4000/api/v1/requirements").then(r => r.json()),
-          fetch("http://localhost:4000/api/v1/requirementChecks").then(r => r.json())
+          fetch(`${API_URL}/requirementCategories`).then(r => r.json()),
+          fetch(`${API_URL}/requirementGroups`).then(r => r.json()),
+          fetch(`${API_URL}/requirements`).then(r => r.json()),
+          fetch(`${API_URL}/requirementChecks`).then(r => r.json())
         ]);
 
         const checks = (checksRes.data || []).filter((c: any) =>
@@ -108,7 +110,7 @@ export default function GestionRequisitos() {
       }
     };
     fetchData();
-  }, [empresa, usuario]);
+  }, [empresa, usuario, API_URL]);
 
   // === Progreso ===
   const gruposCategoria = grupos.filter(g => g.categoryId === categoriaActiva);
@@ -151,10 +153,16 @@ export default function GestionRequisitos() {
       const nombre = entidad?.name || entidad?.legalName || entidad?.nombre;
 
       for (const req of requisitos) {
+        const token = localStorage.getItem("token"); // ✅ si luego usas JWT
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
         if (req.checkId) {
-          await fetch(`http://localhost:4000/api/v1/requirementChecks/${req.checkId}`, {
+          await fetch(`${API_URL}/requirementChecks/${req.checkId}`, {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers,
             body: JSON.stringify({
               requirementId: req.id,
               isChecked: req.completo,
@@ -164,9 +172,9 @@ export default function GestionRequisitos() {
             })
           });
         } else {
-          const res = await fetch("http://localhost:4000/api/v1/requirementChecks", {
+          const res = await fetch(`${API_URL}/requirementChecks`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers,
             body: JSON.stringify({
               requirementId: req.id,
               isChecked: req.completo,
@@ -193,6 +201,7 @@ export default function GestionRequisitos() {
     }
   };
 
+  // === Filtro de requisitos ===
   const filtrarRequisitos = (items: Requisito[]) =>
     items.filter(item =>
       item.name.toLowerCase().includes(busqueda.toLowerCase()) &&
@@ -200,6 +209,7 @@ export default function GestionRequisitos() {
         (filtroEstado === 'completados' && item.completo) ||
         (filtroEstado === 'pendientes' && !item.completo))
     );
+
 
   return (
     <div
@@ -231,7 +241,7 @@ export default function GestionRequisitos() {
               }`}
             title="Opciones de texto"
           >
-            <ZoomIn />
+            <MdAccessibility />
           </button>
 
           {mostrarZoom && (

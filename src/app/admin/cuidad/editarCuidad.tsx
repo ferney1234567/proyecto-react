@@ -20,6 +20,9 @@ interface Departamento {
   name: string;
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+
 export default function EditarModal({
   mostrar,
   onClose,
@@ -38,7 +41,7 @@ export default function EditarModal({
     if (mostrar) {
       const fetchDepartamentos = async () => {
         try {
-          const res = await fetch('http://localhost:4000/api/v1/departments');
+          const res = await fetch(`${API_URL}/departments`);
           if (!res.ok) throw new Error('Error al obtener departamentos');
           const json = await res.json();
           setDepartamentos(json.data || []);

@@ -1,34 +1,33 @@
 'use client';
-
+import { asignarImagenesPorDefecto } from "@/utils/asignarImagenesPorDefecto";
 import { useState, useEffect } from 'react';
 import {
-  FiAward,
-  FiCheckCircle,
-  FiChevronLeft,
-  FiChevronRight,
-  FiEye,
+  FiAward, FiCheckCircle, FiChevronLeft, FiChevronRight, FiEye
 } from 'react-icons/fi';
-import ModalConvocatoria from '../detalleConvo/detalleConvo'; // Ajusta la ruta
+import ModalConvocatoria from '../detalleConvo/detalleConvo';
+import { getConvocatorias } from "@/app/api/convocatorias/routes";
+import Swal from "sweetalert2";
 
-// Interfaz Convocatoria (basada en tu tabla Calls)
+// Tipado base
 interface Convocatoria {
-  id: number;
+  id?: number;
+  callId?: number;
   title: string;
   description: string;
-  resources?: string;
-  callLink?: string;
-  openDate?: string;
-  closeDate?: string;
-  pageName?: string;
-  pageUrl?: string;
-  objective?: string;
-  notes?: string;
-  institutionId?: number;
-  lineId?: number;
-  targetAudienceId?: number;
-  interestId?: number;
-  userId?: number;
-  clickCount?: number;
+  resources: string;
+  callLink: string;
+  openDate: string;
+  closeDate: string;
+  pageName: string;
+  pageUrl: string;
+  objective: string;
+  notes: string;
+  institutionId: number;
+  lineId: number;
+  targetAudienceId: number;
+  interestId: number;
+  userId: number;
+  clickCount: number;
   imageUrl?: string;
 }
 
@@ -38,32 +37,30 @@ export default function Carousel() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [convocatoriaSeleccionada, setConvocatoriaSeleccionada] = useState<Convocatoria | null>(null);
 
-  // Traer convocatorias desde la API
+  // ✅ Un solo efecto para cargar convocatorias
   useEffect(() => {
-    const fetchData = async () => {
+    (async () => {
       try {
-        const res = await fetch("http://localhost:4000/api/v1/calls");
-        const data = await res.json();
-        if (data.status === "Ok" && Array.isArray(data.data)) {
-          setConvocatorias(data.data);
-        }
-      } catch (error) {
-        console.error("❌ Error al traer convocatorias:", error);
+        const data = await getConvocatorias();
+        const listaConImagenes = asignarImagenesPorDefecto(data?.data || []);
+        setConvocatorias(listaConImagenes);
+      } catch (err) {
+        console.error("❌ Error al cargar convocatorias:", err);
+        Swal.fire("Error", "No se pudieron cargar las convocatorias.", "error");
       }
-    };
-    fetchData();
+    })();
   }, []);
 
-  // Rotación automática cada 7s
+  // ✅ Efecto para rotación automática
   useEffect(() => {
-    if (convocatorias.length > 0) {
-      const timer = setInterval(() => {
-        setIndex((prev) => (prev + 1) % convocatorias.length);
-      }, 7000);
-      return () => clearInterval(timer);
-    }
+    if (convocatorias.length === 0) return;
+    const timer = setInterval(() => {
+      setIndex((prev) => (prev + 1) % convocatorias.length);
+    }, 7000);
+    return () => clearInterval(timer);
   }, [convocatorias]);
 
+  // Si aún no hay convocatorias, muestra un loader
   if (convocatorias.length === 0) {
     return (
       <div className="w-full h-[300px] flex items-center justify-center text-gray-500">

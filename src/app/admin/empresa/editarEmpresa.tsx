@@ -32,7 +32,7 @@ interface Empresa {
   celular: string;
   email: string;
   cargoLegal: string;
-   ciudad: string; // nombre
+  ciudad: string; // nombre
   cityId: string; // id real
 }
 
@@ -46,6 +46,10 @@ interface EditarEmpresaProps {
   ) => void;
   modoOscuro: boolean;
 }
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+
 
 export default function EditarEmpresa({
   isOpen,
@@ -65,7 +69,7 @@ export default function EditarEmpresa({
       setTimeout(() => setAnimacion(true), 50);
 
       // 🔹 Cargar ciudades desde la API
-      fetch("http://localhost:4000/api/v1/cities")
+      fetch(`${API_URL}/cities`)
         .then((res) => res.json())
         .then((data) => setCiudades(data.data || data || []))
         .catch((err) => {
@@ -91,7 +95,7 @@ export default function EditarEmpresa({
     : 'border-gray-300 text-gray-700 hover:bg-gray-100';
   const labelColor = modoOscuro ? 'text-gray-200' : 'text-gray-700';
   const iconColor = 'text-[#39A900]';
-    const selectBg = modoOscuro ? 'bg-gray-800 text-white' : 'bg-white text-gray-800';
+  const selectBg = modoOscuro ? 'bg-gray-800 text-white' : 'bg-white text-gray-800';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,33 +181,33 @@ export default function EditarEmpresa({
                 className={`w-full border rounded-xl pl-10 pr-4 py-3 mt-1 ${inputBg}`}
               />
             </div>
-             {/* Ciudad */}
-              <div className="space-y-2">
-                <label className={labelColor}>Ciudad*</label>
-                <div className="relative">
-                  <FaCity className={`absolute left-3 top-3 ${iconColor}`} />
-                 <select
-  name="cityId"
-  value={empresa.cityId || ''}
-  onChange={onChange}
-  required
-  className={`w-full border rounded-xl pl-10 pr-10 py-3 appearance-none ${selectBg}`}
->
-  <option value="">
-    {empresa.ciudad ? `Actual: ${empresa.ciudad}` : "Seleccione una ciudad"}
-  </option>
-  {ciudades.map((c) => (
-    <option key={c.id} value={c.id}>
-      {c.name}
-    </option>
-  ))}
-</select>
+            {/* Ciudad */}
+            <div className="space-y-2">
+              <label className={labelColor}>Ciudad*</label>
+              <div className="relative">
+                <FaCity className={`absolute left-3 top-3 ${iconColor}`} />
+                <select
+                  name="cityId"
+                  value={empresa.cityId || ''}
+                  onChange={onChange}
+                  required
+                  className={`w-full border rounded-xl pl-10 pr-10 py-3 appearance-none ${selectBg}`}
+                >
+                  <option value="">
+                    {empresa.ciudad ? `Actual: ${empresa.ciudad}` : "Seleccione una ciudad"}
+                  </option>
+                  {ciudades.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
 
-                  <FaChevronDown className="absolute right-3 top-3 text-gray-400" />
-                </div>
+                <FaChevronDown className="absolute right-3 top-3 text-gray-400" />
               </div>
             </div>
-         
+          </div>
+
 
           {/* Razón Social */}
           <div className="relative">

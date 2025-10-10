@@ -31,6 +31,9 @@ interface Category {
   name: string;
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+
 export default function Tipo({ modoOscuro }: TipoProps) {
   const [tipos, setTipos] = useState<RequirementGroup[]>([]);
   const [categorias, setCategorias] = useState<Category[]>([]);
@@ -44,7 +47,7 @@ export default function Tipo({ modoOscuro }: TipoProps) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const categoriasRes = await fetch('http://localhost:4000/api/v1/requirementCategories');
+        const categoriasRes = await fetch(`${API_URL}/requirementCategories`);
         if (!categoriasRes.ok) throw new Error('Error cargando categorías');
         const categoriasData = await categoriasRes.json();
         setCategorias(categoriasData.data || []);

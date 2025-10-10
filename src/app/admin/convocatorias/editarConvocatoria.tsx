@@ -133,10 +133,37 @@ export default function EditarConvocatoriaModal({
     setFormData((prev) => (prev ? { ...prev, [name]: value } : prev));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (formData) onSave(formData);
+ const handleSubmit = (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!formData) return;
+
+  // 🔁 Mapeo y normalización de campos
+  const dataMapped = {
+    id: formData.id,
+    title: formData.nombre?.trim() || null,
+    description: formData.descripcion?.trim() || null,
+    resources: formData.recursos?.trim() || null,
+    callLink: formData.link?.trim() || null,
+    openDate: formData.fechaApertura || null,
+    closeDate: formData.fechaCierre || null,
+    pageName: formData.nombrePagina?.trim() || null,
+    pageUrl: formData.pagina?.trim() || null,
+    objective: formData.objetivos?.trim() || null,
+    notes: formData.observaciones?.trim() || null,
+    institutionId: formData.entidad ? parseInt(formData.entidad) : null,
+    lineId: formData.linea ? parseInt(formData.linea) : null,
+    targetAudienceId: formData.publicoObjetivo ? parseInt(formData.publicoObjetivo) : null,
+    interestId: formData.interes ? parseInt(formData.interes) : null,
+    userId: formData.usuario ? parseInt(formData.usuario) : null,
+    imageUrl: formData.imagen?.trim() || null,
+    clickCount: 0,
   };
+
+  // 🚀 Llamas al onSave con los nombres correctos y campos limpios
+  onSave(dataMapped);
+  cerrarModal();
+};
+
 
   // 🎨 Estilos
   const modalBg = modoOscuro ? "bg-[#1a0526] text-white" : "bg-white text-gray-900";

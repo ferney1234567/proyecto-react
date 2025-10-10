@@ -21,6 +21,12 @@ import Swal from "sweetalert2";
 import ModalConvocatoria from '../../../components/detalleConvo/detalleConvo';
 import { useTheme } from '../../ThemeContext';
 import { getThemeStyles } from '../../themeStyles';
+import { useFontSize } from '../../../../FontSizeContext';
+import { asignarImagenesPorDefecto } from "@/utils/asignarImagenesPorDefecto";
+import { MdAccessibility } from 'react-icons/md';
+import { getUserInterestsByUserId } from "../../api/usuarioInteres/route";
+
+
 
 /* ============================
    Tipos de datos
@@ -57,13 +63,23 @@ interface Categoria {
    Componente principal
 ============================ */
 export default function FavoritosPage() {
+
+  // ✅ URLs base dinámicas cargadas desde .env
+  const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+  const API_URL_FAVORITOS = `${BASE_URL}/favorites`;
+  const API_URL_LINEAS = `${BASE_URL}/lines`;
   /* ----------------------------
+
      Estado base
   ---------------------------- */
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<number | ''>('');
   const [convocatorias, setConvocatorias] = useState<Convocatoria[]>([]);
   const [usuario, setUsuario] = useState<any>(null);
+
+  const [interesesUsuario, setInteresesUsuario] = useState<{ id: number; name: string }[]>([]);
+const [interesSeleccionado, setInteresSeleccionado] = useState<number | ''>('');
+
 
   /* ----------------------------
      Estado de UI
@@ -77,13 +93,11 @@ export default function FavoritosPage() {
 
 
   const [mostrarZoom, setMostrarZoom] = useState(false);
-  const [fontSize, setFontSize] = useState(16);
+
+  const { fontSize, aumentarTexto, disminuirTexto, resetTexto } = useFontSize();
 
   const toggleZoomMenu = () => setMostrarZoom(!mostrarZoom);
 
-  const aumentarTexto = () => setFontSize((prev) => prev + 2);
-  const disminuirTexto = () => setFontSize((prev) => Math.max(10, prev - 2));
-  const resetTexto = () => setFontSize(16);
   // Datos
   /* ----------------------------
      Paginación
@@ -107,31 +121,55 @@ export default function FavoritosPage() {
     return u.id ?? u.uId ?? u.uid ?? u.userId ?? null;
   };
 
-  useEffect(() => {
-    (async () => {
-      const uid = getUserId(usuario);
-      if (!uid) return;
-      try {
-        const res = await fetch('http://localhost:4000/api/v1/favorites');
-        const json = await res.json();
+useEffect(() => {
+  (async () => {
+    const uid = getUserId(usuario);
+    if (!uid) return;
 
-        // Filtrar por usuario
-        const favs = (json.data || []).filter((f: any) =>
-          Number(f.userId ?? f.user?.id) === Number(uid)
-        );
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
-        // Mapear para tener convocatoria + id de favorito
-        const calls = favs.map((f: any) => ({
-          ...f.call,         // datos de la convocatoria
-          favId: f.id        // id del favorito en BD
-        }));
+    try {
+      const res = await fetch(API_URL_FAVORITOS, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const json = await res.json();
 
-        setConvocatorias(calls);
-      } catch (err) {
-        console.error('❌ Error cargando favoritos', err);
-      }
-    })();
-  }, [usuario]);
+      const favs = (json.data || []).filter(
+        (f: any) => Number(f.userId ?? f.user?.id) === Number(uid)
+      );
+
+      const convocatoriasSinImagen = favs.map((f: any) => ({
+        ...f.call,
+        favId: f.id,
+      }));
+
+      const convocatoriasConImagen = asignarImagenesPorDefecto(convocatoriasSinImagen);
+      setConvocatorias(convocatoriasConImagen);
+    } catch (err) {
+      console.error("❌ Error cargando favoritos:", err);
+      Swal.fire("Error", "No se pudieron cargar tus favoritos.", "error");
+    }
+  })();
+}, [usuario]);
+
+
+
+useEffect(() => {
+  const uid = usuario?.id || usuario?.uId || usuario?.uid || usuario?.userId;
+  if (!uid) return;
+
+  (async () => {
+    try {
+      const data = await getUserInterestsByUserId(uid);
+      setInteresesUsuario(data || []);
+    } catch (err) {
+      console.error("❌ Error cargando intereses del usuario:", err);
+    }
+  })();
+}, [usuario]);
 
 
 
@@ -139,7 +177,7 @@ export default function FavoritosPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch('http://localhost:4000/api/v1/lines');
+        const res = await fetch(API_URL_LINEAS);
         const json = await res.json();
         setCategorias(json.data || []);
       } catch (err) {
@@ -158,78 +196,85 @@ export default function FavoritosPage() {
      Derivados: filtros y listas
   ============================ */
 
+/* ============================
+   Derivados: filtros y listas
+============================ */
 
-  const convocatoriasUsuario = convocatorias;
+const convocatoriasUsuario = convocatorias;
+const [filtroFecha, setFiltroFecha] = useState("todas");
 
+// 🔹 Combinar filtros de interés y categoría
+const filtradasBase = useMemo(() => {
+  let lista = [...convocatoriasUsuario];
 
+  // Filtro por interés
+  if (interesSeleccionado) {
+    lista = lista.filter((c) => Number(c.interestId) === Number(interesSeleccionado));
+  }
 
+  // Filtro por categoría
+  if (categoriaSeleccionada) {
+    lista = lista.filter((c) => Number(c.lineId) === Number(categoriaSeleccionada));
+  }
 
+  return lista;
+}, [convocatoriasUsuario, interesSeleccionado, categoriaSeleccionada]);
 
-  // Estado extra para filtro de fecha
-  const [filtroFecha, setFiltroFecha] = useState("todas");
+// 🔹 Filtro por búsqueda
+const filtradasPorBusqueda = useMemo(() => {
+  const q = busqueda.trim().toLowerCase();
+  if (!q) return filtradasBase;
+  return filtradasBase.filter((c) => {
+    const t = (c.title || '').toLowerCase();
+    const d = (c.description || '').toLowerCase();
+    return t.includes(q) || d.includes(q);
+  });
+}, [filtradasBase, busqueda]);
 
-  // 1. Filtrar por categoría
-  const filtradasPorCategoria = useMemo(() => {
-    if (!categoriaSeleccionada) return convocatoriasUsuario;
-    return convocatoriasUsuario.filter((c) => c.lineId === categoriaSeleccionada);
-  }, [convocatoriasUsuario, categoriaSeleccionada]);
+// 🔹 Filtro por fecha
+const filtradasPorFecha = useMemo(() => {
+  const hoy = new Date();
+  switch (filtroFecha) {
+    case "abiertas":
+      return filtradasPorBusqueda.filter(c =>
+        new Date(c.openDate) <= hoy && new Date(c.closeDate) >= hoy
+      );
+    case "proximas":
+      return filtradasPorBusqueda.filter(c => new Date(c.openDate) > hoy);
+    case "cerradas":
+      return filtradasPorBusqueda.filter(c => new Date(c.closeDate) < hoy);
+    default:
+      return filtradasPorBusqueda;
+  }
+}, [filtradasPorBusqueda, filtroFecha]);
 
-  // 2. Filtrar por búsqueda
-  const filtradasPorBusqueda = useMemo(() => {
-    const q = busqueda.trim().toLowerCase();
-    if (!q) return filtradasPorCategoria;
-    return filtradasPorCategoria.filter((c) => {
-      const t = (c.title || '').toLowerCase();
-      const d = (c.description || '').toLowerCase();
-      return t.includes(q) || d.includes(q);
-    });
-  }, [filtradasPorCategoria, busqueda]);
+// 🔹 Ordenar
+const [orden, setOrden] = useState("recientes");
+const ordenadas = useMemo(() => {
+  const lista = [...filtradasPorFecha];
+  switch (orden) {
+    case "recientes":
+      return lista.sort((a, b) => new Date(b.openDate).getTime() - new Date(a.openDate).getTime());
+    case "antiguos":
+      return lista.sort((a, b) => new Date(a.openDate).getTime() - new Date(b.openDate).getTime());
+    case "cierreProximo":
+      return lista.sort((a, b) => new Date(a.closeDate).getTime() - new Date(b.closeDate).getTime());
+    case "cierreLejano":
+      return lista.sort((a, b) => new Date(b.closeDate).getTime() - new Date(a.closeDate).getTime());
+    case "tituloAZ":
+      return lista.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+    case "tituloZA":
+      return lista.sort((a, b) => (b.title || "").localeCompare(a.title || ""));
+    default:
+      return lista;
+  }
+}, [filtradasPorFecha, orden]);
 
-  // 3. Filtrar por fecha
-  const filtradasPorFecha = useMemo(() => {
-    const hoy = new Date();
-    switch (filtroFecha) {
-      case "abiertas":
-        return filtradasPorBusqueda.filter(c =>
-          new Date(c.openDate) <= hoy && new Date(c.closeDate) >= hoy
-        );
-      case "proximas":
-        return filtradasPorBusqueda.filter(c => new Date(c.openDate) > hoy);
-      case "cerradas":
-        return filtradasPorBusqueda.filter(c => new Date(c.closeDate) < hoy);
-      default:
-        return filtradasPorBusqueda;
-    }
-  }, [filtradasPorBusqueda, filtroFecha]);
-
-  // 4. Ordenar
-  const [orden, setOrden] = useState("recientes");
-
-  const ordenadas = useMemo(() => {
-    const lista = [...filtradasPorFecha];
-    switch (orden) {
-      case "recientes":
-        return lista.sort((a, b) => new Date(b.openDate).getTime() - new Date(a.openDate).getTime());
-      case "antiguos":
-        return lista.sort((a, b) => new Date(a.openDate).getTime() - new Date(b.openDate).getTime());
-      case "cierreProximo":
-        return lista.sort((a, b) => new Date(a.closeDate).getTime() - new Date(b.closeDate).getTime());
-      case "cierreLejano":
-        return lista.sort((a, b) => new Date(b.closeDate).getTime() - new Date(a.closeDate).getTime());
-      case "tituloAZ":
-        return lista.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
-      case "tituloZA":
-        return lista.sort((a, b) => (b.title || "").localeCompare(a.title || ""));
-      default:
-        return lista;
-    }
-  }, [filtradasPorFecha, orden]);
-
-  // 5. Paginación
-  const indiceInicio = (paginaActual - 1) * porPagina;
-  const indiceFin = indiceInicio + porPagina;
-  const totalPaginas = Math.max(1, Math.ceil(ordenadas.length / porPagina));
-  const convocatoriasPagina = ordenadas.slice(indiceInicio, indiceFin);
+// 🔹 Paginación
+const indiceInicio = (paginaActual - 1) * porPagina;
+const indiceFin = indiceInicio + porPagina;
+const totalPaginas = Math.max(1, Math.ceil(ordenadas.length / porPagina));
+const convocatoriasPagina = ordenadas.slice(indiceInicio, indiceFin);
 
 
   // Reset de página si cambian filtros/búsqueda
@@ -259,34 +304,87 @@ export default function FavoritosPage() {
     }
   };
 
-  const handleEliminarFavorito = async (favId: number) => {
-    try {
-      await fetch(`http://localhost:4000/api/v1/favorites/${favId}`, {
-        method: "DELETE",
-      });
+ const handleEliminarFavorito = async (favId: number) => {
+  const token = localStorage.getItem("token"); // 🔹 Recuperar JWT del usuario logueado
+  if (!token) {
+    Swal.fire({
+      title: "⚠️ Atención",
+      text: "Debes iniciar sesión para eliminar un favorito.",
+      icon: "warning",
+      confirmButtonText: "Entendido",
+    });
+    return;
+  }
 
-      // Quitar del estado local
-      setConvocatorias((prev) => prev.filter((c) => c.favId !== favId));
+  try {
+    // 🔹 Petición DELETE con autenticación JWT
+    const res = await fetch(`${API_URL_FAVORITOS}/${favId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-      Swal.fire({
-        title: "✅ Eliminado",
-        text: "El favorito se eliminó correctamente.",
-        icon: "success",
-        confirmButtonText: "Entendido",
-        confirmButtonColor: "#ef4444",
-        background: "#fff",
-      });
-    } catch (err) {
-      console.error("❌ Error eliminando favorito", err);
-      Swal.fire({
-        title: "Error",
-        text: "No se pudo eliminar el favorito. Inténtalo de nuevo.",
-        icon: "error",
-        confirmButtonText: "Cerrar",
-        confirmButtonColor: "#ef4444",
-      });
+    // 🔹 Verificar respuesta del servidor
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.message || "Error al eliminar favorito");
     }
-  };
+
+    // 🔹 Quitar del estado local para actualizar vista sin recargar
+    setConvocatorias((prev) => prev.filter((c) => c.favId !== favId));
+
+    // 🔹 Colores dinámicos según tema (oscuro o claro)
+    const fondo = modoOscuro ? "#1e293b" : "#ffffff";
+    const colorTexto = modoOscuro ? "#f1f5f9" : "#1e293b";
+
+    // 🔹 Alerta visual y animada (SweetAlert personalizada)
+    Swal.fire({
+      title: '<span style="color:#ef4444; font-size: 24px; font-weight: bold;">¡Favorito eliminado!</span>',
+      html: `
+        <div style="display:flex; justify-content:center; align-items:center; flex-direction:column;">
+          <div style="animation: spin 1.5s linear infinite; font-size:100px; color:#ef4444;">
+            🗑️
+          </div>
+          <p style="margin-top:20px; font-size:16px; color:${colorTexto};">
+            El favorito se eliminó correctamente.
+          </p>
+        </div>
+        <style>
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        </style>
+      `,
+      background: fondo,
+      showConfirmButton: true,
+      confirmButtonText: "Entendido",
+      confirmButtonColor: "#ef4444",
+    });
+  } catch (err: any) {
+    console.error("❌ Error eliminando favorito", err);
+
+    // 🔹 Colores según tema actual
+    const fondo = modoOscuro ? "#1e293b" : "#ffffff";
+    const colorTexto = modoOscuro ? "#f1f5f9" : "#1e293b";
+
+    Swal.fire({
+      title: '<span style="color:#ef4444; font-size: 22px; font-weight: bold;">Error</span>',
+      html: `
+        <p style="color:${colorTexto}; font-size:16px;">
+          ${err.message || "No se pudo eliminar el favorito. Inténtalo nuevamente."}
+        </p>
+      `,
+      icon: "error",
+      confirmButtonText: "Cerrar",
+      confirmButtonColor: "#ef4444",
+      background: fondo,
+    });
+  }
+};
+
 
 
 
@@ -347,16 +445,16 @@ export default function FavoritosPage() {
 
                 </Link>
 
-                 {/* 👇 Botón solo para administradores */}
-  {typeof window !== "undefined" &&
-    (localStorage.getItem("rol") === "admin" ||
-      localStorage.getItem("rol") === "administrador" ||
-      localStorage.getItem("rol") === "2") && (
-      <Link href="/admin/menuadmin" className={`flex items-center space-x-1 ${styles.nav}`}>
-        <FaUserShield className="text-sm" />
-        <span>Admin</span>
-      </Link>
-    )}
+                {/* 👇 Botón solo para administradores */}
+                {typeof window !== "undefined" &&
+                  (localStorage.getItem("rol") === "admin" ||
+                    localStorage.getItem("rol") === "administrador" ||
+                    localStorage.getItem("rol") === "2") && (
+                    <Link href="/admin/menuadmin" className={`flex items-center space-x-1 ${styles.nav}`}>
+                      <FaUserShield className="text-sm" />
+                      <span>Admin</span>
+                    </Link>
+                  )}
 
 
                 {/* Avatar */}
@@ -378,8 +476,8 @@ export default function FavoritosPage() {
                 <button
                   onClick={toggleModoOscuro}
                   className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
-                      ? 'bg-gray-700 text-yellow-300 hover:bg-gray-600'
-                      : 'bg-white text-gray-700 hover:bg-gray-100 shadow-md'
+                    ? 'bg-gray-700 text-yellow-300 hover:bg-gray-600'
+                    : 'bg-white text-gray-700 hover:bg-gray-100 shadow-md'
                     }`}
                   title="Cambiar modo"
                 >
@@ -390,12 +488,12 @@ export default function FavoritosPage() {
                 <button
                   onClick={toggleZoomMenu}
                   className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
-                      ? 'bg-gray-700 text-yellow-300 hover:bg-gray-600'
-                      : 'bg-white text-gray-700 hover:bg-gray-100 shadow-md'
+                    ? 'bg-gray-700 text-yellow-300 hover:bg-gray-600'
+                    : 'bg-white text-gray-700 hover:bg-gray-100 shadow-md'
                     }`}
                   title="Opciones de texto"
                 >
-                  <ZoomIn className="h-6 w-6" />
+                  <MdAccessibility className="h-6 w-6" />
                 </button>
 
                 {/* Botones secundarios (se muestran solo si mostrarZoom = true) */}
@@ -404,8 +502,8 @@ export default function FavoritosPage() {
                     <button
                       onClick={aumentarTexto}
                       className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
-                          ? 'bg-gray-700 text-yellow-300 hover:bg-gray-600'
-                          : 'bg-white text-gray-700 hover:bg-gray-100 shadow-md'
+                        ? 'bg-gray-700 text-yellow-300 hover:bg-gray-600'
+                        : 'bg-white text-gray-700 hover:bg-gray-100 shadow-md'
                         }`}
                       title="Aumentar texto"
                     >
@@ -415,8 +513,8 @@ export default function FavoritosPage() {
                     <button
                       onClick={resetTexto}
                       className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
-                          ? 'bg-gray-700 text-yellow-300 hover:bg-gray-600'
-                          : 'bg-white text-gray-700 hover:bg-gray-100 shadow-md'
+                        ? 'bg-gray-700 text-yellow-300 hover:bg-gray-600'
+                        : 'bg-white text-gray-700 hover:bg-gray-100 shadow-md'
                         }`}
                       title="Restablecer tamaño"
                     >
@@ -426,8 +524,8 @@ export default function FavoritosPage() {
                     <button
                       onClick={disminuirTexto}
                       className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
-                          ? 'bg-gray-700 text-yellow-300 hover:bg-gray-600'
-                          : 'bg-white text-gray-700 hover:bg-gray-100 shadow-md'
+                        ? 'bg-gray-700 text-yellow-300 hover:bg-gray-600'
+                        : 'bg-white text-gray-700 hover:bg-gray-100 shadow-md'
                         }`}
                       title="Disminuir texto"
                     >
@@ -441,162 +539,170 @@ export default function FavoritosPage() {
           </div>
         </header>
 
-      <section
-  className={`rounded-2xl p-4 mb-6 border transition-colors duration-500 ${
-    modoOscuro ? "bg-[#121a2b] border-white/10" : "bg-white/80 border-gray-200/80"
-  }`}
-  style={{ fontSize: `${fontSize}px` }} // 🔹 Escala global
->
-  <div className="flex flex-wrap gap-4 items-end justify-between">
-    {/* Filtro Categoría */}
-    <div className="flex flex-col flex-1 min-w-[220px]">
-      <label
-        className={`mb-2 flex items-center gap-2 font-medium ${styles.textMuted}`}
-        style={{ fontSize: "0.95em" }}
-      >
-        <LayoutGrid style={{ fontSize: "1em" }} /> Categoría
-      </label>
-      <select
-        value={categoriaSeleccionada}
-        onChange={(e) => setCategoriaSeleccionada(Number(e.target.value) || "")}
-        className={`appearance-none w-full rounded-xl px-4 py-2.5 cursor-pointer transition-all duration-200 ${styles.input}`}
-        style={{ fontSize: "0.9em" }}
-      >
-        <option value="">Todas las categorías</option>
-        {categorias.map((cat) => (
-          <option key={cat.id} value={cat.id}>
-            {cat.name}
-          </option>
-        ))}
-      </select>
-    </div>
+        <section
+          className={`rounded-2xl p-4 mb-6 border transition-colors duration-500 ${modoOscuro ? "bg-[#121a2b] border-white/10" : "bg-white/80 border-gray-200/80"
+            }`}
+          style={{ fontSize: `${fontSize}px` }} // 🔹 Escala global
+        >
+          <div className="flex flex-wrap gap-4 items-end justify-between">
+            {/* Filtro Categoría */}
+            <div className="flex flex-col flex-1 min-w-[220px]">
+              <label
+                className={`mb-2 flex items-center gap-2 font-medium ${styles.textMuted}`}
+                style={{ fontSize: "0.95em" }}
+              >
+                <LayoutGrid style={{ fontSize: "1em" }} /> Categoría
+              </label>
+              <select
+                value={categoriaSeleccionada}
+                onChange={(e) => setCategoriaSeleccionada(Number(e.target.value) || "")}
+                className={`appearance-none w-full rounded-xl px-4 py-2.5 cursor-pointer transition-all duration-200 ${styles.input}`}
+                style={{ fontSize: "0.9em" }}
+              >
+                <option value="">Todas las categorías</option>
+                {categorias.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-    {/* Filtro Ubicación */}
-    <div className="flex flex-col flex-1 min-w-[220px]">
-      <label
-        className={`mb-2 flex items-center gap-2 font-medium ${styles.textMuted}`}
-        style={{ fontSize: "0.95em" }}
-      >
-        <MapPin style={{ fontSize: "1em" }} /> Ubicación
-      </label>
-      <select
-        className={`appearance-none w-full rounded-xl px-4 py-2.5 cursor-pointer ${styles.input}`}
-        style={{ fontSize: "0.9em" }}
-      >
-        <option>Todo el país</option>
-        <option>Bogotá</option>
-        <option>Medellín</option>
-        <option>Cali</option>
-      </select>
-    </div>
+            {/* Filtro Ubicación */}
+           {/* 🔹 Filtro Intereses de Usuarios */}
+<div className="flex flex-col flex-1 min-w-[220px]">
+  <label
+    className={`mb-2 flex items-center gap-2 font-medium ${styles.textMuted}`}
+    style={{ fontSize: "0.95em" }}
+  >
+    <FaTags style={{ fontSize: "1em" }} /> Intereses de usuarios
+  </label>
 
-    {/* Filtro Fecha */}
-    <div className="flex flex-col flex-1 min-w-[220px]">
-      <label
-        className={`mb-2 flex items-center gap-2 font-medium ${styles.textMuted}`}
-        style={{ fontSize: "0.95em" }}
-      >
-        <Calendar style={{ fontSize: "1em" }} /> Fecha
-      </label>
-      <select
-        value={filtroFecha}
-        onChange={(e) => setFiltroFecha(e.target.value)}
-        className={`appearance-none w-full rounded-xl px-4 py-2.5 cursor-pointer transition-all duration-200 ${styles.input}`}
-        style={{ fontSize: "0.9em" }}
-      >
-        <option value="todas">Todas las fechas</option>
-        <option value="abiertas">Abiertas ahora</option>
-        <option value="proximas">Próximas</option>
-        <option value="cerradas">Cerradas</option>
-      </select>
-    </div>
-
-    {/* Filtro Ordenar por */}
-    <div className="flex flex-col flex-1 min-w-[220px]">
-      <label
-        className={`mb-2 flex items-center gap-2 font-medium ${styles.textMuted}`}
-        style={{ fontSize: "0.95em" }}
-      >
-        <FaRegBookmark style={{ fontSize: "1em" }} /> Ordenar por
-      </label>
-      <select
-        value={orden}
-        onChange={(e) => setOrden(e.target.value)}
-        className={`appearance-none w-full rounded-xl px-4 py-2.5 cursor-pointer transition-all duration-200 ${styles.input}`}
-        style={{ fontSize: "0.9em" }}
-      >
-        <option value="recientes">Más recientes (apertura)</option>
-        <option value="antiguos">Más antiguos (apertura)</option>
-        <option value="cierreProximo">Cierre más próximo</option>
-        <option value="cierreLejano">Cierre más lejano</option>
-        <option value="tituloAZ">Título A–Z</option>
-        <option value="tituloZA">Título Z–A</option>
-      </select>
-    </div>
-
-    {/* Botones vista */}
-    <div
-      className={`flex items-center gap-2 p-1 rounded-full transition-colors ${
-        modoOscuro ? "bg-[#0e1626]" : "bg-gray-100"
-      }`}
-      style={{ fontSize: "1em" }}
-    >
-      <button
-        onClick={() => cambiarVista("tarjeta")}
-        className={`p-2.5 rounded-full transition-all duration-300 ${
-          vista === "tarjeta"
-            ? "bg-emerald-500 text-white shadow-md"
-            : "text-gray-500 hover:text-gray-800"
-        }`}
-        title="Vista en tarjetas"
-      >
-        <LayoutGrid style={{ fontSize: "1.1em" }} />
-      </button>
-      <button
-        onClick={() => cambiarVista("lista")}
-        className={`p-2.5 rounded-full transition-all duration-300 ${
-          vista === "lista"
-            ? "bg-emerald-500 text-white shadow-md"
-            : "text-gray-500 hover:text-gray-800"
-        }`}
-        title="Vista en lista"
-      >
-        <ListIcon style={{ fontSize: "1.1em" }} />
-      </button>
-    </div>
-  </div>
-</section>
+  <select
+    value={interesSeleccionado}
+    onChange={(e) => setInteresSeleccionado(Number(e.target.value) || '')}
+    className={`appearance-none w-full rounded-xl px-4 py-2.5 cursor-pointer transition-all duration-200 ${styles.input}`}
+    style={{ fontSize: "0.9em" }}
+  >
+    <option value="">Todos los intereses</option>
+    {interesesUsuario.length > 0 ? (
+      interesesUsuario.map((interes) => (
+        <option key={interes.id} value={interes.id}>
+          {interes.name}
+        </option>
+      ))
+    ) : (
+      <option disabled>No tienes intereses registrados</option>
+    )}
+  </select>
+</div>
 
 
+            {/* Filtro Fecha */}
+            <div className="flex flex-col flex-1 min-w-[220px]">
+              <label
+                className={`mb-2 flex items-center gap-2 font-medium ${styles.textMuted}`}
+                style={{ fontSize: "0.95em" }}
+              >
+                <Calendar style={{ fontSize: "1em" }} /> Fecha
+              </label>
+              <select
+                value={filtroFecha}
+                onChange={(e) => setFiltroFecha(e.target.value)}
+                className={`appearance-none w-full rounded-xl px-4 py-2.5 cursor-pointer transition-all duration-200 ${styles.input}`}
+                style={{ fontSize: "0.9em" }}
+              >
+                <option value="todas">Todas las fechas</option>
+                <option value="abiertas">Abiertas ahora</option>
+                <option value="proximas">Próximas</option>
+                <option value="cerradas">Cerradas</option>
+              </select>
+            </div>
+
+            {/* Filtro Ordenar por */}
+            <div className="flex flex-col flex-1 min-w-[220px]">
+              <label
+                className={`mb-2 flex items-center gap-2 font-medium ${styles.textMuted}`}
+                style={{ fontSize: "0.95em" }}
+              >
+                <FaRegBookmark style={{ fontSize: "1em" }} /> Ordenar por
+              </label>
+              <select
+                value={orden}
+                onChange={(e) => setOrden(e.target.value)}
+                className={`appearance-none w-full rounded-xl px-4 py-2.5 cursor-pointer transition-all duration-200 ${styles.input}`}
+                style={{ fontSize: "0.9em" }}
+              >
+                <option value="recientes">Más recientes (apertura)</option>
+                <option value="antiguos">Más antiguos (apertura)</option>
+                <option value="cierreProximo">Cierre más próximo</option>
+                <option value="cierreLejano">Cierre más lejano</option>
+                <option value="tituloAZ">Título A–Z</option>
+                <option value="tituloZA">Título Z–A</option>
+              </select>
+            </div>
+
+            {/* Botones vista */}
+            <div
+              className={`flex items-center gap-2 p-1 rounded-full transition-colors ${modoOscuro ? "bg-[#0e1626]" : "bg-gray-100"
+                }`}
+              style={{ fontSize: "1em" }}
+            >
+              <button
+                onClick={() => cambiarVista("tarjeta")}
+                className={`p-2.5 rounded-full transition-all duration-300 ${vista === "tarjeta"
+                  ? "bg-emerald-500 text-white shadow-md"
+                  : "text-gray-500 hover:text-gray-800"
+                  }`}
+                title="Vista en tarjetas"
+              >
+                <LayoutGrid style={{ fontSize: "1.1em" }} />
+              </button>
+              <button
+                onClick={() => cambiarVista("lista")}
+                className={`p-2.5 rounded-full transition-all duration-300 ${vista === "lista"
+                  ? "bg-emerald-500 text-white shadow-md"
+                  : "text-gray-500 hover:text-gray-800"
+                  }`}
+                title="Vista en lista"
+              >
+                <ListIcon style={{ fontSize: "1.1em" }} />
+              </button>
+            </div>
+          </div>
+        </section>
 
 
-      {/* ========================
+
+
+        {/* ========================
     CONTENIDO: TARJETAS
 ======================== */}
-{vista === "tarjeta" && (
+      {vista === "tarjeta" && (
   <div
     className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-8"
-    style={{ fontSize: `${fontSize}px` }} // 🔹 Escala global
+    style={{ fontSize: `${fontSize}px` }}
   >
     {convocatoriasPagina.map((c, idx) => {
-      const key = `conv-card-${indiceInicio + idx}`;
+      const key = `${c.favId ?? c.id ?? "noid"}-${idx}`;
+      const isExpanded = expandedKey === key;
+
       return (
         <div
-          key={c.id ?? key}
+          key={key}
           className={`relative rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all hover:-translate-y-2 flex flex-col ${styles.card}`}
         >
-          {/* Botón eliminar favorito */}
+          {/* ❌ Botón eliminar favorito */}
           <button
             onClick={() => handleEliminarFavorito(c.favId)}
             className="absolute top-2 right-2 bg-white rounded-full p-2 shadow-md hover:scale-110 transition-transform z-10"
             title="Eliminar de favoritos"
-            style={{ fontSize: "1em" }}
           >
             <FaTrash className="text-red-600" style={{ fontSize: "1em" }} />
           </button>
 
-          {/* Imagen */}
-          <div className="overflow-hidden">
+          {/* 🖼 Imagen completamente ajustada */}
+          <div className="relative w-full h-[220px] overflow-hidden">
             <img
               onClick={() => {
                 setItemSeleccionado(c);
@@ -604,29 +710,39 @@ export default function FavoritosPage() {
               }}
               src={c.imageUrl || "/img/default.jpg"}
               alt={c.title}
-              className="w-full h-[220px] object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
+              className="absolute inset-0 w-full h-full object-cover cursor-pointer transition-transform duration-500 hover:scale-110"
             />
           </div>
 
-          {/* Contenido */}
+          {/* 📄 Contenido */}
           <div className="p-5 flex flex-col justify-between flex-grow">
-            {/* Título */}
-            <h4
-              className={`font-bold mb-3 flex items-center gap-2 ${
-                modoOscuro ? "text-white" : "text-[#00324D]"
-              }`}
-              style={{ fontSize: "1.05em" }}
-            >
+            {/* 🔹 Título */}
+            <div className="flex items-start gap-2 min-h-[3rem]">
               <FaMobileAlt
                 className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                style={{ fontSize: "1em" }}
+                style={{ fontSize: "1em", marginTop: "0.15em" }}
               />
-              {c.title || "—"}
-            </h4>
+              <h4
+                className={`font-bold leading-snug ${
+                  modoOscuro ? "text-white" : "text-[#00324D]"
+                }`}
+                style={{
+                  fontSize: "1.05em",
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  lineHeight: "1.3",
+                }}
+              >
+                {c.title || "—"}
+              </h4>
+            </div>
 
-            {/* Descripción */}
+            {/* 🔹 Descripción (clicable para expandir) */}
             <div
-              className={`mb-2 flex items-start gap-3 ${styles.textMuted}`}
+              className={`mt-2 flex items-start gap-3 ${styles.textMuted}`}
               style={{ fontSize: "0.95em" }}
             >
               <FaGraduationCap
@@ -635,37 +751,69 @@ export default function FavoritosPage() {
                 }`}
                 style={{ fontSize: "1em" }}
               />
-              <div>
-                {c.description && c.description.length > 140
-                  ? `${c.description.slice(0, 140)}...`
-                  : c.description || "—"}
-              </div>
+              <span
+                onClick={() => setExpandedKey(isExpanded ? null : key)}
+                className={`cursor-pointer select-none transition-all ${
+                  isExpanded ? "line-clamp-none" : "line-clamp-3"
+                }`}
+                style={{
+                  display: "-webkit-box",
+                  WebkitBoxOrient: "vertical",
+                  WebkitLineClamp: isExpanded ? "unset" : "3",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  lineHeight: "1.4",
+                }}
+              >
+                {c.description || "Sin descripción disponible."}
+                {!isExpanded && c.description?.length > 140 && " ..."}
+              </span>
             </div>
 
-            {/* Fechas */}
+            {/* 🔹 Fechas alineadas */}
             <div
-              className={`flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4 ${styles.textMuted}`}
+              className={`flex items-center justify-between mt-3 ${styles.textMuted} ${
+                modoOscuro ? "bg-white/5" : "bg-gray-50"
+              } p-2 rounded`}
               style={{ fontSize: "0.9em" }}
             >
-              <span className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5">
                 <FaCalendarAlt
                   className={modoOscuro ? "text-white" : "text-[#00324D]"}
                   style={{ fontSize: "1em" }}
                 />
-                <strong>Apertura:</strong> {fmt(c.openDate)}
-              </span>
-              <span className="flex items-center gap-1.5">
+                <span>
+                  <strong></strong>{" "}
+                  {c.openDate
+                    ? new Date(c.openDate).toLocaleDateString("es-ES", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })
+                    : "—"}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
                 <FaCalendarTimes
                   className={modoOscuro ? "text-white" : "text-[#00324D]"}
                   style={{ fontSize: "1em" }}
                 />
-                <strong>Cierre:</strong> {fmt(c.closeDate)}
-              </span>
+                <span>
+                  <strong></strong>{" "}
+                  {c.closeDate
+                    ? new Date(c.closeDate).toLocaleDateString("es-ES", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })
+                    : "—"}
+                </span>
+              </div>
             </div>
 
-            {/* Botones */}
+            {/* 🔹 Botones inferiores */}
             <div
-              className={`pt-4 mt-auto flex items-center gap-2 border-t ${styles.divider}`}
+              className={`pt-4 mt-4 flex items-center gap-2 border-t ${styles.divider}`}
               style={{ fontSize: "0.9em" }}
             >
               <button
@@ -673,19 +821,18 @@ export default function FavoritosPage() {
                   setItemSeleccionado(c);
                   setModalAbierto(true);
                 }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold ${styles.primaryButton}`}
-                style={{ fontSize: "0.95em" }}
+                className={`flex-1 flex items-center justify-center gap-1 px-4 py-2 rounded-md font-semibold ${styles.primaryButton}`}
               >
-                <FaRegFileAlt style={{ fontSize: "1em" }} /> Detalles
+                <FaRegFileAlt /> Detalles
               </button>
+
               <a
                 href={c.callLink || "#"}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold ${styles.successButton}`}
-                style={{ fontSize: "0.95em" }}
+                className={`flex-1 flex items-center justify-center gap-1 px-4 py-2 rounded-md font-semibold ${styles.successButton}`}
               >
-                <FaCheckCircle style={{ fontSize: "1em" }} /> Inscribirse
+                <FaCheckCircle /> Inscribirse
               </a>
             </div>
           </div>
@@ -696,180 +843,187 @@ export default function FavoritosPage() {
 )}
 
 
-      {/* ========================
+        {/* ========================
     CONTENIDO: LISTA
 ======================== */}
-{vista === "lista" && (
-  <div className="w-full" style={{ fontSize: `${fontSize}px` }}> 
-    <div className="flex flex-col gap-6">
-      {convocatoriasPagina.map((c, idx) => {
-        const key = `conv-list-${indiceInicio + idx}`;
-        return (
-          <div
-            key={c.id ?? key}
-            className={`relative flex flex-col md:flex-row rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all hover:-translate-y-2 ${styles.card}`}
-          >
-            {/* Botón eliminar */}
-            <button
-              onClick={() => handleEliminarFavorito(c.favId)}
-              className="absolute top-2 right-2 bg-white rounded-full p-2 shadow-md hover:scale-110 transition-transform z-10"
-              title="Eliminar de favoritos"
-              style={{ fontSize: "1em" }}
-            >
-              <FaTrash className="text-red-600" style={{ fontSize: "1em" }} />
-            </button>
+        {vista === "lista" && (
+          <div className="w-full" style={{ fontSize: `${fontSize}px` }}>
+            <div className="flex flex-col gap-6">
+              {convocatoriasPagina.map((c, idx) => {
+                const uniqueKey = `${c.favId ?? c.id ?? 'noid'}-list-${idx}`;
 
-            {/* Imagen */}
-            <div className="w-full md:w-[400px] h-[260px] flex-shrink-0 overflow-hidden">
-              <img
-                onClick={() => {
-                  setItemSeleccionado(c);
-                  setModalAbierto(true);
-                }}
-                src={c.imageUrl || "/img/default.jpg"}
-                alt={c.title}
-                className="w-full h-full object-cover object-[20%] cursor-pointer transition-transform duration-300 hover:scale-110"
-              />
-            </div>
-
-            {/* Contenido */}
-            <div className="flex flex-col flex-grow p-6">
-              <div className="flex-grow">
-                {/* Título */}
-                <h4
-                  className={`font-bold flex items-center gap-3 ${
-                    modoOscuro ? "text-white" : "text-[#00324D]"
-                  }`}
-                  style={{ fontSize: "1.2em" }}
-                >
-                  <FaMobileAlt
-                    className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                    style={{ fontSize: "1em" }}
-                  />
-                  {c.title || "—"}
-                </h4>
-
-                <div className={`my-4 border-t ${styles.divider}`} />
-
-                {/* Descripción */}
-                <div className="space-y-4">
+                return (
                   <div
-                    className={`flex items-start gap-3 ${styles.textMuted}`}
-                    style={{ fontSize: "0.95em" }}
+                    key={uniqueKey}
+                    className={`relative flex flex-col md:flex-row rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all hover:-translate-y-2 ${styles.card}`}
                   >
-                    <FaGraduationCap
-                      className={`flex-shrink-0 mt-0.5 ${
-                        modoOscuro ? "text-white" : "text-[#00324D]"
-                      }`}
-                      style={{ fontSize: "1.1em" }}
-                    />
-                    <div>
-                      {c.description && c.description.length > 200
-                        ? `${c.description.slice(0, 200)}...`
-                        : c.description || "—"}
+                    {/* Botón eliminar */}
+                    <button
+                      onClick={() => handleEliminarFavorito(c.favId)}
+                      className="absolute top-2 right-2 bg-white rounded-full p-2 shadow-md hover:scale-110 transition-transform z-10"
+                      title="Eliminar de favoritos"
+                      style={{ fontSize: "1em" }}
+                    >
+                      <FaTrash className="text-red-600" style={{ fontSize: "1em" }} />
+                    </button>
+
+                    {/* Imagen */}
+                    <div className="w-full md:w-[400px] flex-shrink-0 overflow-hidden relative flex self-stretch">
+                      <img
+                        onClick={() => {
+                          setItemSeleccionado(c);
+                          setModalAbierto(true);
+                        }}
+                        src={c.imageUrl || "/img/default.jpg"}
+                        alt={c.title}
+                        className="
+                  w-full 
+                  h-full 
+                  object-cover 
+                  cursor-pointer 
+                  transition-transform 
+                  duration-300 
+                  hover:scale-110
+                  flex-1
+                  self-stretch
+                "
+                      />
+                    </div>
+
+                    {/* Contenido */}
+                    <div className="flex flex-col flex-grow p-6 justify-between">
+                      <div>
+                        {/* Título */}
+                        <h4
+                          className={`font-bold flex items-center gap-3 ${modoOscuro ? "text-white" : "text-[#00324D]"}`}
+                          style={{ fontSize: "1.2em" }}
+                        >
+                          <FaMobileAlt
+                            className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                            style={{ fontSize: "1em" }}
+                          />
+                          {c.title || "—"}
+                        </h4>
+
+                        <div className={`my-4 border-t ${styles.divider}`} />
+
+                        {/* Descripción */}
+                        <div className="space-y-4">
+                          <div
+                            className={`flex items-start gap-3 ${styles.textMuted}`}
+                            style={{ fontSize: "0.95em" }}
+                          >
+                            <FaGraduationCap
+                              className={`flex-shrink-0 mt-0.5 ${modoOscuro ? "text-white" : "text-[#00324D]"}`}
+                              style={{ fontSize: "1.1em" }}
+                            />
+                            <div>
+                              {c.description && c.description.length > 200
+                                ? `${c.description.slice(0, 200)}...`
+                                : c.description || "—"}
+                            </div>
+                          </div>
+
+                          {/* Fechas */}
+                          <div
+                            className={`flex flex-wrap gap-x-6 gap-y-2 ${styles.textMuted}`}
+                            style={{ fontSize: "0.9em" }}
+                          >
+                            <span className="flex items-center gap-2">
+                              <FaCalendarAlt
+                                className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                                style={{ fontSize: "1em" }}
+                              />
+                              <strong>Apertura:</strong> {fmt(c.openDate)}
+                            </span>
+                            <span className="flex items-center gap-2">
+                              <FaCalendarTimes
+                                className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                                style={{ fontSize: "1em" }}
+                              />
+                              <strong>Cierre:</strong> {fmt(c.closeDate)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Botones */}
+                      <div
+                        className={`flex flex-wrap items-center gap-3 pt-4 mt-6 border-t ${styles.divider}`}
+                        style={{ fontSize: "0.95em" }}
+                      >
+                        <button
+                          onClick={() => {
+                            setItemSeleccionado(c);
+                            setModalAbierto(true);
+                          }}
+                          className={`flex items-center gap-2 px-5 py-2 rounded-md font-semibold ${styles.primaryButton}`}
+                        >
+                          <FaRegFileAlt style={{ fontSize: "1em" }} /> Detalles
+                        </button>
+                        <a
+                          href={c.callLink || "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`flex items-center gap-2 px-5 py-2 rounded-md font-semibold ${styles.successButton}`}
+                        >
+                          <FaCheckCircle style={{ fontSize: "1em" }} /> Inscribirse
+                        </a>
+                      </div>
                     </div>
                   </div>
-
-                  {/* Fechas */}
-                  <div
-                    className={`flex flex-wrap gap-x-6 gap-y-2 ${styles.textMuted}`}
-                    style={{ fontSize: "0.9em" }}
-                  >
-                    <span className="flex items-center gap-2">
-                      <FaCalendarAlt
-                        className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                        style={{ fontSize: "1em" }}
-                      />
-                      <strong>Apertura:</strong> {fmt(c.openDate)}
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <FaCalendarTimes
-                        className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                        style={{ fontSize: "1em" }}
-                      />
-                      <strong>Cierre:</strong> {fmt(c.closeDate)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Botones */}
-              <div
-                className={`flex flex-wrap items-center gap-3 pt-4 mt-auto border-t ${styles.divider}`}
-                style={{ fontSize: "0.95em" }}
-              >
-                <button
-                  onClick={() => {
-                    setItemSeleccionado(c);
-                    setModalAbierto(true);
-                  }}
-                  className={`flex items-center gap-2 px-5 py-2 rounded-md font-semibold ${styles.primaryButton}`}
-                >
-                  <FaRegFileAlt style={{ fontSize: "1em" }} /> Detalles
-                </button>
-                <a
-                  href={c.callLink || "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`flex items-center gap-2 px-5 py-2 rounded-md font-semibold ${styles.successButton}`}
-                >
-                  <FaCheckCircle style={{ fontSize: "1em" }} /> Inscribirse
-                </a>
-              </div>
+                );
+              })}
             </div>
           </div>
-        );
-      })}
-    </div>
-  </div>
-)}
+        )}
 
 
-       {/* ========================
+
+        {/* ========================
     PAGINACIÓN
 ======================== */}
-<div
-  className="flex justify-center items-center gap-3 mt-8 flex-wrap"
-  style={{ fontSize: `${fontSize}px` }} // 🔹 Escala global
->
-  {/* Botón Anterior */}
-  <button
-    className={`flex items-center justify-center gap-2 px-4 py-2 font-semibold rounded-xl shadow-sm transition-all disabled:opacity-50 ${styles.button}`}
-    disabled={paginaActual === 1}
-    onClick={() => setPaginaActual(paginaActual - 1)}
-    style={{ fontSize: "0.95em" }}
-  >
-    <ChevronLeft style={{ fontSize: "1em" }} /> Anterior
-  </button>
+        <div
+          className="flex justify-center items-center gap-3 mt-8 flex-wrap"
+          style={{ fontSize: `${fontSize}px` }} // 🔹 Escala global
+        >
+          {/* Botón Anterior */}
+          <button
+            className={`flex items-center justify-center gap-2 px-4 py-2 font-semibold rounded-xl shadow-sm transition-all disabled:opacity-50 ${styles.button}`}
+            disabled={paginaActual === 1}
+            onClick={() => setPaginaActual(paginaActual - 1)}
+            style={{ fontSize: "0.95em" }}
+          >
+            <ChevronLeft style={{ fontSize: "1em" }} /> Anterior
+          </button>
 
-  {/* Números de página */}
-  {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((num) => (
-    <button
-      key={num}
-      className={`flex items-center justify-center font-bold rounded-xl transition-all ${
-        paginaActual === num ? styles.primaryButton : styles.button
-      }`}
-      onClick={() => setPaginaActual(num)}
-      style={{
-        width: "2.6em",
-        height: "2.6em",
-        fontSize: "1em",
-      }}
-    >
-      {num}
-    </button>
-  ))}
+          {/* Números de página */}
+          {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((num) => (
+            <button
+              key={num}
+              className={`flex items-center justify-center font-bold rounded-xl transition-all ${paginaActual === num ? styles.primaryButton : styles.button
+                }`}
+              onClick={() => setPaginaActual(num)}
+              style={{
+                width: "2.6em",
+                height: "2.6em",
+                fontSize: "1em",
+              }}
+            >
+              {num}
+            </button>
+          ))}
 
-  {/* Botón Siguiente */}
-  <button
-    className={`flex items-center justify-center gap-2 px-4 py-2 font-semibold rounded-xl shadow-sm transition-all disabled:opacity-50 ${styles.button}`}
-    disabled={paginaActual === totalPaginas}
-    onClick={() => setPaginaActual(paginaActual + 1)}
-    style={{ fontSize: "0.95em" }}
-  >
-    Siguiente <ChevronRight style={{ fontSize: "1em" }} />
-  </button>
-</div>
+          {/* Botón Siguiente */}
+          <button
+            className={`flex items-center justify-center gap-2 px-4 py-2 font-semibold rounded-xl shadow-sm transition-all disabled:opacity-50 ${styles.button}`}
+            disabled={paginaActual === totalPaginas}
+            onClick={() => setPaginaActual(paginaActual + 1)}
+            style={{ fontSize: "0.95em" }}
+          >
+            Siguiente <ChevronRight style={{ fontSize: "1em" }} />
+          </button>
+        </div>
 
       </div>
 
