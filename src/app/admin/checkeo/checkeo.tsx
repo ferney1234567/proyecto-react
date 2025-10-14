@@ -8,7 +8,6 @@ import ModalChequeo from './crearChequeo';
 import ModalEditarChequeo from './editarCheckeo';
 
 import {
-  getRequirementChecks,
   createRequirementCheck,
   updateRequirementCheck,
   deleteRequirementCheck,
@@ -46,8 +45,8 @@ interface Chequeo {
   idUser: number | null;
   createdAt: string;
   updatedAt: string;
-  company: Company;
-  requirement: Requirement;
+  company: Company | null;
+  requirement: Requirement | null;
   user: any | null;
 }
 
@@ -143,7 +142,6 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
     }
   };
 
-  // === Ejecutar cargas cuando el token esté disponible ===
   useEffect(() => {
     if (token) {
       cargarChequeos();
@@ -219,8 +217,8 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
     setNuevoChequeo({
       id: chequeo.id,
       is_checked: chequeo.isChecked,
-      empresa: chequeo.company.name,
-      requisito: chequeo.requirement.name,
+      empresa: chequeo.company?.name || '',
+      requisito: chequeo.requirement?.name || '',
       companyId: chequeo.companyId,
       requirementId: chequeo.requirementId,
     });
@@ -240,13 +238,17 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
     setMostrarModal(true);
   };
 
-  // === Filtros ===
-  const filteredChequeos = chequeos.filter(
-    (c) =>
-      c.company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.requirement.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.company.legalRepresentativeName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // === Filtros seguros ===
+  const filteredChequeos = chequeos.filter((c) => {
+    const companyName = c.company?.name?.toLowerCase() || '';
+    const requirementName = c.requirement?.name?.toLowerCase() || '';
+    const representativeName = c.company?.legalRepresentativeName?.toLowerCase() || '';
+    return (
+      companyName.includes(searchTerm.toLowerCase()) ||
+      requirementName.includes(searchTerm.toLowerCase()) ||
+      representativeName.includes(searchTerm.toLowerCase())
+    );
+  });
 
   const aprobados = filteredChequeos.filter((c) => c.isChecked);
   const noAprobados = filteredChequeos.filter((c) => !c.isChecked);
@@ -316,10 +318,10 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
                   <div className="flex-1">
                     <h3 className={`text-xl font-semibold flex items-center gap-2 ${titleColor} mb-2`}>
                       <Building2 size={20} />
-                      {chequeo.company.name}
+                      {chequeo.company?.name || 'Sin empresa'}
                     </h3>
-                    <p className={`${secondaryText}`}>{chequeo.requirement.name}</p>
-                    <p className="text-sm">{chequeo.requirement.notes}</p>
+                    <p className={`${secondaryText}`}>{chequeo.requirement?.name || 'Sin requisito'}</p>
+                    <p className="text-sm">{chequeo.requirement?.notes || ''}</p>
                     <p className="text-xs mt-2">
                       <Calendar size={14} className="inline mr-1" />
                       Creado: {formatFecha(chequeo.createdAt)}
@@ -359,10 +361,10 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
                   <div className="flex-1">
                     <h3 className={`text-xl font-semibold flex items-center gap-2 ${titleColor} mb-2`}>
                       <Building2 size={20} />
-                      {chequeo.company.name}
+                      {chequeo.company?.name || 'Sin empresa'}
                     </h3>
-                    <p className={`${secondaryText}`}>{chequeo.requirement.name}</p>
-                    <p className="text-sm">{chequeo.requirement.notes}</p>
+                    <p className={`${secondaryText}`}>{chequeo.requirement?.name || 'Sin requisito'}</p>
+                    <p className="text-sm">{chequeo.requirement?.notes || ''}</p>
                     <p className="text-xs mt-2">
                       <Calendar size={14} className="inline mr-1" />
                       Creado: {formatFecha(chequeo.createdAt)}
@@ -408,7 +410,7 @@ export default function Chequeos({ modoOscuro }: ChequeosProps) {
       {mostrarModalEditar && (
         <ModalEditarChequeo
           abierto={mostrarModalEditar}
-          editando={true}
+          editando
           chequeo={nuevoChequeo}
           empresas={empresas}
           requisitos={requisitos}

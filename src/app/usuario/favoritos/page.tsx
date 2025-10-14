@@ -78,7 +78,7 @@ export default function FavoritosPage() {
   const [usuario, setUsuario] = useState<any>(null);
 
   const [interesesUsuario, setInteresesUsuario] = useState<{ id: number; name: string }[]>([]);
-const [interesSeleccionado, setInteresSeleccionado] = useState<number | ''>('');
+  const [interesSeleccionado, setInteresSeleccionado] = useState<number | ''>('');
 
 
   /* ----------------------------
@@ -121,55 +121,55 @@ const [interesSeleccionado, setInteresSeleccionado] = useState<number | ''>('');
     return u.id ?? u.uId ?? u.uid ?? u.userId ?? null;
   };
 
-useEffect(() => {
-  (async () => {
-    const uid = getUserId(usuario);
+  useEffect(() => {
+    (async () => {
+      const uid = getUserId(usuario);
+      if (!uid) return;
+
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      try {
+        const res = await fetch(API_URL_FAVORITOS, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const json = await res.json();
+
+        const favs = (json.data || []).filter(
+          (f: any) => Number(f.userId ?? f.user?.id) === Number(uid)
+        );
+
+        const convocatoriasSinImagen = favs.map((f: any) => ({
+          ...f.call,
+          favId: f.id,
+        }));
+
+        const convocatoriasConImagen = asignarImagenesPorDefecto(convocatoriasSinImagen);
+        setConvocatorias(convocatoriasConImagen);
+      } catch (err) {
+        console.error("❌ Error cargando favoritos:", err);
+        Swal.fire("Error", "No se pudieron cargar tus favoritos.", "error");
+      }
+    })();
+  }, [usuario]);
+
+
+
+  useEffect(() => {
+    const uid = usuario?.id || usuario?.uId || usuario?.uid || usuario?.userId;
     if (!uid) return;
 
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
-    try {
-      const res = await fetch(API_URL_FAVORITOS, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const json = await res.json();
-
-      const favs = (json.data || []).filter(
-        (f: any) => Number(f.userId ?? f.user?.id) === Number(uid)
-      );
-
-      const convocatoriasSinImagen = favs.map((f: any) => ({
-        ...f.call,
-        favId: f.id,
-      }));
-
-      const convocatoriasConImagen = asignarImagenesPorDefecto(convocatoriasSinImagen);
-      setConvocatorias(convocatoriasConImagen);
-    } catch (err) {
-      console.error("❌ Error cargando favoritos:", err);
-      Swal.fire("Error", "No se pudieron cargar tus favoritos.", "error");
-    }
-  })();
-}, [usuario]);
-
-
-
-useEffect(() => {
-  const uid = usuario?.id || usuario?.uId || usuario?.uid || usuario?.userId;
-  if (!uid) return;
-
-  (async () => {
-    try {
-      const data = await getUserInterestsByUserId(uid);
-      setInteresesUsuario(data || []);
-    } catch (err) {
-      console.error("❌ Error cargando intereses del usuario:", err);
-    }
-  })();
-}, [usuario]);
+    (async () => {
+      try {
+        const data = await getUserInterestsByUserId(uid);
+        setInteresesUsuario(data || []);
+      } catch (err) {
+        console.error("❌ Error cargando intereses del usuario:", err);
+      }
+    })();
+  }, [usuario]);
 
 
 
@@ -196,85 +196,85 @@ useEffect(() => {
      Derivados: filtros y listas
   ============================ */
 
-/* ============================
-   Derivados: filtros y listas
-============================ */
+  /* ============================
+     Derivados: filtros y listas
+  ============================ */
 
-const convocatoriasUsuario = convocatorias;
-const [filtroFecha, setFiltroFecha] = useState("todas");
+  const convocatoriasUsuario = convocatorias;
+  const [filtroFecha, setFiltroFecha] = useState("todas");
 
-// 🔹 Combinar filtros de interés y categoría
-const filtradasBase = useMemo(() => {
-  let lista = [...convocatoriasUsuario];
+  // 🔹 Combinar filtros de interés y categoría
+  const filtradasBase = useMemo(() => {
+    let lista = [...convocatoriasUsuario];
 
-  // Filtro por interés
-  if (interesSeleccionado) {
-    lista = lista.filter((c) => Number(c.interestId) === Number(interesSeleccionado));
-  }
+    // Filtro por interés
+    if (interesSeleccionado) {
+      lista = lista.filter((c) => Number(c.interestId) === Number(interesSeleccionado));
+    }
 
-  // Filtro por categoría
-  if (categoriaSeleccionada) {
-    lista = lista.filter((c) => Number(c.lineId) === Number(categoriaSeleccionada));
-  }
+    // Filtro por categoría
+    if (categoriaSeleccionada) {
+      lista = lista.filter((c) => Number(c.lineId) === Number(categoriaSeleccionada));
+    }
 
-  return lista;
-}, [convocatoriasUsuario, interesSeleccionado, categoriaSeleccionada]);
+    return lista;
+  }, [convocatoriasUsuario, interesSeleccionado, categoriaSeleccionada]);
 
-// 🔹 Filtro por búsqueda
-const filtradasPorBusqueda = useMemo(() => {
-  const q = busqueda.trim().toLowerCase();
-  if (!q) return filtradasBase;
-  return filtradasBase.filter((c) => {
-    const t = (c.title || '').toLowerCase();
-    const d = (c.description || '').toLowerCase();
-    return t.includes(q) || d.includes(q);
-  });
-}, [filtradasBase, busqueda]);
+  // 🔹 Filtro por búsqueda
+  const filtradasPorBusqueda = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    if (!q) return filtradasBase;
+    return filtradasBase.filter((c) => {
+      const t = (c.title || '').toLowerCase();
+      const d = (c.description || '').toLowerCase();
+      return t.includes(q) || d.includes(q);
+    });
+  }, [filtradasBase, busqueda]);
 
-// 🔹 Filtro por fecha
-const filtradasPorFecha = useMemo(() => {
-  const hoy = new Date();
-  switch (filtroFecha) {
-    case "abiertas":
-      return filtradasPorBusqueda.filter(c =>
-        new Date(c.openDate) <= hoy && new Date(c.closeDate) >= hoy
-      );
-    case "proximas":
-      return filtradasPorBusqueda.filter(c => new Date(c.openDate) > hoy);
-    case "cerradas":
-      return filtradasPorBusqueda.filter(c => new Date(c.closeDate) < hoy);
-    default:
-      return filtradasPorBusqueda;
-  }
-}, [filtradasPorBusqueda, filtroFecha]);
+  // 🔹 Filtro por fecha
+  const filtradasPorFecha = useMemo(() => {
+    const hoy = new Date();
+    switch (filtroFecha) {
+      case "abiertas":
+        return filtradasPorBusqueda.filter(c =>
+          new Date(c.openDate) <= hoy && new Date(c.closeDate) >= hoy
+        );
+      case "proximas":
+        return filtradasPorBusqueda.filter(c => new Date(c.openDate) > hoy);
+      case "cerradas":
+        return filtradasPorBusqueda.filter(c => new Date(c.closeDate) < hoy);
+      default:
+        return filtradasPorBusqueda;
+    }
+  }, [filtradasPorBusqueda, filtroFecha]);
 
-// 🔹 Ordenar
-const [orden, setOrden] = useState("recientes");
-const ordenadas = useMemo(() => {
-  const lista = [...filtradasPorFecha];
-  switch (orden) {
-    case "recientes":
-      return lista.sort((a, b) => new Date(b.openDate).getTime() - new Date(a.openDate).getTime());
-    case "antiguos":
-      return lista.sort((a, b) => new Date(a.openDate).getTime() - new Date(b.openDate).getTime());
-    case "cierreProximo":
-      return lista.sort((a, b) => new Date(a.closeDate).getTime() - new Date(b.closeDate).getTime());
-    case "cierreLejano":
-      return lista.sort((a, b) => new Date(b.closeDate).getTime() - new Date(a.closeDate).getTime());
-    case "tituloAZ":
-      return lista.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
-    case "tituloZA":
-      return lista.sort((a, b) => (b.title || "").localeCompare(a.title || ""));
-    default:
-      return lista;
-  }
-}, [filtradasPorFecha, orden]);
+  // 🔹 Ordenar
+  const [orden, setOrden] = useState("recientes");
+  const ordenadas = useMemo(() => {
+    const lista = [...filtradasPorFecha];
+    switch (orden) {
+      case "recientes":
+        return lista.sort((a, b) => new Date(b.openDate).getTime() - new Date(a.openDate).getTime());
+      case "antiguos":
+        return lista.sort((a, b) => new Date(a.openDate).getTime() - new Date(b.openDate).getTime());
+      case "cierreProximo":
+        return lista.sort((a, b) => new Date(a.closeDate).getTime() - new Date(b.closeDate).getTime());
+      case "cierreLejano":
+        return lista.sort((a, b) => new Date(b.closeDate).getTime() - new Date(a.closeDate).getTime());
+      case "tituloAZ":
+        return lista.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+      case "tituloZA":
+        return lista.sort((a, b) => (b.title || "").localeCompare(a.title || ""));
+      default:
+        return lista;
+    }
+  }, [filtradasPorFecha, orden]);
 
-// 🔹 Paginación
-const indiceInicio = (paginaActual - 1) * porPagina;
-const indiceFin = indiceInicio + porPagina;
-const totalPaginas = Math.max(1, Math.ceil(ordenadas.length / porPagina));
-const convocatoriasPagina = ordenadas.slice(indiceInicio, indiceFin);
+  // 🔹 Paginación
+  const indiceInicio = (paginaActual - 1) * porPagina;
+  const indiceFin = indiceInicio + porPagina;
+  const totalPaginas = Math.max(1, Math.ceil(ordenadas.length / porPagina));
+  const convocatoriasPagina = ordenadas.slice(indiceInicio, indiceFin);
 
 
   // Reset de página si cambian filtros/búsqueda
@@ -304,45 +304,45 @@ const convocatoriasPagina = ordenadas.slice(indiceInicio, indiceFin);
     }
   };
 
- const handleEliminarFavorito = async (favId: number) => {
-  const token = localStorage.getItem("token"); // 🔹 Recuperar JWT del usuario logueado
-  if (!token) {
-    Swal.fire({
-      title: "⚠️ Atención",
-      text: "Debes iniciar sesión para eliminar un favorito.",
-      icon: "warning",
-      confirmButtonText: "Entendido",
-    });
-    return;
-  }
-
-  try {
-    // 🔹 Petición DELETE con autenticación JWT
-    const res = await fetch(`${API_URL_FAVORITOS}/${favId}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    // 🔹 Verificar respuesta del servidor
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.message || "Error al eliminar favorito");
+  const handleEliminarFavorito = async (favId: number) => {
+    const token = localStorage.getItem("token"); // 🔹 Recuperar JWT del usuario logueado
+    if (!token) {
+      Swal.fire({
+        title: "⚠️ Atención",
+        text: "Debes iniciar sesión para eliminar un favorito.",
+        icon: "warning",
+        confirmButtonText: "Entendido",
+      });
+      return;
     }
 
-    // 🔹 Quitar del estado local para actualizar vista sin recargar
-    setConvocatorias((prev) => prev.filter((c) => c.favId !== favId));
+    try {
+      // 🔹 Petición DELETE con autenticación JWT
+      const res = await fetch(`${API_URL_FAVORITOS}/${favId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    // 🔹 Colores dinámicos según tema (oscuro o claro)
-    const fondo = modoOscuro ? "#1e293b" : "#ffffff";
-    const colorTexto = modoOscuro ? "#f1f5f9" : "#1e293b";
+      // 🔹 Verificar respuesta del servidor
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Error al eliminar favorito");
+      }
 
-    // 🔹 Alerta visual y animada (SweetAlert personalizada)
-    Swal.fire({
-      title: '<span style="color:#ef4444; font-size: 24px; font-weight: bold;">¡Favorito eliminado!</span>',
-      html: `
+      // 🔹 Quitar del estado local para actualizar vista sin recargar
+      setConvocatorias((prev) => prev.filter((c) => c.favId !== favId));
+
+      // 🔹 Colores dinámicos según tema (oscuro o claro)
+      const fondo = modoOscuro ? "#1e293b" : "#ffffff";
+      const colorTexto = modoOscuro ? "#f1f5f9" : "#1e293b";
+
+      // 🔹 Alerta visual y animada (SweetAlert personalizada)
+      Swal.fire({
+        title: '<span style="color:#ef4444; font-size: 24px; font-weight: bold;">¡Favorito eliminado!</span>',
+        html: `
         <div style="display:flex; justify-content:center; align-items:center; flex-direction:column;">
           <div style="animation: spin 1.5s linear infinite; font-size:100px; color:#ef4444;">
             🗑️
@@ -358,32 +358,32 @@ const convocatoriasPagina = ordenadas.slice(indiceInicio, indiceFin);
           }
         </style>
       `,
-      background: fondo,
-      showConfirmButton: true,
-      confirmButtonText: "Entendido",
-      confirmButtonColor: "#ef4444",
-    });
-  } catch (err: any) {
-    console.error("❌ Error eliminando favorito", err);
+        background: fondo,
+        showConfirmButton: true,
+        confirmButtonText: "Entendido",
+        confirmButtonColor: "#ef4444",
+      });
+    } catch (err: any) {
+      console.error("❌ Error eliminando favorito", err);
 
-    // 🔹 Colores según tema actual
-    const fondo = modoOscuro ? "#1e293b" : "#ffffff";
-    const colorTexto = modoOscuro ? "#f1f5f9" : "#1e293b";
+      // 🔹 Colores según tema actual
+      const fondo = modoOscuro ? "#1e293b" : "#ffffff";
+      const colorTexto = modoOscuro ? "#f1f5f9" : "#1e293b";
 
-    Swal.fire({
-      title: '<span style="color:#ef4444; font-size: 22px; font-weight: bold;">Error</span>',
-      html: `
+      Swal.fire({
+        title: '<span style="color:#ef4444; font-size: 22px; font-weight: bold;">Error</span>',
+        html: `
         <p style="color:${colorTexto}; font-size:16px;">
           ${err.message || "No se pudo eliminar el favorito. Inténtalo nuevamente."}
         </p>
       `,
-      icon: "error",
-      confirmButtonText: "Cerrar",
-      confirmButtonColor: "#ef4444",
-      background: fondo,
-    });
-  }
-};
+        icon: "error",
+        confirmButtonText: "Cerrar",
+        confirmButtonColor: "#ef4444",
+        background: fondo,
+      });
+    }
+  };
 
 
 
@@ -569,33 +569,33 @@ const convocatoriasPagina = ordenadas.slice(indiceInicio, indiceFin);
             </div>
 
             {/* Filtro Ubicación */}
-           {/* 🔹 Filtro Intereses de Usuarios */}
-<div className="flex flex-col flex-1 min-w-[220px]">
-  <label
-    className={`mb-2 flex items-center gap-2 font-medium ${styles.textMuted}`}
-    style={{ fontSize: "0.95em" }}
-  >
-    <FaTags style={{ fontSize: "1em" }} /> Intereses de usuarios
-  </label>
+            {/* 🔹 Filtro Intereses de Usuarios */}
+            <div className="flex flex-col flex-1 min-w-[220px]">
+              <label
+                className={`mb-2 flex items-center gap-2 font-medium ${styles.textMuted}`}
+                style={{ fontSize: "0.95em" }}
+              >
+                <FaTags style={{ fontSize: "1em" }} /> Intereses de usuarios
+              </label>
 
-  <select
-    value={interesSeleccionado}
-    onChange={(e) => setInteresSeleccionado(Number(e.target.value) || '')}
-    className={`appearance-none w-full rounded-xl px-4 py-2.5 cursor-pointer transition-all duration-200 ${styles.input}`}
-    style={{ fontSize: "0.9em" }}
-  >
-    <option value="">Todos los intereses</option>
-    {interesesUsuario.length > 0 ? (
-      interesesUsuario.map((interes) => (
-        <option key={interes.id} value={interes.id}>
-          {interes.name}
-        </option>
-      ))
-    ) : (
-      <option disabled>No tienes intereses registrados</option>
-    )}
-  </select>
-</div>
+              <select
+                value={interesSeleccionado}
+                onChange={(e) => setInteresSeleccionado(Number(e.target.value) || '')}
+                className={`appearance-none w-full rounded-xl px-4 py-2.5 cursor-pointer transition-all duration-200 ${styles.input}`}
+                style={{ fontSize: "0.9em" }}
+              >
+                <option value="">Todos los intereses</option>
+                {interesesUsuario.length > 0 ? (
+                  interesesUsuario.map((interes) => (
+                    <option key={interes.id} value={interes.id}>
+                      {interes.name}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>No tienes intereses registrados</option>
+                )}
+              </select>
+            </div>
 
 
             {/* Filtro Fecha */}
@@ -678,169 +678,165 @@ const convocatoriasPagina = ordenadas.slice(indiceInicio, indiceFin);
         {/* ========================
     CONTENIDO: TARJETAS
 ======================== */}
-      {vista === "tarjeta" && (
-  <div
-    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-8"
-    style={{ fontSize: `${fontSize}px` }}
-  >
-    {convocatoriasPagina.map((c, idx) => {
-      const key = `${c.favId ?? c.id ?? "noid"}-${idx}`;
-      const isExpanded = expandedKey === key;
-
-      return (
-        <div
-          key={key}
-          className={`relative rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all hover:-translate-y-2 flex flex-col ${styles.card}`}
-        >
-          {/* ❌ Botón eliminar favorito */}
-          <button
-            onClick={() => handleEliminarFavorito(c.favId)}
-            className="absolute top-2 right-2 bg-white rounded-full p-2 shadow-md hover:scale-110 transition-transform z-10"
-            title="Eliminar de favoritos"
+        {vista === "tarjeta" && (
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-8"
+            style={{ fontSize: `${fontSize}px` }}
           >
-            <FaTrash className="text-red-600" style={{ fontSize: "1em" }} />
-          </button>
+            {convocatoriasPagina.map((c, idx) => {
+              const key = `${c.favId ?? c.id ?? "noid"}-${idx}`;
+              const isExpanded = expandedKey === key;
 
-          {/* 🖼 Imagen completamente ajustada */}
-          <div className="relative w-full h-[220px] overflow-hidden">
-            <img
-              onClick={() => {
-                setItemSeleccionado(c);
-                setModalAbierto(true);
-              }}
-              src={c.imageUrl || "/img/default.jpg"}
-              alt={c.title}
-              className="absolute inset-0 w-full h-full object-cover cursor-pointer transition-transform duration-500 hover:scale-110"
-            />
+              return (
+                <div
+                  key={key}
+                  className={`relative rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all hover:-translate-y-2 flex flex-col ${styles.card}`}
+                >
+                  {/* ❌ Botón eliminar favorito */}
+                  <button
+                    onClick={() => handleEliminarFavorito(c.favId)}
+                    className="absolute top-2 right-2 bg-white rounded-full p-2 shadow-md hover:scale-110 transition-transform z-10"
+                    title="Eliminar de favoritos"
+                  >
+                    <FaTrash className="text-red-600" style={{ fontSize: "1em" }} />
+                  </button>
+
+                  {/* 🖼 Imagen completamente ajustada */}
+                  <div className="relative w-full h-[220px] overflow-hidden">
+                    <img
+                      onClick={() => {
+                        setItemSeleccionado(c);
+                        setModalAbierto(true);
+                      }}
+                      src={c.imageUrl || "/img/default.jpg"}
+                      alt={c.title}
+                      className="absolute inset-0 w-full h-full object-cover cursor-pointer transition-transform duration-500 hover:scale-110"
+                    />
+                  </div>
+
+                  {/* 📄 Contenido */}
+                  <div className="p-5 flex flex-col justify-between flex-grow">
+                    {/* 🔹 Título */}
+                    <div className="flex items-start gap-2 min-h-[3rem]">
+                      <FaMobileAlt
+                        className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                        style={{ fontSize: "1em", marginTop: "0.15em" }}
+                      />
+                      <h4
+                        className={`font-bold leading-snug ${modoOscuro ? "text-white" : "text-[#00324D]"
+                          }`}
+                        style={{
+                          fontSize: "1.05em",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          lineHeight: "1.3",
+                        }}
+                      >
+                        {c.title || "—"}
+                      </h4>
+                    </div>
+
+                    {/* 🔹 Descripción (clicable para expandir) */}
+                    <div
+                      className={`mt-2 flex items-start gap-3 ${styles.textMuted}`}
+                      style={{ fontSize: "0.95em" }}
+                    >
+                      <FaGraduationCap
+                        className={`mt-0.5 flex-shrink-0 ${modoOscuro ? "text-white" : "text-[#00324D]"
+                          }`}
+                        style={{ fontSize: "1em" }}
+                      />
+                      <span
+                        onClick={() => setExpandedKey(isExpanded ? null : key)}
+                        className={`cursor-pointer select-none transition-all ${isExpanded ? "line-clamp-none" : "line-clamp-3"
+                          }`}
+                        style={{
+                          display: "-webkit-box",
+                          WebkitBoxOrient: "vertical",
+                          WebkitLineClamp: isExpanded ? "unset" : "3",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          lineHeight: "1.4",
+                        }}
+                      >
+                        {c.description || "Sin descripción disponible."}
+                        {!isExpanded && c.description?.length > 140 && " ..."}
+                      </span>
+                    </div>
+
+                    {/* 🔹 Fechas alineadas */}
+                    <div
+                      className={`flex items-center justify-between mt-3 ${styles.textMuted} ${modoOscuro ? "bg-white/5" : "bg-gray-50"
+                        } p-2 rounded`}
+                      style={{ fontSize: "0.9em" }}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <FaCalendarAlt
+                          className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                          style={{ fontSize: "1em" }}
+                        />
+                        <span>
+                          <strong></strong>{" "}
+                          {c.openDate
+                            ? new Date(c.openDate).toLocaleDateString("es-ES", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })
+                            : "—"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <FaCalendarTimes
+                          className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                          style={{ fontSize: "1em" }}
+                        />
+                        <span>
+                          <strong></strong>{" "}
+                          {c.closeDate
+                            ? new Date(c.closeDate).toLocaleDateString("es-ES", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })
+                            : "—"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 🔹 Botones inferiores */}
+                    <div
+                      className={`pt-4 mt-4 flex items-center gap-2 border-t ${styles.divider}`}
+                      style={{ fontSize: "0.9em" }}
+                    >
+                      <button
+                        onClick={() => {
+                          setItemSeleccionado(c);
+                          setModalAbierto(true);
+                        }}
+                        className={`flex-1 flex items-center justify-center gap-1 px-4 py-2 rounded-md font-semibold ${styles.primaryButton}`}
+                      >
+                        <FaRegFileAlt /> Detalles
+                      </button>
+
+                      <a
+                        href={c.callLink || "#"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`flex-1 flex items-center justify-center gap-1 px-4 py-2 rounded-md font-semibold ${styles.successButton}`}
+                      >
+                        <FaCheckCircle /> Inscribirse
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-
-          {/* 📄 Contenido */}
-          <div className="p-5 flex flex-col justify-between flex-grow">
-            {/* 🔹 Título */}
-            <div className="flex items-start gap-2 min-h-[3rem]">
-              <FaMobileAlt
-                className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                style={{ fontSize: "1em", marginTop: "0.15em" }}
-              />
-              <h4
-                className={`font-bold leading-snug ${
-                  modoOscuro ? "text-white" : "text-[#00324D]"
-                }`}
-                style={{
-                  fontSize: "1.05em",
-                  display: "-webkit-box",
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  lineHeight: "1.3",
-                }}
-              >
-                {c.title || "—"}
-              </h4>
-            </div>
-
-            {/* 🔹 Descripción (clicable para expandir) */}
-            <div
-              className={`mt-2 flex items-start gap-3 ${styles.textMuted}`}
-              style={{ fontSize: "0.95em" }}
-            >
-              <FaGraduationCap
-                className={`mt-0.5 flex-shrink-0 ${
-                  modoOscuro ? "text-white" : "text-[#00324D]"
-                }`}
-                style={{ fontSize: "1em" }}
-              />
-              <span
-                onClick={() => setExpandedKey(isExpanded ? null : key)}
-                className={`cursor-pointer select-none transition-all ${
-                  isExpanded ? "line-clamp-none" : "line-clamp-3"
-                }`}
-                style={{
-                  display: "-webkit-box",
-                  WebkitBoxOrient: "vertical",
-                  WebkitLineClamp: isExpanded ? "unset" : "3",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  lineHeight: "1.4",
-                }}
-              >
-                {c.description || "Sin descripción disponible."}
-                {!isExpanded && c.description?.length > 140 && " ..."}
-              </span>
-            </div>
-
-            {/* 🔹 Fechas alineadas */}
-            <div
-              className={`flex items-center justify-between mt-3 ${styles.textMuted} ${
-                modoOscuro ? "bg-white/5" : "bg-gray-50"
-              } p-2 rounded`}
-              style={{ fontSize: "0.9em" }}
-            >
-              <div className="flex items-center gap-1.5">
-                <FaCalendarAlt
-                  className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                  style={{ fontSize: "1em" }}
-                />
-                <span>
-                  <strong></strong>{" "}
-                  {c.openDate
-                    ? new Date(c.openDate).toLocaleDateString("es-ES", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })
-                    : "—"}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <FaCalendarTimes
-                  className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                  style={{ fontSize: "1em" }}
-                />
-                <span>
-                  <strong></strong>{" "}
-                  {c.closeDate
-                    ? new Date(c.closeDate).toLocaleDateString("es-ES", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })
-                    : "—"}
-                </span>
-              </div>
-            </div>
-
-            {/* 🔹 Botones inferiores */}
-            <div
-              className={`pt-4 mt-4 flex items-center gap-2 border-t ${styles.divider}`}
-              style={{ fontSize: "0.9em" }}
-            >
-              <button
-                onClick={() => {
-                  setItemSeleccionado(c);
-                  setModalAbierto(true);
-                }}
-                className={`flex-1 flex items-center justify-center gap-1 px-4 py-2 rounded-md font-semibold ${styles.primaryButton}`}
-              >
-                <FaRegFileAlt /> Detalles
-              </button>
-
-              <a
-                href={c.callLink || "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`flex-1 flex items-center justify-center gap-1 px-4 py-2 rounded-md font-semibold ${styles.successButton}`}
-              >
-                <FaCheckCircle /> Inscribirse
-              </a>
-            </div>
-          </div>
-        </div>
-      );
-    })}
-  </div>
-)}
+        )}
 
 
         {/* ========================

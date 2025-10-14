@@ -16,7 +16,7 @@ interface Usuario {
   name: string;
   email: string;
   phone: string;
-  is_active: boolean;
+  isActive: boolean;
   imgUser?: string | null;
 }
 
@@ -38,7 +38,7 @@ export default function EditarUsuario({
     name: '',
     email: '',
     phone: '',
-    is_active: true,
+    isActive: true,
     imgUser: '',
   });
   const [previewImg, setPreviewImg] = useState<string>('/img/eco.jpeg');
@@ -50,7 +50,7 @@ export default function EditarUsuario({
         name: usuario.name || '',
         email: usuario.email || '',
         phone: usuario.phone || '',
-        is_active: usuario.is_active ?? true,
+        isActive: usuario.isActive ?? true,
         imgUser: usuario.imgUser || '',
       });
       setPreviewImg(usuario.imgUser || '/img/eco.jpeg');
@@ -60,8 +60,8 @@ export default function EditarUsuario({
   const manejarCambio = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
 
-    if (name === 'is_active') {
-      setFormData((prev) => ({ ...prev, is_active: value === 'true' }));
+    if (name === 'isActive') {
+      setFormData((prev) => ({ ...prev, isActive: value === 'true' }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
       if (name === 'imgUser') setPreviewImg(value || '/img/eco.jpeg');
@@ -198,8 +198,8 @@ export default function EditarUsuario({
             <div className="relative mt-1">
               <FaUserCheck className="absolute left-4 top-3 text-[#39A900]" />
               <select
-                name="is_active"
-                value={formData.is_active ? 'true' : 'false'}
+                name="isActive"
+                value={formData.isActive ? 'true' : 'false'}
                 onChange={manejarCambio}
                 className={`w-full border rounded-xl pl-12 pr-4 py-3 ${inputBg}`}
               >

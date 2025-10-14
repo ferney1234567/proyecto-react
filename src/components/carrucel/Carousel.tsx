@@ -1,14 +1,14 @@
-'use client';
+"use client";
+
 import { asignarImagenesPorDefecto } from "@/utils/asignarImagenesPorDefecto";
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   FiAward, FiCheckCircle, FiChevronLeft, FiChevronRight, FiEye
-} from 'react-icons/fi';
-import ModalConvocatoria from '../detalleConvo/detalleConvo';
+} from "react-icons/fi";
+import ModalConvocatoria from "../detalleConvo/detalleConvo";
 import { getConvocatorias } from "@/app/api/convocatorias/routes";
 import Swal from "sweetalert2";
 
-// Tipado base
 interface Convocatoria {
   id?: number;
   callId?: number;
@@ -35,9 +35,10 @@ export default function Carousel() {
   const [convocatorias, setConvocatorias] = useState<Convocatoria[]>([]);
   const [index, setIndex] = useState(0);
   const [modalAbierto, setModalAbierto] = useState(false);
-  const [convocatoriaSeleccionada, setConvocatoriaSeleccionada] = useState<Convocatoria | null>(null);
+  const [convocatoriaSeleccionada, setConvocatoriaSeleccionada] =
+    useState<Convocatoria | null>(null);
 
-  // ✅ Un solo efecto para cargar convocatorias
+  // ✅ Cargar convocatorias
   useEffect(() => {
     (async () => {
       try {
@@ -51,7 +52,7 @@ export default function Carousel() {
     })();
   }, []);
 
-  // ✅ Efecto para rotación automática
+  // ✅ Rotación automática
   useEffect(() => {
     if (convocatorias.length === 0) return;
     const timer = setInterval(() => {
@@ -60,7 +61,6 @@ export default function Carousel() {
     return () => clearInterval(timer);
   }, [convocatorias]);
 
-  // Si aún no hay convocatorias, muestra un loader
   if (convocatorias.length === 0) {
     return (
       <div className="w-full h-[300px] flex items-center justify-center text-gray-500">
@@ -100,13 +100,22 @@ export default function Carousel() {
           </div>
 
           {/* Título y descripción */}
-         {/* Título y descripción */}
-<h2 className="text-4xl font-extrabold tracking-tight">{current.title}</h2>
-<p className="text-base opacity-90 line-clamp-2">{current.description}</p>
+          <h2
+            className="text-4xl font-extrabold tracking-tight leading-tight line-clamp-2 max-w-2xl"
+            title={current.title}
+          >
+            {current.title}
+          </h2>
 
+          <p
+            className="text-base opacity-90 leading-relaxed line-clamp-3 max-w-2xl"
+            title={current.description}
+          >
+            {current.description}
+          </p>
 
           {/* Botones */}
-          <div className="flex gap-4 pt-2">
+          <div className="flex flex-wrap gap-4 pt-2">
             <a
               href={current.callLink || "#"}
               target="_blank"
@@ -149,7 +158,7 @@ export default function Carousel() {
           <button
             key={i}
             className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-              i === index ? 'bg-white scale-125' : 'bg-white/40'
+              i === index ? "bg-white scale-125" : "bg-white/40"
             }`}
             onClick={() => setIndex(i)}
             aria-label={`Ir al slide ${i + 1}`}

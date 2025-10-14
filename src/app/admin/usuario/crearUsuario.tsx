@@ -211,22 +211,22 @@ export default function ModalUsuario({
 
           {/* Estado */}
           <div>
-            <label htmlFor="is_active" className={`block text-sm font-semibold ${labelColor}`}>
+            <label htmlFor="isActive" className={`block text-sm font-semibold ${labelColor}`}>
               Estado del usuario
             </label>
             <div className="relative mt-1">
               <FaUserCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-[#39A900]" />
               <select
-                id="is_active"
-                name="is_active"
+                id="isActive"
+                name="isActive"
                 className={`w-full border rounded-xl pl-12 pr-4 py-3 ${inputBg}`}
-                value={nuevoUsuario.is_active ? 'true' : 'false'}
+                value={nuevoUsuario.isActive ? 'true' : 'false'}
                 onChange={(e) =>
                   manejarCambio({
                     ...e,
                     target: {
                       ...e.target,
-                      name: 'is_active',
+                      name: 'isActive',
                       value: e.target.value === 'true',
                     },
                   } as any)

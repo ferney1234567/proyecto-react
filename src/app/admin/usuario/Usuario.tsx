@@ -17,8 +17,8 @@ export interface Usuario {
   email: string;
   password: string;
   phone: string;
-  is_active: boolean;
-  role_id?: number | null;
+  isActive: boolean;
+  roleId?: number | null;
   imgUser?: string | null; // ✅ añadimos el campo de imagen
 }
 
@@ -32,8 +32,8 @@ export default function Usuario({ modoOscuro }: UsuarioProps) {
     email: '',
     password: '',
     phone: '',
-    is_active: true,
-    role_id: null,
+    isActive: true,
+    roleId: null,
     imgUser: '',
   });
   const [mostrarModalEditar, setMostrarModalEditar] = useState(false);
@@ -99,7 +99,7 @@ export default function Usuario({ modoOscuro }: UsuarioProps) {
 
   const cerrarModalCrear = () => {
     setMostrarModalCrear(false);
-    setNuevoUsuario({ id: '', name: '', email: '', password: '', phone: '', is_active: true, role_id: null, imgUser: '' });
+    setNuevoUsuario({ id: '', name: '', email: '', password: '', phone: '', isActive: true, roleId: null, imgUser: '' });
   };
 
   const cerrarModalEditar = () => {
@@ -236,7 +236,7 @@ export default function Usuario({ modoOscuro }: UsuarioProps) {
                     <p className={detailText}>{usuario.phone}</p>
                     <span
                       className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
-                        usuario.is_active
+                        usuario.isActive
                           ? modoOscuro
                             ? 'bg-green-900/30 text-green-400'
                             : 'bg-green-100 text-green-800'
@@ -245,7 +245,7 @@ export default function Usuario({ modoOscuro }: UsuarioProps) {
                           : 'bg-red-100 text-red-800'
                       }`}
                     >
-                      {usuario.is_active ? 'Activo' : 'Inactivo'}
+                      {usuario.isActive ? 'Activo' : 'Inactivo'}
                     </span>
                   </div>
                 </div>

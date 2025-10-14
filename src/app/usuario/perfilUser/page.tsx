@@ -8,6 +8,8 @@ import { Sun, Moon, RefreshCcw, ZoomOut, ZoomIn } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import Swal from "sweetalert2";
+
+import DatosEmpresaModal from "./DatosEmpresaModal"; 
 // ðŸ‘‡ Tema
 import { useTheme } from '../../ThemeContext';
 import { getThemeStyles } from '../../themeStyles';
@@ -52,6 +54,8 @@ export default function PerfilEmpresa() {
   const router = useRouter();
   const { modoOscuro, toggleModoOscuro } = useTheme();
   const styles = getThemeStyles(modoOscuro);
+
+  const [mostrarModal, setMostrarModal] = useState(false);
 
 
   const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
@@ -351,7 +355,6 @@ export default function PerfilEmpresa() {
   const [empresaId, setEmpresaId] = useState<number | null>(null);
 
   const toCompanyPayload = (p: ProfileData) => {
-    // ðŸ”¹ Buscar ciudad seleccionada
     const ciudadSeleccionada = ciudades.find(c => c.name === p.ciudad);
 
     return {
@@ -366,10 +369,14 @@ export default function PerfilEmpresa() {
         : undefined,
       economicSector: p.sector || undefined,
       description: p.descripcion || undefined,
-      email: p.email || undefined,              // âœ… Guarda email
-      cityId: ciudadSeleccionada?.id || null,   // âœ… EnvÃ­a id correcto
+
+      // ✅ Fijar siempre el email del usuario logueado
+      email: user?.email || "",
+
+      cityId: ciudadSeleccionada?.id || null,
     };
   };
+
 
 
   useEffect(() => {
@@ -400,7 +407,7 @@ export default function PerfilEmpresa() {
             return {
               ...prev,
               nombre: mine.name ?? prev.nombre,
-              email: mine.email ?? prev.email,
+              email: mine.email || user?.email || prev.email || "", // ✅ fuerza a tener algún correo
               nit: mine.taxId ?? prev.nit,
               razonSocial: mine.legalName ?? prev.razonSocial,
               direccion: mine.address ?? prev.direccion,
@@ -414,6 +421,7 @@ export default function PerfilEmpresa() {
               departamento: departamentoNombre || prev.departamento,
             };
           });
+
 
         } else {
           setEmpresa(null);
@@ -497,7 +505,14 @@ export default function PerfilEmpresa() {
       if (!res.ok) throw new Error(data?.message || "Error al guardar empresa");
 
       if (!empresaId && data?.data?.id) setEmpresaId(data.data.id);
-      if (data?.data) setEmpresa(data.data);
+      if (data?.data) {
+        setEmpresa(data.data);
+        setProfileData(prev => ({
+          ...prev,
+          email: data.data.email || user?.email || prev.email || "",
+        }));
+      }
+
 
       Swal.fire("Exito", "Datos de la empresa guardados correctamente", "success");
     } catch (err: any) {
@@ -1179,13 +1194,6 @@ export default function PerfilEmpresa() {
               )}
             </div>
           )}
-
-
-
-
-
-
-
         </header>
 
         {/* MAIN */}
@@ -1262,23 +1270,40 @@ export default function PerfilEmpresa() {
             </div>
           </div>
 
-          {/* Botones de acciÃ³n con tamaÃ±o dinÃ¡mico */}
-          <div className="mt-12 flex justify-center gap-6">
-            <a
-              href="/requisitos"
-              className={`px-8 py-3 rounded-lg font-semibold transition-all ${styles.primaryButton} hover:scale-105 transform`}
-              style={{ fontSize: `${fontSize}px` }}
-            >
-              Ver Requisitos
-            </a>
-            <button
-              onClick={handleLogout}
-              className="bg-red-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-red-700 transition-all hover:scale-105 transform"
-              style={{ fontSize: `${fontSize}px` }}
-            >
-              Cerrar Sesión
-            </button>
-          </div>
+  
+{/* Botones de acción con tamaño dinámico */}
+<div className="mt-12 flex justify-center gap-6">
+  <a
+    href="/requisitos"
+    className={`px-8 py-3 rounded-lg font-semibold transition-all ${styles.primaryButton} hover:scale-105 transform`}
+    style={{ fontSize: `${fontSize}px` }}
+  >
+    Ver Requisitos
+  </a>
+
+  {/* 🆕 Nuevo botón Datos de Empresa */}
+  <button
+    onClick={() => setMostrarModal(true)} // ✅ abrir modal
+    className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all hover:scale-105 transform shadow-md"
+    style={{ fontSize: `${fontSize}px` }}
+  >
+    Datos de Empresa
+  </button>
+
+  <button
+    onClick={handleLogout}
+    className="bg-red-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-red-700 transition-all hover:scale-105 transform"
+    style={{ fontSize: `${fontSize}px` }}
+  >
+    Cerrar Sesión
+  </button>
+
+  {/* ✅ Modal */}
+  {mostrarModal && (
+    <DatosEmpresaModal cerrarModal={() => setMostrarModal(false)} />
+  )}
+</div>
+
         </main>
       </div>
     </div>

@@ -19,7 +19,7 @@ import {
 import { useTheme } from "../../ThemeContext";
 import { getThemeStyles } from "../../themeStyles";
 import { useFontSize } from "../../../../FontSizeContext";
-import { createUser } from "../../api/usuarios/route";
+import { createUser, getUsers } from "../../api/usuarios/route"; // ✅ Importamos getUsers
 import { MdAccessibility } from "react-icons/md";
 
 export default function FormularioRegistro() {
@@ -41,12 +41,35 @@ export default function FormularioRegistro() {
   const [mostrarContrasena, setMostrarContrasena] = useState(false);
   const [cargando, setCargando] = useState(false);
 
-  // 🚀 Envío de datos
+  // 🚀 Envío de datos con validación de correo
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setCargando(true);
 
     try {
+      // ✅ 1. Consultar todos los usuarios registrados
+      const usersResponse = await getUsers();
+      const users = usersResponse?.data || [];
+
+      // ✅ 2. Buscar si el correo ya existe (sin distinción de mayúsculas/minúsculas)
+      const correoExistente = users.find(
+        (u: any) => u.email.toLowerCase() === correo.toLowerCase()
+      );
+
+      if (correoExistente) {
+        Swal.fire({
+          icon: "warning",
+          title: "Correo ya registrado",
+          text: "El correo ingresado ya está en uso. Intenta iniciar sesión o usa otro correo.",
+          confirmButtonColor: "#d33",
+          background: modoOscuro ? "#1a0526" : "#fff",
+          color: modoOscuro ? "#fff" : "#333",
+        });
+        setCargando(false);
+        return; // 🚫 Detiene el proceso
+      }
+
+      // ✅ 3. Crear usuario si no existe
       const nuevoUsuario = {
         name: nombre,
         email: correo,
@@ -61,8 +84,11 @@ export default function FormularioRegistro() {
         title: "Registro exitoso",
         text: "Ahora puedes iniciar sesión",
         confirmButtonColor: "#39A900",
+        background: modoOscuro ? "#1a0526" : "#fff",
+        color: modoOscuro ? "#fff" : "#333",
       }).then(() => router.push("/"));
 
+      // ✅ 4. Limpiar formulario
       setNombre("");
       setCorreo("");
       setContrasena("");
@@ -75,6 +101,8 @@ export default function FormularioRegistro() {
             ? error.message
             : "Ocurrió un error, intenta nuevamente",
         confirmButtonColor: "#d33",
+        background: modoOscuro ? "#1a0526" : "#fff",
+        color: modoOscuro ? "#fff" : "#333",
       });
     } finally {
       setCargando(false);
@@ -83,10 +111,11 @@ export default function FormularioRegistro() {
 
   return (
     <div
-      className={`min-h-screen w-full flex items-center justify-center p-6 relative transition-colors duration-500 ${modoOscuro
+      className={`min-h-screen w-full flex items-center justify-center p-6 relative transition-colors duration-500 ${
+        modoOscuro
           ? "bg-gradient-to-br from-gray-900 via-gray-800 to-black"
           : estilos.fondo
-        }`}
+      }`}
       style={{ fontSize: `${fontSize}px` }}
     >
       {/* ☀️🌙 + 🔠 Botones flotantes */}
@@ -94,10 +123,11 @@ export default function FormularioRegistro() {
         {/* Modo oscuro */}
         <button
           onClick={toggleModoOscuro}
-          className={`p-3 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
+          className={`p-3 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
+            modoOscuro
               ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
               : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
-            }`}
+          }`}
           title="Cambiar modo"
         >
           {modoOscuro ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
@@ -106,10 +136,11 @@ export default function FormularioRegistro() {
         {/* Botón Zoom */}
         <button
           onClick={toggleZoomMenu}
-          className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
+          className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
+            modoOscuro
               ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
               : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
-            }`}
+          }`}
           title="Opciones de texto"
         >
           <MdAccessibility className="h-6 w-6" />
@@ -120,10 +151,11 @@ export default function FormularioRegistro() {
           <div className="flex flex-col space-y-3 mt-2 animate-fade-in">
             <button
               onClick={aumentarTexto}
-              className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
+              className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
+                modoOscuro
                   ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
                   : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
-                }`}
+              }`}
               title="Aumentar texto"
             >
               <ZoomIn className="h-6 w-6" />
@@ -131,10 +163,11 @@ export default function FormularioRegistro() {
 
             <button
               onClick={resetTexto}
-              className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
+              className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
+                modoOscuro
                   ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
                   : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
-                }`}
+              }`}
               title="Restablecer tamaño"
             >
               <RefreshCcw className="h-6 w-6" />
@@ -142,10 +175,11 @@ export default function FormularioRegistro() {
 
             <button
               onClick={disminuirTexto}
-              className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${modoOscuro
+              className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
+                modoOscuro
                   ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
                   : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
-                }`}
+              }`}
               title="Disminuir texto"
             >
               <ZoomOut className="h-6 w-6" />
@@ -156,10 +190,11 @@ export default function FormularioRegistro() {
 
       {/* 📋 Card Registro */}
       <div
-        className={`relative z-10 w-full max-w-md rounded-2xl p-8 shadow-2xl backdrop-blur-md border transition-colors duration-500 ${modoOscuro
+        className={`relative z-10 w-full max-w-md rounded-2xl p-8 shadow-2xl backdrop-blur-md border transition-colors duration-500 ${
+          modoOscuro
             ? "bg-gray-900/80 border border-gray-700 text-gray-100 shadow-[0_0_20px_rgba(0,255,128,0.15)]"
             : "bg-white border-gray-200 text-gray-900"
-          }`}
+        }`}
       >
         {/* Logo + Título */}
         <div className="flex flex-col items-center mb-8">
@@ -182,16 +217,18 @@ export default function FormularioRegistro() {
               onChange={(e) => setNombre(e.target.value)}
               placeholder=" "
               required
-              className={`peer w-full pt-5 pb-2 px-3 pl-10 text-base font-medium bg-transparent border-0 border-b-2 outline-none transition-colors duration-300 ${modoOscuro
+              className={`peer w-full pt-5 pb-2 px-3 pl-10 text-base font-medium bg-transparent border-0 border-b-2 outline-none transition-colors duration-300 ${
+                modoOscuro
                   ? "border-gray-600 text-white focus:border-green-400"
                   : "border-gray-300 text-gray-900 focus:border-[#39A900]"
-                }`}
+              }`}
             />
             <label
-              className={`absolute top-4 left-10 text-base pointer-events-none transition-all duration-300 ease-in-out ${modoOscuro
+              className={`absolute top-4 left-10 text-base pointer-events-none transition-all duration-300 ease-in-out ${
+                modoOscuro
                   ? "text-gray-500 peer-focus:text-green-400"
                   : "text-gray-500 peer-focus:text-[#39A900]"
-                } peer-focus:top-[-0.6rem] peer-focus:text-sm peer-[&:not(:placeholder-shown)]:top-[-0.6rem] peer-[&:not(:placeholder-shown)]:text-sm`}
+              } peer-focus:top-[-0.6rem] peer-focus:text-sm peer-[&:not(:placeholder-shown)]:top-[-0.6rem] peer-[&:not(:placeholder-shown)]:text-sm`}
             >
               Nombre Completo
             </label>
@@ -206,16 +243,18 @@ export default function FormularioRegistro() {
               onChange={(e) => setCorreo(e.target.value)}
               placeholder=" "
               required
-              className={`peer w-full pt-5 pb-2 px-3 pl-10 text-base font-medium bg-transparent border-0 border-b-2 outline-none transition-colors duration-300 ${modoOscuro
+              className={`peer w-full pt-5 pb-2 px-3 pl-10 text-base font-medium bg-transparent border-0 border-b-2 outline-none transition-colors duration-300 ${
+                modoOscuro
                   ? "border-gray-600 text-white focus:border-green-400"
                   : "border-gray-300 text-gray-900 focus:border-[#39A900]"
-                }`}
+              }`}
             />
             <label
-              className={`absolute top-4 left-10 text-base pointer-events-none transition-all duration-300 ease-in-out ${modoOscuro
+              className={`absolute top-4 left-10 text-base pointer-events-none transition-all duration-300 ease-in-out ${
+                modoOscuro
                   ? "text-gray-500 peer-focus:text-green-400"
                   : "text-gray-500 peer-focus:text-[#39A900]"
-                } peer-focus:top-[-0.6rem] peer-focus:text-sm peer-[&:not(:placeholder-shown)]:top-[-0.6rem] peer-[&:not(:placeholder-shown)]:text-sm`}
+              } peer-focus:top-[-0.6rem] peer-focus:text-sm peer-[&:not(:placeholder-shown)]:top-[-0.6rem] peer-[&:not(:placeholder-shown)]:text-sm`}
             >
               Correo Electrónico
             </label>
@@ -230,26 +269,29 @@ export default function FormularioRegistro() {
               onChange={(e) => setContrasena(e.target.value)}
               placeholder=" "
               required
-              className={`peer w-full pt-5 pb-2 px-3 pl-10 text-base font-medium bg-transparent border-0 border-b-2 outline-none transition-colors duration-300 ${modoOscuro
+              className={`peer w-full pt-5 pb-2 px-3 pl-10 text-base font-medium bg-transparent border-0 border-b-2 outline-none transition-colors duration-300 ${
+                modoOscuro
                   ? "border-gray-600 text-white focus:border-green-400"
                   : "border-gray-300 text-gray-900 focus:border-[#39A900]"
-                }`}
+              }`}
             />
             <button
               type="button"
               onClick={() => setMostrarContrasena(!mostrarContrasena)}
-              className={`absolute right-3 top-4 transition-colors ${modoOscuro
+              className={`absolute right-3 top-4 transition-colors ${
+                modoOscuro
                   ? "text-gray-400 hover:text-green-400"
                   : "text-slate-400 hover:text-[#39A900]"
-                }`}
+              }`}
             >
               {mostrarContrasena ? <EyeOff /> : <Eye />}
             </button>
             <label
-              className={`absolute top-4 left-10 text-base pointer-events-none transition-all duration-300 ease-in-out ${modoOscuro
+              className={`absolute top-4 left-10 text-base pointer-events-none transition-all duration-300 ease-in-out ${
+                modoOscuro
                   ? "text-gray-500 peer-focus:text-green-400"
                   : "text-gray-500 peer-focus:text-[#39A900]"
-                } peer-focus:top-[-0.6rem] peer-focus:text-sm peer-[&:not(:placeholder-shown)]:top-[-0.6rem] peer-[&:not(:placeholder-shown)]:text-sm`}
+              } peer-focus:top-[-0.6rem] peer-focus:text-sm peer-[&:not(:placeholder-shown)]:top-[-0.6rem] peer-[&:not(:placeholder-shown)]:text-sm`}
             >
               Contraseña
             </label>

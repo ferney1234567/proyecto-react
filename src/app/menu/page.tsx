@@ -768,22 +768,40 @@ const handleFavorito = async (convocatoria: Convocatoria) => {
 
                   <div className="space-y-3 mt-8 flex-grow">
                     {/* 🔹 Título */}
-                    <h3
-                      className={`font-bold flex items-center gap-2 leading-tight ${modoOscuro ? "text-white" : "text-[#00324D]"
-                        }`}
-                      style={{
-                        fontSize: `${1.2 + (fontSize - 16) * 0.05}em`,
-                        lineHeight: "1.3em",
-                      }}
-                    >
-                      <FaMobileAlt
-                        className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                        style={{
-                          fontSize: `${1 + (fontSize - 16) * 0.05}em`,
-                        }}
-                      />
-                      {convocatoriasPagina[0].title}
-                    </h3>
+                  {/* 🔹 Título (alineado con icono + máximo 2 líneas) */}
+<h3
+  className={`font-bold leading-tight flex items-start gap-2 ${
+    modoOscuro ? "text-white" : "text-[#00324D]"
+  }`}
+  style={{
+    fontSize: `${1.2 + (fontSize - 16) * 0.05}em`,
+    lineHeight: "1.3em",
+  }}
+>
+  {/* Icono perfectamente alineado */}
+  <FaMobileAlt
+    className={`${modoOscuro ? "text-white" : "text-[#00324D]"} flex-shrink-0 mt-[2px]`}
+    style={{
+      fontSize: `${1 + (fontSize - 16) * 0.05}em`,
+    }}
+  />
+
+  {/* Título truncado con 2 líneas máximas */}
+  <span
+    className="block overflow-hidden text-ellipsis break-words"
+    style={{
+      display: "-webkit-box",
+      WebkitLineClamp: 2, // 🔹 Máximo 2 líneas
+      WebkitBoxOrient: "vertical",
+      textOverflow: "ellipsis",
+      lineHeight: "1.3em",
+      maxHeight: `${fontSize * 3.2}px`,
+    }}
+  >
+    {convocatoriasPagina[0].title}
+  </span>
+</h3>
+
 
                     {/* 🔹 Descripción limitada a 4 párrafos */}
                     <div className="flex items-start gap-2">

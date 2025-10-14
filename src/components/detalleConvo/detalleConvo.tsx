@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, JSX } from "react";
 import {
   FaBullhorn, FaCalendarAlt, FaCalendarTimes, FaBuilding,
   FaRegFileAlt, FaCheckCircle, FaRegBookmark, FaSearch,
-  FaInfoCircle, FaTimes
+  FaInfoCircle, FaTimes, FaExternalLinkAlt, FaLink
 } from "react-icons/fa";
 
-// 👇 Tema
 import { useTheme } from "../../app/ThemeContext";
 import { getThemeStyles } from "../../app/themeStyles";
 
@@ -33,15 +32,12 @@ export interface Convocatoria {
   imageUrl?: string;
 }
 
-
 interface Catalogo {
   id: number;
   name: string;
 }
 
-
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function ModalConvocatoria({
   modalAbierto,
@@ -53,7 +49,6 @@ export default function ModalConvocatoria({
   convocatoria: Convocatoria | null;
 }) {
   const [pestanaActiva, setPestanaActiva] = useState("descripcion");
-
   const { modoOscuro } = useTheme();
   const estilos = getThemeStyles(modoOscuro);
 
@@ -63,22 +58,17 @@ export default function ModalConvocatoria({
   const [intereses, setIntereses] = useState<Catalogo[]>([]);
   const [usuarios, setUsuarios] = useState<Catalogo[]>([]);
 
-  // ✅ Función segura → devuelve "null" si no encuentra nada
   const getNombre = (arr: Catalogo[] | undefined, id: number | undefined) => {
-    if (!arr || arr.length === 0 || !id) return "null";
-    return arr.find(item => item.id === id)?.name || "null";
+    if (!arr || arr.length === 0 || !id) return "—";
+    return arr.find(item => item.id === id)?.name || "—";
   };
 
-  // ✅ Cerrar con tecla ESC
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") cerrarModal();
-    };
+    const handleKeyDown = (e: KeyboardEvent) => e.key === "Escape" && cerrarModal();
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [cerrarModal]);
 
-  // ✅ Cargar catálogos reales de la API
   useEffect(() => {
     const fetchCatalogos = async () => {
       try {
@@ -89,7 +79,6 @@ export default function ModalConvocatoria({
           fetch(`${API_URL}/interests`).then(r => r.json()),
           fetch(`${API_URL}/users`).then(r => r.json()),
         ]);
-
         setInstituciones(instRes.data || []);
         setLineas(lineRes.data || []);
         setPublicos(publRes.data || []);
@@ -111,8 +100,7 @@ export default function ModalConvocatoria({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`relative ${estilos.card} rounded-2xl w-[95%] max-w-5xl max-h-[90vh] 
-                    overflow-y-scroll scrollbar-hide shadow-2xl animate-fade-in`}
+        className={`relative ${estilos.card} rounded-2xl w-[95%] max-w-5xl max-h-[90vh] overflow-y-scroll scrollbar-hide shadow-2xl animate-fade-in`}
       >
         {/* ENCABEZADO */}
         <div
@@ -145,40 +133,43 @@ export default function ModalConvocatoria({
           />
         </div>
 
-        {/* INFO CARDS */}
+        {/* INFO PRINCIPAL */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 mx-8 mb-6">
-          <div className={`${modoOscuro ? "bg-gray-800" : "bg-blue-50"} rounded-xl p-5 shadow-sm text-center transform transition-transform hover:scale-105`}>
-            <FaCalendarAlt className="text-blue-500 text-3xl mb-2 mx-auto" />
-            <p className="text-sm font-medium">Fecha de Apertura</p>
-            <strong>{new Date(convocatoria.openDate).toLocaleDateString()}</strong>
-          </div>
-          <div className={`${modoOscuro ? "bg-gray-800" : "bg-red-50"} rounded-xl p-5 shadow-sm text-center transform transition-transform hover:scale-105`}>
-            <FaCalendarTimes className="text-red-500 text-3xl mb-2 mx-auto" />
-            <p className="text-sm font-medium">Fecha de Cierre</p>
-            <strong>{new Date(convocatoria.closeDate).toLocaleDateString()}</strong>
-          </div>
-          <div className={`${modoOscuro ? "bg-gray-800" : "bg-purple-50"} rounded-xl p-5 shadow-sm text-center transform transition-transform hover:scale-105`}>
-            <FaBuilding className="text-purple-600 text-3xl mb-2 mx-auto" />
-            <p className="text-sm font-medium">Entidad</p>
-            <strong>{getNombre(instituciones, convocatoria.institutionId)}</strong>
-          </div>
+          <CardInfo
+            icon={<FaCalendarAlt className="text-blue-500 text-4xl mb-2 mx-auto" />}
+            title="Fecha de Apertura"
+            value={new Date(convocatoria.openDate).toLocaleDateString()}
+            bg={modoOscuro ? "bg-gray-800" : "bg-blue-50"}
+          />
+          <CardInfo
+            icon={<FaCalendarTimes className="text-red-500 text-4xl mb-2 mx-auto" />}
+            title="Fecha de Cierre"
+            value={new Date(convocatoria.closeDate).toLocaleDateString()}
+            bg={modoOscuro ? "bg-gray-800" : "bg-red-50"}
+          />
+          <CardInfo
+            icon={<FaBuilding className="text-purple-600 text-4xl mb-2 mx-auto" />}
+            title="Entidad"
+            value={getNombre(instituciones, convocatoria.institutionId)}
+            bg={modoOscuro ? "bg-gray-800" : "bg-purple-50"}
+          />
         </div>
 
         {/* PESTAÑAS */}
-       <div className="flex flex-wrap justify-center gap-1 mx-8 pb-2">
-
+        <div className="flex flex-wrap justify-center gap-1 mx-8 pb-2">
           {[
             { id: "descripcion", icon: FaRegFileAlt, label: "Descripción", color: "text-blue-500" },
             { id: "objetivos", icon: FaCheckCircle, label: "Objetivos", color: "text-green-500" },
             { id: "recursos", icon: FaRegBookmark, label: "Recursos", color: "text-yellow-500" },
-            { id: "observaciones", icon: FaSearch, label: "Observaciones", color: "text-orange-500" },
+            { id: "notas", icon: FaSearch, label: "Notas", color: "text-orange-500" },
             { id: "masInformacion", icon: FaInfoCircle, label: "Más información", color: "text-purple-500" },
           ].map(({ id, icon: Icon, label, color }) => (
             <button
               key={id}
               onClick={() => setPestanaActiva(id)}
-              className={`flex items-center gap-2 px-6 py-3 text-sm rounded-lg font-medium transition-all duration-200 ${pestanaActiva === id
-                  ? `${modoOscuro ? "bg-gray-700 shadow text-white" : "bg-white shadow-sm"} ${color}`
+              className={`flex items-center gap-2 px-6 py-3 text-sm rounded-lg font-medium transition-all duration-200 
+                ${pestanaActiva === id
+                  ? `${modoOscuro ? "bg-gray-700 text-white" : "bg-white text-gray-900"} ${color}`
                   : `${modoOscuro ? "text-gray-400 hover:text-gray-200" : "text-gray-500 hover:text-gray-700"}`}`}
             >
               <Icon className="text-base" />
@@ -187,74 +178,100 @@ export default function ModalConvocatoria({
           ))}
         </div>
 
-        {/* CONTENIDO MEJORADO */}
+        {/* CONTENIDO */}
         <div
-          className={`p-6 mx-8 rounded-xl min-h-[150px] mb-6 shadow-md border transition-colors duration-300 
+          className={`p-6 mx-8 rounded-xl min-h-[150px] mb-6 shadow-md border 
           ${modoOscuro ? "bg-gray-900 border-gray-700 text-gray-200" : "bg-white border-gray-200 text-gray-700"}`}
         >
           {pestanaActiva === "descripcion" && (
-            <div>
-              <h4 className={`text-lg font-semibold mb-3 ${modoOscuro ? "text-white" : "text-gray-900"}`}>Descripción</h4>
+            <>
+              <h4 className="text-lg font-semibold mb-3">Descripción</h4>
               <p className="leading-relaxed">{convocatoria.description}</p>
-            </div>
+            </>
           )}
           {pestanaActiva === "objetivos" && (
-            <div>
-              <h4 className={`text-lg font-semibold mb-3 ${modoOscuro ? "text-white" : "text-gray-900"}`}>Objetivos</h4>
+            <>
+              <h4 className="text-lg font-semibold mb-3">Objetivos</h4>
               <p className="leading-relaxed">{convocatoria.objective}</p>
-            </div>
+            </>
           )}
           {pestanaActiva === "recursos" && (
-            <div>
-              <h4 className={`text-lg font-semibold mb-3 ${modoOscuro ? "text-white" : "text-gray-900"}`}>Recursos</h4>
+            <>
+              <h4 className="text-lg font-semibold mb-3">Recursos</h4>
               <p className="leading-relaxed">{convocatoria.resources}</p>
-            </div>
+            </>
           )}
-          {pestanaActiva === "observaciones" && (
-            <div>
-              <h4 className={`text-lg font-semibold mb-3 ${modoOscuro ? "text-white" : "text-gray-900"}`}>Observaciones</h4>
+          {pestanaActiva === "notas" && (
+            <>
+              <h4 className="text-lg font-semibold mb-3">Notas</h4>
               <p className="leading-relaxed">{convocatoria.notes}</p>
-            </div>
+            </>
           )}
           {pestanaActiva === "masInformacion" && (
-            <div>
-              <h4 className={`text-lg font-semibold mb-4 ${modoOscuro ? "text-white" : "text-gray-900"}`}>Más Información</h4>
+            <>
+              <h4 className="text-lg font-semibold mb-4">Más Información</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                <div className={`p-3 rounded-lg shadow-sm ${modoOscuro ? "bg-gray-800" : "bg-gray-50"}`}>
-                  <strong>Público Objetivo:</strong> {getNombre(publicos, convocatoria.targetAudienceId)}
-                </div>
-                <div className={`p-3 rounded-lg shadow-sm ${modoOscuro ? "bg-gray-800" : "bg-gray-50"}`}>
-                  <strong>Área de Interés:</strong> {getNombre(intereses, convocatoria.interestId)}
-                </div>
-                <div className={`p-3 rounded-lg shadow-sm ${modoOscuro ? "bg-gray-800" : "bg-gray-50"}`}>
-                  <strong>Línea Estratégica:</strong> {getNombre(lineas, convocatoria.lineId)}
-                </div>
-                <div className={`p-3 rounded-lg shadow-sm ${modoOscuro ? "bg-gray-800" : "bg-gray-50"}`}>
-                  <strong>Usuario Responsable:</strong> {getNombre(usuarios, convocatoria.userId)}
-                </div>
-                <div className={`p-3 rounded-lg shadow-sm ${modoOscuro ? "bg-gray-800" : "bg-gray-50"}`}>
-                  <strong>Clicks registrados:</strong> {convocatoria.clickCount}
-                </div>
+                <Info label="Público Objetivo" value={getNombre(publicos, convocatoria.targetAudienceId)} />
+                <Info label="Área de Interés" value={getNombre(intereses, convocatoria.interestId)} />
+                <Info label="Línea Estratégica" value={getNombre(lineas, convocatoria.lineId)} />
+                <Info label="Página Asociada" value={convocatoria.pageName} />
+                <Info
+                  label="URL Página"
+                  value={<a href={convocatoria.pageUrl} target="_blank" className="text-blue-500 hover:underline flex items-center gap-1"><FaExternalLinkAlt /> Abrir enlace</a>}
+                />
+                <Info
+                  label="Enlace de Convocatoria"
+                  value={<a href={convocatoria.callLink} target="_blank" className="text-green-500 hover:underline flex items-center gap-1"><FaLink /> Ver convocatoria</a>}
+                />
               </div>
-            </div>
+            </>
           )}
         </div>
 
-        {/* BOTONES FINALES */}
+        {/* BOTONES */}
         <div className="flex justify-end gap-4 px-8 pb-6">
-          <button
+          <a
+            href={convocatoria.callLink}
+            target="_blank"
             className="flex items-center gap-2 px-6 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold shadow transition"
           >
-            <FaCheckCircle /> Inscribirse
-          </button>
+            <FaCheckCircle /> Inscribirse 
+          </a>
           <button
             onClick={cerrarModal}
             className="flex items-center gap-2 px-6 py-2 rounded-lg bg-gray-400 hover:bg-gray-500 text-white font-semibold shadow transition"
           >
-            <FaTimes /> Cancelar
+            <FaTimes /> Cerrar
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// 🔹 Subcomponentes reutilizables
+function CardInfo({ icon, title, value, bg }: { icon: JSX.Element; title: string; value: string; bg: string }) {
+  return (
+    <div
+      className={`${bg} rounded-xl p-5 text-center shadow-sm transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border hover:border-gray-300 active:scale-100`}
+    >
+      {icon}
+      <p className="text-sm font-medium mb-1">{title}</p>
+      <strong className="text-lg">{value}</strong>
+    </div>
+  );
+}
+
+function Info({ label, value, icon }: { label: string; value: any; icon?: JSX.Element }) {
+  return (
+    <div
+      className={`p-4 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800 flex flex-col gap-1 transition-all duration-300 transform hover:scale-105 active:scale-100 hover:shadow-md`}
+    >
+      <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300 font-medium">
+        {icon}
+        <strong>{label}:</strong>
+      </div>
+      <div className="text-gray-700 dark:text-gray-200 text-base">{value || "—"}</div>
     </div>
   );
 }
