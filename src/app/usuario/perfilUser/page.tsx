@@ -782,7 +782,14 @@ export default function PerfilEmpresa() {
 
 
   return (
-    <div className={`min-h-screen ${styles.fondo}`}>
+  <div
+  className={`min-h-screen w-full transition-colors duration-500 ${
+    modoOscuro
+      ? "bg-[#0b1220] text-gray-200"
+      : "bg-white text-gray-800"
+  }`}
+>
+
       <div className={`max-w-7xl mx-auto my-6 rounded-3xl shadow-xl ${styles.divider} ${styles.card}`}>
         {/* HEADER */}
         <header className={`${modoOscuro ? 'bg-gradient-to-b from-[#0b1220] to-[#0a0f1a]' : 'bg-gradient-to-b from-[#00324D] to-[#001a27]'} text-white p-6 text-center pb-12 rounded-t-3xl`}>
@@ -1299,9 +1306,32 @@ export default function PerfilEmpresa() {
   </button>
 
   {/* ✅ Modal */}
-  {mostrarModal && (
-    <DatosEmpresaModal cerrarModal={() => setMostrarModal(false)} />
-  )}
+ {mostrarModal && (
+  <DatosEmpresaModal
+    cerrarModal={() => setMostrarModal(false)}
+    onEmpresaActualizada={(nuevaEmpresa) => {
+      setEmpresa(nuevaEmpresa);
+      setProfileData((prev) => ({
+        ...prev,
+        nombre: nuevaEmpresa.name ?? prev.nombre,
+        email: nuevaEmpresa.email ?? prev.email,
+        nit: nuevaEmpresa.taxId ?? prev.nit,
+        razonSocial: nuevaEmpresa.legalName ?? prev.razonSocial,
+        direccion: nuevaEmpresa.address ?? prev.direccion,
+        telefono: nuevaEmpresa.phone ?? prev.telefono,
+        paginaWeb: nuevaEmpresa.website ?? prev.paginaWeb,
+        numEmpleados: nuevaEmpresa.employeeCount
+          ? String(nuevaEmpresa.employeeCount)
+          : prev.numEmpleados,
+        sector: nuevaEmpresa.economicSector ?? prev.sector,
+        descripcion: nuevaEmpresa.description ?? prev.descripcion,
+        ciudad: nuevaEmpresa.city?.name ?? prev.ciudad,
+          departamento: nuevaEmpresa.departmentName ?? prev.departamento,
+      }));
+    }}
+  />
+)}
+
 </div>
 
         </main>

@@ -2,11 +2,11 @@
 
 import { useState, useEffect, JSX } from "react";
 import {
-  FaBullhorn, FaCalendarAlt, FaCalendarTimes, FaBuilding,
+  FaBullhorn, FaCalendarAlt, FaCalendarTimes,
   FaRegFileAlt, FaCheckCircle, FaRegBookmark, FaSearch,
-  FaInfoCircle, FaTimes, FaExternalLinkAlt, FaLink
+  FaInfoCircle, FaTimes, FaExternalLinkAlt, FaLink,
+  FaGlobeAmericas, FaProjectDiagram, FaUniversity
 } from "react-icons/fa";
-
 import { useTheme } from "../../app/ThemeContext";
 import { getThemeStyles } from "../../app/themeStyles";
 
@@ -56,7 +56,6 @@ export default function ModalConvocatoria({
   const [lineas, setLineas] = useState<Catalogo[]>([]);
   const [publicos, setPublicos] = useState<Catalogo[]>([]);
   const [intereses, setIntereses] = useState<Catalogo[]>([]);
-  const [usuarios, setUsuarios] = useState<Catalogo[]>([]);
 
   const getNombre = (arr: Catalogo[] | undefined, id: number | undefined) => {
     if (!arr || arr.length === 0 || !id) return "—";
@@ -72,18 +71,16 @@ export default function ModalConvocatoria({
   useEffect(() => {
     const fetchCatalogos = async () => {
       try {
-        const [instRes, lineRes, publRes, intRes, userRes] = await Promise.all([
+        const [instRes, lineRes, publRes, intRes] = await Promise.all([
           fetch(`${API_URL}/institutions`).then(r => r.json()),
           fetch(`${API_URL}/lines`).then(r => r.json()),
           fetch(`${API_URL}/targetAudiences`).then(r => r.json()),
           fetch(`${API_URL}/interests`).then(r => r.json()),
-          fetch(`${API_URL}/users`).then(r => r.json()),
         ]);
         setInstituciones(instRes.data || []);
         setLineas(lineRes.data || []);
         setPublicos(publRes.data || []);
         setIntereses(intRes.data || []);
-        setUsuarios(userRes.data || []);
       } catch (error) {
         console.error("Error cargando catálogos", error);
       }
@@ -128,36 +125,48 @@ export default function ModalConvocatoria({
           <img
             src={convocatoria.imageUrl || "/img/default.jpg"}
             alt={convocatoria.title}
-            className={`w-full max-w-[1000px] max-h-[400px] object-cover rounded-xl shadow-md border 
+            className={`w-full max-w-[950px] max-h-[320px] object-cover rounded-xl shadow-md border 
             ${modoOscuro ? "border-white/10" : "border-gray-200"}`}
           />
         </div>
 
-        {/* INFO PRINCIPAL */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 mx-8 mb-6">
+        {/* CONTENEDORES PRINCIPALES */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 mx-8 mb-6">
           <CardInfo
             icon={<FaCalendarAlt className="text-blue-500 text-4xl mb-2 mx-auto" />}
             title="Fecha de Apertura"
             value={new Date(convocatoria.openDate).toLocaleDateString()}
-            bg={modoOscuro ? "bg-gray-800" : "bg-blue-50"}
+            bg={modoOscuro ? "bg-gray-800 border border-gray-700" : "bg-blue-50 border border-blue-200"}
           />
           <CardInfo
             icon={<FaCalendarTimes className="text-red-500 text-4xl mb-2 mx-auto" />}
             title="Fecha de Cierre"
             value={new Date(convocatoria.closeDate).toLocaleDateString()}
-            bg={modoOscuro ? "bg-gray-800" : "bg-red-50"}
+            bg={modoOscuro ? "bg-gray-800 border border-gray-700" : "bg-red-50 border border-red-200"}
           />
           <CardInfo
-            icon={<FaBuilding className="text-purple-600 text-4xl mb-2 mx-auto" />}
-            title="Entidad"
+            icon={<FaGlobeAmericas className="text-teal-500 text-4xl mb-2 mx-auto" />}
+            title="Área de Interés"
+            value={getNombre(intereses, convocatoria.interestId)}
+            bg={modoOscuro ? "bg-gray-800 border border-gray-700" : "bg-teal-50 border border-teal-200"}
+          />
+          <CardInfo
+            icon={<FaUniversity className="text-indigo-500 text-4xl mb-2 mx-auto" />}
+            title="Institución"
             value={getNombre(instituciones, convocatoria.institutionId)}
-            bg={modoOscuro ? "bg-gray-800" : "bg-purple-50"}
+            bg={modoOscuro ? "bg-gray-800 border border-gray-700" : "bg-indigo-50 border border-indigo-200"}
+          />
+          <CardInfo
+            icon={<FaProjectDiagram className="text-emerald-500 text-4xl mb-2 mx-auto" />}
+            title="Línea"
+            value={getNombre(lineas, convocatoria.lineId)}
+            bg={modoOscuro ? "bg-gray-800 border border-gray-700" : "bg-emerald-50 border border-emerald-200"}
           />
         </div>
 
         {/* PESTAÑAS */}
         <div className="flex flex-wrap justify-center gap-1 mx-8 pb-2">
-          {[
+          {[ 
             { id: "descripcion", icon: FaRegFileAlt, label: "Descripción", color: "text-blue-500" },
             { id: "objetivos", icon: FaCheckCircle, label: "Objetivos", color: "text-green-500" },
             { id: "recursos", icon: FaRegBookmark, label: "Recursos", color: "text-yellow-500" },
@@ -178,10 +187,13 @@ export default function ModalConvocatoria({
           ))}
         </div>
 
-        {/* CONTENIDO */}
+        {/* CONTENIDO PRINCIPAL */}
         <div
-          className={`p-6 mx-8 rounded-xl min-h-[150px] mb-6 shadow-md border 
-          ${modoOscuro ? "bg-gray-900 border-gray-700 text-gray-200" : "bg-white border-gray-200 text-gray-700"}`}
+          className={`p-6 mx-8 rounded-xl min-h-[150px] mb-6 shadow-md ${
+            modoOscuro
+              ? "bg-gray-900 text-gray-200 border border-gray-700"
+              : "bg-white text-gray-700 border border-gray-200"
+          }`}
         >
           {pestanaActiva === "descripcion" && (
             <>
@@ -210,18 +222,24 @@ export default function ModalConvocatoria({
           {pestanaActiva === "masInformacion" && (
             <>
               <h4 className="text-lg font-semibold mb-4">Más Información</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                <Info label="Público Objetivo" value={getNombre(publicos, convocatoria.targetAudienceId)} />
-                <Info label="Área de Interés" value={getNombre(intereses, convocatoria.interestId)} />
-                <Info label="Línea Estratégica" value={getNombre(lineas, convocatoria.lineId)} />
-                <Info label="Página Asociada" value={convocatoria.pageName} />
+              <div
+                className={`grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm rounded-xl p-5 shadow-inner max-w-[900px] mx-auto ${
+                  modoOscuro
+                    ? "bg-gray-800 border border-gray-600"
+                    : "bg-gray-100 border border-gray-200"
+                }`}
+              >
+                <Info label="Público Objetivo" value={getNombre(publicos, convocatoria.targetAudienceId)} modoOscuro={modoOscuro} />
+                <Info label="Página Asociada" value={convocatoria.pageName} modoOscuro={modoOscuro} />
                 <Info
                   label="URL Página"
-                  value={<a href={convocatoria.pageUrl} target="_blank" className="text-blue-500 hover:underline flex items-center gap-1"><FaExternalLinkAlt /> Abrir enlace</a>}
+                  value={<a href={convocatoria.pageUrl} target="_blank" className="text-blue-400 hover:underline flex items-center gap-1"><FaExternalLinkAlt /> Abrir enlace</a>}
+                  modoOscuro={modoOscuro}
                 />
                 <Info
                   label="Enlace de Convocatoria"
-                  value={<a href={convocatoria.callLink} target="_blank" className="text-green-500 hover:underline flex items-center gap-1"><FaLink /> Ver convocatoria</a>}
+                  value={<a href={convocatoria.callLink} target="_blank" className="text-green-400 hover:underline flex items-center gap-1"><FaLink /> Ver convocatoria</a>}
+                  modoOscuro={modoOscuro}
                 />
               </div>
             </>
@@ -235,11 +253,11 @@ export default function ModalConvocatoria({
             target="_blank"
             className="flex items-center gap-2 px-6 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold shadow transition"
           >
-            <FaCheckCircle /> Inscribirse 
+            <FaCheckCircle /> Inscribirse
           </a>
           <button
             onClick={cerrarModal}
-            className="flex items-center gap-2 px-6 py-2 rounded-lg bg-gray-400 hover:bg-gray-500 text-white font-semibold shadow transition"
+            className="flex items-center gap-2 px-6 py-2 rounded-lg bg-gray-500 hover:bg-gray-600 text-white font-semibold shadow transition"
           >
             <FaTimes /> Cerrar
           </button>
@@ -249,12 +267,10 @@ export default function ModalConvocatoria({
   );
 }
 
-// 🔹 Subcomponentes reutilizables
+/* 🔹 Tarjeta color pastel */
 function CardInfo({ icon, title, value, bg }: { icon: JSX.Element; title: string; value: string; bg: string }) {
   return (
-    <div
-      className={`${bg} rounded-xl p-5 text-center shadow-sm transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border hover:border-gray-300 active:scale-100`}
-    >
+    <div className={`${bg} rounded-xl p-4 text-center shadow-sm transform transition-all duration-300 hover:scale-105`}>
       {icon}
       <p className="text-sm font-medium mb-1">{title}</p>
       <strong className="text-lg">{value}</strong>
@@ -262,16 +278,16 @@ function CardInfo({ icon, title, value, bg }: { icon: JSX.Element; title: string
   );
 }
 
-function Info({ label, value, icon }: { label: string; value: any; icon?: JSX.Element }) {
+/* 🔹 Bloques adaptados a modo oscuro */
+function Info({ label, value, modoOscuro }: { label: string; value: any; modoOscuro: boolean }) {
   return (
-    <div
-      className={`p-4 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800 flex flex-col gap-1 transition-all duration-300 transform hover:scale-105 active:scale-100 hover:shadow-md`}
-    >
-      <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300 font-medium">
-        {icon}
-        <strong>{label}:</strong>
-      </div>
-      <div className="text-gray-700 dark:text-gray-200 text-base">{value || "—"}</div>
+    <div className={`p-4 rounded-lg flex flex-col gap-1 transition-all ${
+      modoOscuro
+        ? "bg-gray-900 border border-gray-600 text-gray-100"
+        : "bg-white border border-gray-300 text-gray-800"
+    }`}>
+      <div className="font-medium opacity-80">{label}:</div>
+      <div className="text-base">{value || "—"}</div>
     </div>
   );
 }

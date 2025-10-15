@@ -99,6 +99,8 @@ export default function ExplorarPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
+  const [busquedaLocal, setBusquedaLocal] = useState("");
+
   // === Estados ===
   const [categorias, setCategorias] = useState<{ id: number; name: string; description: string }[]>([]);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<number | ''>('');
@@ -125,83 +127,84 @@ export default function ExplorarPage() {
 
 
   const [fechaSeleccionada, setFechaSeleccionada] = useState("");
-  const convocatoriasFiltradas = useMemo(() => {
-    let filtradas = convocatorias;
+ const convocatoriasFiltradas = useMemo(() => {
+  let filtradas = convocatorias;
 
-    // 🔹 Filtro por categoría
-    if (categoriaSeleccionada) {
-      filtradas = filtradas.filter((c) => c.lineId === categoriaSeleccionada);
-    }
+  // 🔹 Filtro por categoría
+  if (categoriaSeleccionada) {
+    filtradas = filtradas.filter((c) => c.lineId === categoriaSeleccionada);
+  }
 
-    // 🔹 Filtro por interés
-    if (interesSeleccionado) {
-      filtradas = filtradas.filter((c) => c.interestId === interesSeleccionado);
-    }
+  // 🔹 Filtro por interés
+  if (interesSeleccionado) {
+    filtradas = filtradas.filter((c) => c.interestId === interesSeleccionado);
+  }
 
-    // 🔹 Filtro por público objetivo
-    if (publicoObjetivoSeleccionado) {
-      filtradas = filtradas.filter((c) => c.targetAudienceId === publicoObjetivoSeleccionado);
-    }
+  // 🔹 Filtro por público objetivo
+  if (publicoObjetivoSeleccionado) {
+    filtradas = filtradas.filter((c) => c.targetAudienceId === publicoObjetivoSeleccionado);
+  }
 
-    // 🔹 Filtro por búsqueda
-    if (search) {
-      filtradas = filtradas.filter(
-        (c) =>
-          c.title.toLowerCase().includes(search) ||
-          c.description.toLowerCase().includes(search)
-      );
-    }
+  // ✅ 🔹 Filtro por búsqueda global (de URL) o local
+  const termino = (busquedaLocal || search).toLowerCase().trim();
+  if (termino) {
+    filtradas = filtradas.filter(
+      (c) =>
+        c.title.toLowerCase().includes(termino) ||
+        c.description.toLowerCase().includes(termino)
+    );
+  }
 
-    // 🔹 Filtro por rango de fechas
-    if (fechaInicio || fechaFin) {
-      filtradas = filtradas.filter((c) => {
-        const open = new Date(c.openDate);
-        const start = fechaInicio ? new Date(fechaInicio) : null;
-        const end = fechaFin ? new Date(fechaFin) : null;
+  // 🔹 Filtro por rango de fechas
+  if (fechaInicio || fechaFin) {
+    filtradas = filtradas.filter((c) => {
+      const open = new Date(c.openDate);
+      const start = fechaInicio ? new Date(fechaInicio) : null;
+      const end = fechaFin ? new Date(fechaFin) : null;
+      if (start && open < start) return false;
+      if (end && open > end) return false;
+      return true;
+    });
+  }
 
-        if (start && open < start) return false;
-        if (end && open > end) return false;
-        return true;
-      });
-    }
+  // 🔹 Filtro por tipo de fecha
+  if (fechaSeleccionada) {
+    const hoy = new Date();
+    filtradas = filtradas.filter((c) => {
+      const apertura = new Date(c.openDate);
+      const cierre = new Date(c.closeDate);
+      if (fechaSeleccionada === "recientes") {
+        const hace15Dias = new Date(hoy);
+        hace15Dias.setDate(hoy.getDate() - 15);
+        return apertura >= hace15Dias && apertura <= hoy;
+      }
+      if (fechaSeleccionada === "vencer") {
+        const en7Dias = new Date(hoy);
+        en7Dias.setDate(hoy.getDate() + 7);
+        return cierre >= hoy && cierre <= en7Dias;
+      }
+      if (fechaSeleccionada === "proximas") {
+        return apertura > hoy;
+      }
+      if (fechaSeleccionada === "finalizadas") {
+        return cierre < hoy;
+      }
+      return true;
+    });
+  }
 
-    // 🔹 Filtro por tipo de fecha
-    if (fechaSeleccionada) {
-      const hoy = new Date();
-      filtradas = filtradas.filter((c) => {
-        const apertura = new Date(c.openDate);
-        const cierre = new Date(c.closeDate);
-        if (fechaSeleccionada === "recientes") {
-          const hace15Dias = new Date(hoy);
-          hace15Dias.setDate(hoy.getDate() - 15);
-          return apertura >= hace15Dias && apertura <= hoy;
-        }
-        if (fechaSeleccionada === "vencer") {
-          const en7Dias = new Date(hoy);
-          en7Dias.setDate(hoy.getDate() + 7);
-          return cierre >= hoy && cierre <= en7Dias;
-        }
-        if (fechaSeleccionada === "proximas") {
-          return apertura > hoy;
-        }
-        if (fechaSeleccionada === "finalizadas") {
-          return cierre < hoy;
-        }
-        return true;
-      });
-    }
-
-    return filtradas;
-  }, [
-    convocatorias,
-    categoriaSeleccionada,
-    interesSeleccionado,
-    publicoObjetivoSeleccionado,
-    search,
-    fechaInicio,
-    fechaFin,
-    fechaSeleccionada,
-  ]);
+  return filtradas;
+}, [
+  convocatorias,
+  categoriaSeleccionada,
+  interesSeleccionado,
+  publicoObjetivoSeleccionado,
+  busquedaLocal, // 🔹 Muy importante agregarlo aquí
+  search,        // 🔹 Para que también funcione cuando se viene con ?search=
+  fechaInicio,
+  fechaFin,
+  fechaSeleccionada,
+]);
 
 
 
@@ -361,37 +364,37 @@ export default function ExplorarPage() {
 
 
   const handleFavorito = async (convocatoria: Convocatoria) => {
-  const uid = getUserId(usuario);
-  const cid = getConvocatoriaCallId(convocatoria);
+    const uid = getUserId(usuario);
+    const cid = getConvocatoriaCallId(convocatoria);
 
-  if (!uid) {
-    Swal.fire({
-      title: "⚠️ Atención",
-      text: "Debes iniciar sesión para guardar favoritos",
-      icon: "warning",
-      background: modoOscuro ? "#1a0526" : "#fff",
-      color: modoOscuro ? "#fff" : "#333",
-      confirmButtonColor: modoOscuro ? "#39A900" : "#2d8500",
-    });
-    return;
-  }
-
-  if (!cid) {
-    Swal.fire("Error", "No se pudo identificar la convocatoria (callId).", "error");
-    return;
-  }
-
-  try {
-    const favoritoExistente = favoritos.find((f) => Number(f.callId) === Number(cid));
-
-    // === 🗑️ Eliminar favorito ===
-    if (favoritoExistente?.id) {
-      await deleteFavorito(favoritoExistente.id);
-      setFavoritos((prev) => prev.filter((f) => Number(f.callId) !== Number(cid)));
-
+    if (!uid) {
       Swal.fire({
-        title: "Eliminado de favoritos",
-        html: `
+        title: "⚠️ Atención",
+        text: "Debes iniciar sesión para guardar favoritos",
+        icon: "warning",
+        background: modoOscuro ? "#1a0526" : "#fff",
+        color: modoOscuro ? "#fff" : "#333",
+        confirmButtonColor: modoOscuro ? "#39A900" : "#2d8500",
+      });
+      return;
+    }
+
+    if (!cid) {
+      Swal.fire("Error", "No se pudo identificar la convocatoria (callId).", "error");
+      return;
+    }
+
+    try {
+      const favoritoExistente = favoritos.find((f) => Number(f.callId) === Number(cid));
+
+      // === 🗑️ Eliminar favorito ===
+      if (favoritoExistente?.id) {
+        await deleteFavorito(favoritoExistente.id);
+        setFavoritos((prev) => prev.filter((f) => Number(f.callId) !== Number(cid)));
+
+        Swal.fire({
+          title: "Eliminado de favoritos",
+          html: `
           <div style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
             <div style="
               font-size:60px;
@@ -418,32 +421,32 @@ export default function ExplorarPage() {
             }
           </style>
         `,
-        background: modoOscuro ? "#1a0526" : "#fff",
-        color: modoOscuro ? "#fff" : "#333",
-        showConfirmButton: false,
-        width: 400,
-        padding: "1.6em",
-        didOpen: () => {
-          const okBtn = document.getElementById("ok-btn");
-          if (okBtn) okBtn.addEventListener("click", () => Swal.close());
-        },
-      });
-    }
+          background: modoOscuro ? "#1a0526" : "#fff",
+          color: modoOscuro ? "#fff" : "#333",
+          showConfirmButton: false,
+          width: 400,
+          padding: "1.6em",
+          didOpen: () => {
+            const okBtn = document.getElementById("ok-btn");
+            if (okBtn) okBtn.addEventListener("click", () => Swal.close());
+          },
+        });
+      }
 
-    // === ⭐ Agregar favorito ===
-    else {
-      const payload = { userId: uid, callId: cid };
-      const nuevoFav = await createFavorito(payload);
-      const creadoRaw = nuevoFav?.data ?? nuevoFav;
-      const creado =
-        normalizeFav(creadoRaw) ?? { userId: uid, callId: cid, id: creadoRaw?.id };
+      // === ⭐ Agregar favorito ===
+      else {
+        const payload = { userId: uid, callId: cid };
+        const nuevoFav = await createFavorito(payload);
+        const creadoRaw = nuevoFav?.data ?? nuevoFav;
+        const creado =
+          normalizeFav(creadoRaw) ?? { userId: uid, callId: cid, id: creadoRaw?.id };
 
-      setFavoritos((prev) => [...prev, creado]);
+        setFavoritos((prev) => [...prev, creado]);
 
-      // ✨ SweetAlert estilizado con estrella
-      Swal.fire({
-        title: "¡Agregado a Favoritos!",
-        html: `
+        // ✨ SweetAlert estilizado con estrella
+        Swal.fire({
+          title: "¡Agregado a Favoritos!",
+          html: `
           <div style="display:flex; justify-content:center; align-items:center; flex-direction:column;">
             <div style="
               font-size:50px;
@@ -470,22 +473,22 @@ export default function ExplorarPage() {
             }
           </style>
         `,
-        background: modoOscuro ? "#1a0526" : "#fff",
-        color: modoOscuro ? "#fff" : "#333",
-        showConfirmButton: false,
-        width: 400,
-        padding: "1.6em",
-        didOpen: () => {
-          const okBtn = document.getElementById("ok-btn-add");
-          if (okBtn) okBtn.addEventListener("click", () => Swal.close());
-        },
-      });
+          background: modoOscuro ? "#1a0526" : "#fff",
+          color: modoOscuro ? "#fff" : "#333",
+          showConfirmButton: false,
+          width: 400,
+          padding: "1.6em",
+          didOpen: () => {
+            const okBtn = document.getElementById("ok-btn-add");
+            if (okBtn) okBtn.addEventListener("click", () => Swal.close());
+          },
+        });
+      }
+    } catch (err: any) {
+      console.error("❌ Error al actualizar favoritos:", err);
+      Swal.fire("Error", "No se pudo actualizar tus favoritos.", "error");
     }
-  } catch (err: any) {
-    console.error("❌ Error al actualizar favoritos:", err);
-    Swal.fire("Error", "No se pudo actualizar tus favoritos.", "error");
-  }
-};
+  };
 
 
 
@@ -504,11 +507,14 @@ export default function ExplorarPage() {
               <div className="relative w-full max-w-xl">
                 <input
                   type="text"
+                  value={busquedaLocal}
+                  onChange={(e) => setBusquedaLocal(e.target.value)}
                   placeholder="Buscar convocatorias, programas, becas..."
                   className={`pl-12 pr-6 py-2 rounded-full w-full focus:outline-none focus:ring-2 ${styles.input}`}
                 />
                 <FaSearch className={`absolute left-4 top-3.5 ${styles.textMuted}`} />
               </div>
+
             </div>
 
             {/* Derecha: nav + modo oscuro */}
@@ -534,7 +540,7 @@ export default function ExplorarPage() {
                 {typeof window !== "undefined" &&
                   (localStorage.getItem("rol") === "admin" ||
                     localStorage.getItem("rol") === "administrador" ||
-                    localStorage.getItem("rol") === "2") && (
+                    localStorage.getItem("rol") === "1") && (
                     <Link href="/admin/menuadmin" className={`flex items-center space-x-1 ${styles.nav}`}>
                       <FaUserShield className="text-sm" />
                       <span>Admin</span>
@@ -623,140 +629,139 @@ export default function ExplorarPage() {
           </div>
         </header>
 
-       {/* FILTROS */}
-<section
-  className={`rounded-2xl p-4 mb-6 border transition-colors duration-500 ${
-    modoOscuro
-      ? "bg-[#121a2b] border-white/10"
-      : "bg-white/80 border-gray-200/80"
-  }`}
-  style={{ fontSize: `${fontSize}px` }}
->
-  <div className="flex flex-wrap gap-x-6 gap-y-5 items-end">
-    {/* 🔹 Grid con 5 columnas en pantallas grandes */}
-    <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-      
-      {/* 🟢 Categoría */}
-      <div className="flex flex-col">
-        <label
-          className={`flex items-center font-medium mb-2 gap-2 ${styles.textMuted}`}
-          style={{ fontSize: "0.9em" }}
+        {/* FILTROS */}
+        <section
+          className={`rounded-2xl p-4 mb-6 border transition-colors duration-500 ${modoOscuro
+            ? "bg-[#121a2b] border-white/10"
+            : "bg-white/80 border-gray-200/80"
+            }`}
+          style={{ fontSize: `${fontSize}px` }}
         >
-          <LayoutGrid style={{ fontSize: "1.1em" }} /> Categoría
-        </label>
-        <select
-          value={categoriaSeleccionada}
-          onChange={(e) =>
-            setCategoriaSeleccionada(Number(e.target.value) || "")
-          }
-          className={`w-full appearance-none rounded-xl cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md ${styles.input}`}
-          style={{ fontSize: "0.95em", padding: "0.8em 1em" }}
-        >
-          <option value="">Todas las categorías</option>
-          {categorias.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
-            </option>
-          ))}
-        </select>
-      </div>
+          <div className="flex flex-wrap gap-x-6 gap-y-5 items-end">
+            {/* 🔹 Grid con 5 columnas en pantallas grandes */}
+            <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
 
-      {/* 🟢 Intereses */}
-      <div className="flex flex-col">
-        <label
-          className={`flex items-center font-medium mb-2 gap-2 ${styles.textMuted}`}
-          style={{ fontSize: "0.9em" }}
-        >
-          <FaTags style={{ fontSize: "1.1em" }} /> Intereses Usuario
-        </label>
-        <select
-          value={interesSeleccionado}
-          onChange={(e) =>
-            setInteresSeleccionado(Number(e.target.value) || "")
-          }
-          className={`w-full appearance-none rounded-xl cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md ${styles.input}`}
-          style={{ fontSize: "0.95em", padding: "0.8em 1em" }}
-        >
-          <option value="">Todos los intereses</option>
-          {interesesUsuario.map((interes) => (
-            <option key={interes.id} value={interes.id}>
-              {interes.name}
-            </option>
-          ))}
-        </select>
-      </div>
+              {/* 🟢 Categoría */}
+              <div className="flex flex-col">
+                <label
+                  className={`flex items-center font-medium mb-2 gap-2 ${styles.textMuted}`}
+                  style={{ fontSize: "0.9em" }}
+                >
+                  <LayoutGrid style={{ fontSize: "1.1em" }} /> Categoría
+                </label>
+                <select
+                  value={categoriaSeleccionada}
+                  onChange={(e) =>
+                    setCategoriaSeleccionada(Number(e.target.value) || "")
+                  }
+                  className={`w-full appearance-none rounded-xl cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md ${styles.input}`}
+                  style={{ fontSize: "0.95em", padding: "0.8em 1em" }}
+                >
+                  <option value="">Todas las categorías</option>
+                  {categorias.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-      {/* 🟢 Público Objetivo */}
-      <div className="flex flex-col">
-        <label
-          className={`flex items-center font-medium mb-2 gap-2 ${styles.textMuted}`}
-          style={{ fontSize: "0.9em" }}
-        >
-          <FaBriefcase style={{ fontSize: "1.1em" }} /> Público Objetivo
-        </label>
-        <select
-          value={publicoObjetivoSeleccionado}
-          onChange={(e) =>
-            setPublicoObjetivoSeleccionado(Number(e.target.value) || "")
-          }
-          className={`w-full appearance-none rounded-xl cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md ${styles.input}`}
-          style={{ fontSize: "0.95em", padding: "0.8em 1em" }}
-        >
-          <option value="">Todos los públicos</option>
-          {publicosObjetivo.map((pub) => (
-            <option key={pub.id} value={pub.id}>
-              {pub.name}
-            </option>
-          ))}
-        </select>
-      </div>
+              {/* 🟢 Intereses */}
+              <div className="flex flex-col">
+                <label
+                  className={`flex items-center font-medium mb-2 gap-2 ${styles.textMuted}`}
+                  style={{ fontSize: "0.9em" }}
+                >
+                  <FaTags style={{ fontSize: "1.1em" }} /> Intereses Usuario
+                </label>
+                <select
+                  value={interesSeleccionado}
+                  onChange={(e) =>
+                    setInteresSeleccionado(Number(e.target.value) || "")
+                  }
+                  className={`w-full appearance-none rounded-xl cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md ${styles.input}`}
+                  style={{ fontSize: "0.95em", padding: "0.8em 1em" }}
+                >
+                  <option value="">Todos los intereses</option>
+                  {interesesUsuario.map((interes) => (
+                    <option key={interes.id} value={interes.id}>
+                      {interes.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-      {/* 🟢 Fecha */}
-      <div className="flex flex-col">
-        <label
-          className={`flex items-center font-medium mb-2 gap-2 ${styles.textMuted}`}
-          style={{ fontSize: "0.9em" }}
-        >
-          <Calendar style={{ fontSize: "1.1em" }} /> Filtrar por fecha
-        </label>
-        <select
-          value={fechaSeleccionada}
-          onChange={(e) => setFechaSeleccionada(e.target.value)}
-          className={`w-full appearance-none rounded-xl cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md ${styles.input}`}
-          style={{ fontSize: "0.95em", padding: "0.8em 1em" }}
-        >
-          <option value="">Cualquier fecha</option>
-          <option value="recientes">Recientes (últimos 15 días)</option>
-          <option value="vencer">Próximas a vencer (menos de 7 días)</option>
-          <option value="proximas">Próximas convocatorias</option>
-          <option value="finalizadas">Finalizadas</option>
-        </select>
-      </div>
+              {/* 🟢 Público Objetivo */}
+              <div className="flex flex-col">
+                <label
+                  className={`flex items-center font-medium mb-2 gap-2 ${styles.textMuted}`}
+                  style={{ fontSize: "0.9em" }}
+                >
+                  <FaBriefcase style={{ fontSize: "1.1em" }} /> Público Objetivo
+                </label>
+                <select
+                  value={publicoObjetivoSeleccionado}
+                  onChange={(e) =>
+                    setPublicoObjetivoSeleccionado(Number(e.target.value) || "")
+                  }
+                  className={`w-full appearance-none rounded-xl cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md ${styles.input}`}
+                  style={{ fontSize: "0.95em", padding: "0.8em 1em" }}
+                >
+                  <option value="">Todos los públicos</option>
+                  {publicosObjetivo.map((pub) => (
+                    <option key={pub.id} value={pub.id}>
+                      {pub.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-      {/* 🟢 Visualización */}
-      <div className="flex flex-col">
-        <label
-          className={`flex items-center font-medium mb-2 gap-2 ${styles.textMuted}`}
-          style={{ fontSize: "0.9em" }}
-        >
-          <View style={{ fontSize: "1.1em" }} /> Visualización
-        </label>
-        <select
-          value={vista}
-          onChange={(e) => setVista(e.target.value as any)}
-          className={`w-full appearance-none rounded-xl cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md ${styles.input}`}
-          style={{ fontSize: "0.95em", padding: "0.8em 1em" }}
-        >
-          <option value="Tarjeta">Tarjeta</option>
-          <option value="Lista">Lista</option>
-          <option value="Tabla">Tabla</option>
-          <option value="Mosaico">Mosaico</option>
-        </select>
-      </div>
+              {/* 🟢 Fecha */}
+              <div className="flex flex-col">
+                <label
+                  className={`flex items-center font-medium mb-2 gap-2 ${styles.textMuted}`}
+                  style={{ fontSize: "0.9em" }}
+                >
+                  <Calendar style={{ fontSize: "1.1em" }} /> Filtrar por fecha
+                </label>
+                <select
+                  value={fechaSeleccionada}
+                  onChange={(e) => setFechaSeleccionada(e.target.value)}
+                  className={`w-full appearance-none rounded-xl cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md ${styles.input}`}
+                  style={{ fontSize: "0.95em", padding: "0.8em 1em" }}
+                >
+                  <option value="">Cualquier fecha</option>
+                  <option value="recientes">Recientes (últimos 15 días)</option>
+                  <option value="vencer">Próximas a vencer (menos de 7 días)</option>
+                  <option value="proximas">Próximas convocatorias</option>
+                  <option value="finalizadas">Finalizadas</option>
+                </select>
+              </div>
 
-    </div>
-  </div>
-</section>
+              {/* 🟢 Visualización */}
+              <div className="flex flex-col">
+                <label
+                  className={`flex items-center font-medium mb-2 gap-2 ${styles.textMuted}`}
+                  style={{ fontSize: "0.9em" }}
+                >
+                  <View style={{ fontSize: "1.1em" }} /> Visualización
+                </label>
+                <select
+                  value={vista}
+                  onChange={(e) => setVista(e.target.value as any)}
+                  className={`w-full appearance-none rounded-xl cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md ${styles.input}`}
+                  style={{ fontSize: "0.95em", padding: "0.8em 1em" }}
+                >
+                  <option value="Tarjeta">Tarjeta</option>
+                  <option value="Lista">Lista</option>
+                  <option value="Tabla">Tabla</option>
+                  <option value="Mosaico">Mosaico</option>
+                </select>
+              </div>
+
+            </div>
+          </div>
+        </section>
 
 
         {/* 🔹 VISTA TARJETA (alineada y con Apertura/Cierre) */}
@@ -930,50 +935,50 @@ export default function ExplorarPage() {
 
                         {/* 🔹 Favorito con animaciones */}
                         <button
-                              onClick={() => handleFavorito(c)}
-                              className="group ml-auto relative p-2 rounded-md hover:bg-white/5 transition-colors"
-                              title="Marcar como favorita"
-                            >
-                              {isFavByConv(c) ? (
-                                <FaStar
-                                  className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125"
-                                  style={{ fontSize: "1.5em" }}
-                                />
-                              ) : (
-                                <FaRegStar
-                                  className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${modoOscuro
-                                    ? "text-yellow-400"
-                                    : "text-yellow-500"
-                                    }`}
-                                  style={{
-                                    stroke: "#FFD700",
-                                    strokeWidth: "20",
-                                    fill: "transparent",
-                                    fontSize: "1.5em",
-                                  }}
-                                />
-                              )}
+                          onClick={() => handleFavorito(c)}
+                          className="group ml-auto relative p-2 rounded-md hover:bg-white/5 transition-colors"
+                          title="Marcar como favorita"
+                        >
+                          {isFavByConv(c) ? (
+                            <FaStar
+                              className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125"
+                              style={{ fontSize: "1.5em" }}
+                            />
+                          ) : (
+                            <FaRegStar
+                              className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${modoOscuro
+                                ? "text-yellow-400"
+                                : "text-yellow-500"
+                                }`}
+                              style={{
+                                stroke: "#FFD700",
+                                strokeWidth: "20",
+                                fill: "transparent",
+                                fontSize: "1.5em",
+                              }}
+                            />
+                          )}
 
-                              {/* 🌟 Estrellitas */}
-                              <span
-                                className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
-                                style={{ fontSize: "0.7em" }}
-                              >
-                                ✦
-                              </span>
-                              <span
-                                className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
-                                style={{ fontSize: "0.6em" }}
-                              >
-                                ✧
-                              </span>
-                              <span
-                                className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
-                                style={{ fontSize: "0.7em" }}
-                              >
-                                ✨
-                              </span>
-                            </button>
+                          {/* 🌟 Estrellitas */}
+                          <span
+                            className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
+                            style={{ fontSize: "0.7em" }}
+                          >
+                            ✦
+                          </span>
+                          <span
+                            className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
+                            style={{ fontSize: "0.6em" }}
+                          >
+                            ✧
+                          </span>
+                          <span
+                            className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
+                            style={{ fontSize: "0.7em" }}
+                          >
+                            ✨
+                          </span>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -1040,18 +1045,36 @@ export default function ExplorarPage() {
                         <div>
                           {/* 🔹 Título */}
                           <h4
-                            className={`font-semibold flex items-center gap-2 mb-2 ${modoOscuro ? "text-white" : "text-[#00324D]"
-                              }`}
+                            className={`font-semibold flex items-start gap-2 mb-2 ${modoOscuro ? "text-white" : "text-[#00324D]"}`}
                             style={{
                               fontSize: `${1.1 + fontSize * 0.015}em`,
+                              lineHeight: "1.3em",
                             }}
                           >
                             <FaMobileAlt
                               className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                              style={{ fontSize: "0.9em" }}
+                              style={{
+                                fontSize: "0.9em",
+                                flexShrink: 0,
+                                marginTop: "0.2em",
+                              }}
                             />
-                            {c.title}
+                            <span
+                              style={{
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2, // 🔹 máximo 2 líneas
+                                WebkitBoxOrient: "vertical",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                lineHeight: "1.3em",
+                                maxHeight: "2.6em", // 🔹 evita que crezca más de 2 líneas
+                              }}
+                              title={c.title} // 🔹 muestra el título completo al pasar el mouse
+                            >
+                              {c.title}
+                            </span>
                           </h4>
+
 
                           {/* Línea divisoria */}
                           <div className="my-2 border-t border-gray-300/40 dark:border-white/20" />
@@ -1142,51 +1165,51 @@ export default function ExplorarPage() {
                           >
                             <FaCheckCircle /> Inscribirse
                           </button>
-                         <button
-                              onClick={() => handleFavorito(c)}
-                              className="group ml-auto relative p-2 rounded-md hover:bg-white/5 transition-colors"
-                              title="Marcar como favorita"
-                            >
-                              {isFavByConv(c) ? (
-                                <FaStar
-                                  className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125"
-                                  style={{ fontSize: "1.5em" }}
-                                />
-                              ) : (
-                                <FaRegStar
-                                  className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${modoOscuro
-                                    ? "text-yellow-400"
-                                    : "text-yellow-500"
-                                    }`}
-                                  style={{
-                                    stroke: "#FFD700",
-                                    strokeWidth: "20",
-                                    fill: "transparent",
-                                    fontSize: "1.5em",
-                                  }}
-                                />
-                              )}
+                          <button
+                            onClick={() => handleFavorito(c)}
+                            className="group ml-auto relative p-2 rounded-md hover:bg-white/5 transition-colors"
+                            title="Marcar como favorita"
+                          >
+                            {isFavByConv(c) ? (
+                              <FaStar
+                                className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125"
+                                style={{ fontSize: "1.5em" }}
+                              />
+                            ) : (
+                              <FaRegStar
+                                className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${modoOscuro
+                                  ? "text-yellow-400"
+                                  : "text-yellow-500"
+                                  }`}
+                                style={{
+                                  stroke: "#FFD700",
+                                  strokeWidth: "20",
+                                  fill: "transparent",
+                                  fontSize: "1.5em",
+                                }}
+                              />
+                            )}
 
-                              {/* 🌟 Estrellitas */}
-                              <span
-                                className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
-                                style={{ fontSize: "0.7em" }}
-                              >
-                                ✦
-                              </span>
-                              <span
-                                className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
-                                style={{ fontSize: "0.6em" }}
-                              >
-                                ✧
-                              </span>
-                              <span
-                                className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
-                                style={{ fontSize: "0.7em" }}
-                              >
-                                ✨
-                              </span>
-                            </button>
+                            {/* 🌟 Estrellitas */}
+                            <span
+                              className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
+                              style={{ fontSize: "0.7em" }}
+                            >
+                              ✦
+                            </span>
+                            <span
+                              className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
+                              style={{ fontSize: "0.6em" }}
+                            >
+                              ✧
+                            </span>
+                            <span
+                              className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
+                              style={{ fontSize: "0.7em" }}
+                            >
+                              ✨
+                            </span>
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -1292,12 +1315,22 @@ export default function ExplorarPage() {
                               />
                             </div>
                             <span
-                              className={`font-semibold ${modoOscuro ? "text-white" : "text-[#00324D]"
-                                }`}
-                              style={{ fontSize: "1em" }}
+                              className={`font-semibold ${modoOscuro ? "text-white" : "text-[#00324D]"}`}
+                              style={{
+                                fontSize: "1em",
+                                display: "-webkit-box",
+                                WebkitLineClamp: 3, // 🔹 Máximo 3 líneas visibles
+                                WebkitBoxOrient: "vertical",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                lineHeight: "1.3em",
+                                maxHeight: "3.9em", // 🔹 Asegura que solo se muestren 3 líneas
+                              }}
+                              title={c.title} // 🔹 Muestra el texto completo al pasar el mouse
                             >
                               {c.title}
                             </span>
+
                           </div>
                         </td>
 
@@ -1603,50 +1636,50 @@ export default function ExplorarPage() {
 
                         {/* 🌟 Favorito con animación */}
                         <button
-                              onClick={() => handleFavorito(c)}
-                              className="group ml-auto relative p-2 rounded-md hover:bg-white/5 transition-colors"
-                              title="Marcar como favorita"
-                            >
-                              {isFavByConv(c) ? (
-                                <FaStar
-                                  className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125"
-                                  style={{ fontSize: "1.5em" }}
-                                />
-                              ) : (
-                                <FaRegStar
-                                  className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${modoOscuro
-                                    ? "text-yellow-400"
-                                    : "text-yellow-500"
-                                    }`}
-                                  style={{
-                                    stroke: "#FFD700",
-                                    strokeWidth: "20",
-                                    fill: "transparent",
-                                    fontSize: "1.5em",
-                                  }}
-                                />
-                              )}
+                          onClick={() => handleFavorito(c)}
+                          className="group ml-auto relative p-2 rounded-md hover:bg-white/5 transition-colors"
+                          title="Marcar como favorita"
+                        >
+                          {isFavByConv(c) ? (
+                            <FaStar
+                              className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125"
+                              style={{ fontSize: "1.5em" }}
+                            />
+                          ) : (
+                            <FaRegStar
+                              className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${modoOscuro
+                                ? "text-yellow-400"
+                                : "text-yellow-500"
+                                }`}
+                              style={{
+                                stroke: "#FFD700",
+                                strokeWidth: "20",
+                                fill: "transparent",
+                                fontSize: "1.5em",
+                              }}
+                            />
+                          )}
 
-                              {/* 🌟 Estrellitas */}
-                              <span
-                                className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
-                                style={{ fontSize: "0.7em" }}
-                              >
-                                ✦
-                              </span>
-                              <span
-                                className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
-                                style={{ fontSize: "0.6em" }}
-                              >
-                                ✧
-                              </span>
-                              <span
-                                className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
-                                style={{ fontSize: "0.7em" }}
-                              >
-                                ✨
-                              </span>
-                            </button>
+                          {/* 🌟 Estrellitas */}
+                          <span
+                            className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
+                            style={{ fontSize: "0.7em" }}
+                          >
+                            ✦
+                          </span>
+                          <span
+                            className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
+                            style={{ fontSize: "0.6em" }}
+                          >
+                            ✧
+                          </span>
+                          <span
+                            className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
+                            style={{ fontSize: "0.7em" }}
+                          >
+                            ✨
+                          </span>
+                        </button>
                       </div>
                     </div>
                   </div>

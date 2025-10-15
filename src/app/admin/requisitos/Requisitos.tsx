@@ -39,11 +39,9 @@ export default function Requisitos({ modoOscuro }: RequisitosProps) {
   const [buscar, setBuscar] = useState("");
   const [mostrarModal, setMostrarModal] = useState(false);
   const [mostrarEditar, setMostrarEditar] = useState(false);
-
   const [instituciones, setInstituciones] = useState<any[]>([]);
   const [grupos, setGrupos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [nuevoRequisito, setNuevoRequisito] = useState<Requisito>({
     id: 0,
     nombre: "",
@@ -51,7 +49,6 @@ export default function Requisitos({ modoOscuro }: RequisitosProps) {
     entidad: "",
     tipo: "",
   });
-
   const [requisitoSeleccionado, setRequisitoSeleccionado] = useState<Requisito | null>(null);
 
   // === CARGAR DATOS ===
@@ -191,15 +188,15 @@ export default function Requisitos({ modoOscuro }: RequisitosProps) {
     }
   };
 
-  // === FILTRO ===
+  // === FILTRO (busca por requisito y observación) ===
   const term = (buscar || "").toLowerCase();
   const filtrados = requisitos.filter(
     (r) =>
-      (r.nombre || "").toLowerCase().includes(term) ||
-      (r.observacion || "").toLowerCase().includes(term)
+      (r.nombre && r.nombre.toLowerCase().includes(term)) ||
+      (r.observacion && r.observacion.toLowerCase().includes(term))
   );
 
-  // === ESTILOS IGUALES A LÍNEAS ===
+  // === ESTILOS ===
   const bgColor = modoOscuro ? "bg-[#1a0526]" : "bg-white";
   const textColor = modoOscuro ? "text-white" : "text-gray-900";
   const borderColor = modoOscuro ? "border-white/20" : "border-gray-200";
@@ -223,7 +220,7 @@ export default function Requisitos({ modoOscuro }: RequisitosProps) {
           </span>
         </h2>
         <p className={`text-lg ${secondaryText}`}>
-          Administra los requisitos desde la API
+          Administra los requisitos 
         </p>
       </div>
 
@@ -232,7 +229,7 @@ export default function Requisitos({ modoOscuro }: RequisitosProps) {
         <div className="relative w-full sm:w-96">
           <input
             type="text"
-            placeholder="Buscar requisitos..."
+            placeholder="Buscar por nombre u observación..."
             className={`border rounded-2xl px-5 py-3 text-lg pl-12 focus:outline-none focus:ring-2 w-full transition-all duration-300 hover:shadow-md ${searchBg} ${textColor} ${searchBorder} ${searchFocus} ${placeholderColor}`}
             value={buscar}
             onChange={(e) => setBuscar(e.target.value)}
@@ -269,12 +266,12 @@ export default function Requisitos({ modoOscuro }: RequisitosProps) {
                 {/* Info */}
                 <div className="flex flex-col gap-4 w-full">
                   <div className="flex items-center gap-3">
-                    <div className={`p-4 rounded-xl ${iconBg} text-[#39A900]`}>
+                    <div className={`p-3 rounded-xl ${iconBg} text-[#39A900]`}>
                       <FileText size={22} />
                     </div>
-                    <h3 className="text-2xl font-semibold hover:text-[#39A900]">
-                      {req.nombre}
-                    </h3>
+                    <p className={`text-lg hover:text-[#39A900] ${secondaryText}`}>
+                      Requisito: {req.nombre}
+                    </p>
                   </div>
 
                   <div className="flex items-center gap-3">
@@ -282,7 +279,7 @@ export default function Requisitos({ modoOscuro }: RequisitosProps) {
                       <StickyNote size={20} />
                     </div>
                     <p className={`text-lg ${secondaryText}`}>
-                      {req.observacion}
+                      Observación: {req.observacion}
                     </p>
                   </div>
 
@@ -309,13 +306,21 @@ export default function Requisitos({ modoOscuro }: RequisitosProps) {
                 <div className="flex gap-3">
                   <button
                     onClick={() => editarRequisito(req)}
-                    className={`p-3 rounded-xl ${modoOscuro ? "bg-blue-900/30 text-blue-400" : "bg-blue-50 text-blue-600"} hover:scale-110 transition`}
+                    className={`p-3 rounded-xl ${
+                      modoOscuro
+                        ? "bg-blue-900/30 text-blue-400"
+                        : "bg-blue-50 text-blue-600"
+                    } hover:scale-110 transition`}
                   >
                     <Edit size={20} />
                   </button>
                   <button
                     onClick={() => eliminarRequisito(req.id)}
-                    className={`p-3 rounded-xl ${modoOscuro ? "bg-red-900/30 text-red-400" : "bg-red-50 text-red-600"} hover:scale-110 transition`}
+                    className={`p-3 rounded-xl ${
+                      modoOscuro
+                        ? "bg-red-900/30 text-red-400"
+                        : "bg-red-50 text-red-600"
+                    } hover:scale-110 transition`}
                   >
                     <Trash2 size={20} />
                   </button>

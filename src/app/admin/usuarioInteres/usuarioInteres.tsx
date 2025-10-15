@@ -190,13 +190,7 @@ export default function UserInterests({ modoOscuro }: Props) {
           />
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
         </div>
-        <button
-          onClick={() => setMostrarModal(true)}
-          className="flex items-center gap-2 px-6 py-3 bg-[#39A900] text-white text-lg font-medium rounded-2xl hover:bg-[#2d8500] transition-all shadow-md hover:shadow-xl transform hover:scale-105 duration-300 w-full sm:w-auto justify-center"
-        >
-          <Plus size={20} />
-          Nuevo UserInterest
-        </button>
+     
       </div>
 
       {/* Loader */}
@@ -249,31 +243,7 @@ export default function UserInterests({ modoOscuro }: Props) {
                     </p>
                   </div>
                 </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => {
-                      setSeleccionado(item);
-                      setMostrarEditar(true);
-                    }}
-                    className={`p-3 rounded-xl ${
-                      modoOscuro
-                        ? "bg-blue-900/30 text-blue-400"
-                        : "bg-blue-50 text-blue-600"
-                    } hover:scale-110 transition`}
-                  >
-                    <Edit size={20} />
-                  </button>
-                  <button
-                    onClick={() => eliminar(item.userId, item.interestId)}
-                    className={`p-3 rounded-xl ${
-                      modoOscuro
-                        ? "bg-red-900/30 text-red-400"
-                        : "bg-red-50 text-red-600"
-                    } hover:scale-110 transition`}
-                  >
-                    <Trash2 size={20} />
-                  </button>
-                </div>
+               
               </div>
             ))
           )}

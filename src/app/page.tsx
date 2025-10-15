@@ -131,59 +131,6 @@ export default function LoginPage() {
           {modoOscuro ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
         </button>
 
-        {/* 🔍 Botón de menú zoom */}
-        <button
-          onClick={toggleZoomMenu}
-          className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
-            modoOscuro
-              ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
-              : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
-          }`}
-          title="Opciones de texto"
-        >
-          <MdAccessibility className="h-6 w-6" />
-        </button>
-
-        {/* 📏 Menú Zoom (aparece al presionar el botón) */}
-        {mostrarZoom && (
-          <div className="flex flex-col space-y-3 mt-2 animate-fade-in">
-            <button
-              onClick={aumentarTexto}
-              className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
-                modoOscuro
-                  ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
-                  : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
-              }`}
-              title="Aumentar texto"
-            >
-              <ZoomIn className="h-6 w-6" />
-            </button>
-
-            <button
-              onClick={resetTexto}
-              className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
-                modoOscuro
-                  ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
-                  : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
-              }`}
-              title="Restablecer tamaño"
-            >
-              <RefreshCcw className="h-6 w-6" />
-            </button>
-
-            <button
-              onClick={disminuirTexto}
-              className={`p-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
-                modoOscuro
-                  ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
-                  : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
-              }`}
-              title="Disminuir texto"
-            >
-              <ZoomOut className="h-6 w-6" />
-            </button>
-          </div>
-        )}
       </div>
 
       {/* 📋 Card Login */}

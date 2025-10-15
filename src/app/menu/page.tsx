@@ -103,6 +103,9 @@ const normalizeFav = (f: any): Favorito | null => {
 
 export default function HomePage() {
 
+    const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+
   const [mostrarZoom, setMostrarZoom] = useState(false);
 
   // Paginación
@@ -157,6 +160,76 @@ export default function HomePage() {
       }
     }
   }, []);
+
+  useEffect(() => {
+  const usuarioGuardado = localStorage.getItem("usuario");
+  if (usuarioGuardado) {
+    try {
+      setUsuario(JSON.parse(usuarioGuardado));
+    } catch {
+      setUsuario(null);
+    }
+  }
+}, []);
+
+useEffect(() => {
+  const verificarEmpresaUsuario = async () => {
+    const usuarioGuardado = localStorage.getItem("usuario");
+    if (!usuarioGuardado) return;
+
+    const usuario = JSON.parse(usuarioGuardado);
+    if (!usuario?.email) return;
+
+    // ✅ Ejecutar solo si acaba de iniciar sesión
+    const ultimaSesion = localStorage.getItem("ultimaSesionEmail");
+    if (ultimaSesion === usuario.email && localStorage.getItem("empresaVerificada") === "true") {
+      return; // Evita repetir si ya se verificó esta sesión
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/companies`);
+      const data = await res.json();
+
+      const tieneEmpresa = Array.isArray(data.data)
+        ? data.data.some((empresa: any) => empresa.email === usuario.email)
+        : false;
+
+      if (!tieneEmpresa) {
+        await Swal.fire({
+          icon: "info",
+          title: `¡Bienvenido, ${usuario.name || "Usuario"}! 👋`,
+          html: `
+            <p style="font-size:16px; margin-top:8px;">
+              No estás vinculado a una empresa.<br/>
+              <b>Por favor crea o asóciate a una empresa para continuar.</b>
+            </p>
+          `,
+          confirmButtonText: "Vincular Empresa",
+          cancelButtonText: "Más tarde",
+          showCancelButton: true,
+          confirmButtonColor: "#39A900",
+          cancelButtonColor: modoOscuro ? "#6366f1" : "#3b82f6",
+          background: modoOscuro ? "#1a0526" : "#fff",
+          color: modoOscuro ? "#fff" : "#333",
+        }).then((res) => {
+          if (res.isConfirmed) {
+            router.push("/usuario/perfilUser");
+          }
+        });
+      }
+
+      // ✅ Marcar verificación solo para este usuario actual
+      localStorage.setItem("empresaVerificada", "true");
+      localStorage.setItem("ultimaSesionEmail", usuario.email);
+    } catch (error) {
+      console.error("❌ Error verificando empresa del usuario:", error);
+    }
+  };
+
+  verificarEmpresaUsuario();
+}, [API_URL, modoOscuro]);
+
+
 
 
   const obtenerInicial = (nombre?: string) =>
@@ -379,6 +452,8 @@ const handleFavorito = async (convocatoria: Convocatoria) => {
     }
   };
 
+  
+
 
 
 
@@ -450,7 +525,7 @@ const handleFavorito = async (convocatoria: Convocatoria) => {
                 {typeof window !== "undefined" &&
                   (localStorage.getItem("rol") === "admin" ||
                     localStorage.getItem("rol") === "administrador" ||
-                    localStorage.getItem("rol") === "2") && (
+                    localStorage.getItem("rol") === "1") && (
                     <Link href="/admin/menuadmin" className={`flex items-center space-x-1 ${styles.nav}`}>
                       <FaUserShield className="text-sm" />
                       <span>Admin</span>

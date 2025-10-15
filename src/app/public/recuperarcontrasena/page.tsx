@@ -267,57 +267,6 @@ export default function RecuperarContrasenaPage() {
             {modoOscuro ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </button>
 
-          <button
-            onClick={toggleZoomMenu}
-            className={`p-3 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
-              modoOscuro
-                ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
-                : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
-            }`}
-            title="Opciones de texto"
-          >
-            <MdAccessibility className="h-5 w-5" />
-          </button>
-
-          {mostrarZoom && (
-            <div className="flex flex-col space-y-3 mt-2 animate-fade-in">
-              <button
-                onClick={aumentarTexto}
-                className={`p-3 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
-                  modoOscuro
-                    ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
-                    : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
-                }`}
-                title="Aumentar texto"
-              >
-                <ZoomIn className="h-5 w-5" />
-              </button>
-
-              <button
-                onClick={resetTexto}
-                className={`p-3 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
-                  modoOscuro
-                    ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
-                    : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
-                }`}
-                title="Restablecer tamaño"
-              >
-                <RefreshCcw className="h-5 w-5" />
-              </button>
-
-              <button
-                onClick={disminuirTexto}
-                className={`p-3 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
-                  modoOscuro
-                    ? "bg-gray-700 text-yellow-300 hover:bg-gray-600"
-                    : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
-                }`}
-                title="Disminuir texto"
-              >
-                <ZoomOut className="h-5 w-5" />
-              </button>
-            </div>
-          )}
         </div>
       </div>
     

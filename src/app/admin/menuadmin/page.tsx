@@ -136,6 +136,9 @@ const ComponentesCards = () => {
     favoritos: 0, // si lo expones por otra ruta, cámbialo aquí
   });
 
+ 
+
+
  const fetchAll = async () => {
   try {
     const [
@@ -164,25 +167,25 @@ const ComponentesCards = () => {
     ]);
 
     setCounts({
-      lineas: normalizeCount(lineas),
-      convocatorias: normalizeCount(convocatorias),
-      empresas: normalizeCount(empresas),
-      usuarios: normalizeCount(usuarios),
-      ciudades: normalizeCount(ciudades),
-      departamentos: normalizeCount(departamentos),
-      intereses: normalizeCount(intereses),
-      requisitos: normalizeCount(requisitos),
-      categorias: normalizeCount(categorias),
-      roles: normalizeCount(roles),
-      requirementGroups: normalizeCount(requirementGroups),
-      requirementChecks: normalizeCount(requirementChecks),
-      userInterests: normalizeCount(userInterests),
-      callAdditionalInterests: normalizeCount(callAdditionalInterests),
-      favoritos: normalizeCount(favoritos),
-      publicoObjetivo: normalizeCount(publicoObjetivo),
-      entidadInstitucion: normalizeCount(entidadInstitucion),
-      chequeos: normalizeCount(requirementChecks),
-    });
+  lineas: normalizeCount(lineas),
+  convocatorias: normalizeCount(convocatorias),
+  empresas: normalizeCount(empresas),
+  usuarios: normalizeCount(usuarios),
+  ciudades: normalizeCount(ciudades),
+  departamentos: normalizeCount(departamentos),
+  intereses: normalizeCount(intereses),
+  requisitos: normalizeCount(requisitos),
+  categorias: normalizeCount(categorias),
+  roles: normalizeCount(roles),
+  requirementGroups: normalizeCount(requirementGroups),
+  requirementChecks: normalizeCount(requirementChecks),
+  userInterests: normalizeCount(userInterests),
+  callAdditionalInterests: normalizeCount(callAdditionalInterests),
+  favoritos: normalizeCount(favoritos),
+  publicoObjetivo: normalizeCount(publicoObjetivo),
+  entidadInstitucion: normalizeCount(entidadInstitucion),
+  chequeos: normalizeCount(requirementChecks),
+});
   } catch (e) {
     console.error("Error cargando conteos", e);
   }
@@ -192,6 +195,7 @@ const ComponentesCards = () => {
 useEffect(() => {
   fetchAll();
 }, []);
+
 
 
   const colorPalette = [
@@ -220,7 +224,7 @@ useEffect(() => {
     requisitos: counts.requisitos,
     entidad: counts.entidadInstitucion, // si luego expones API, reemplaza
     rol: counts.roles,
-    favoritos: counts.requirementChecks, // o requirementGroups/requisitosSeleccion si aplica
+   favoritos: counts.favoritos,
     tipo: counts.requirementGroups,
     convocatorias: counts.convocatorias,
     empresa: counts.empresas,
@@ -377,6 +381,8 @@ useEffect(() => {
   fetchAll(); // 🔄 recarga los conteos
 };
 
+
+
   const filteredComponents = components.filter(
     (component) =>
       component.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -432,14 +438,11 @@ useEffect(() => {
           {/* Statistics (placeholder visual - puedes conectar a KPIs si quieres) */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             {[
-  {
-    value: formatNumber(
-      counts.lineas + counts.convocatorias + counts.empresas + counts.usuarios +
-      counts.ciudades + counts.departamentos + counts.intereses + counts.requisitos
-    ),
-    label: "Total Registros",
-    icon: FileText,
-    change: "+12%",       // 🔹 ← Valor estático
+ {
+    value: formatNumber(counts.favoritos),
+    label: "Total Convocatorias Marcadas Favoritos",
+    icon: Star,
+    change: "+12%",
     changeType: "increase",
     color: "from-blue-500 to-cyan-500",
   },
@@ -461,7 +464,7 @@ useEffect(() => {
   },
   {
     value: formatNumber(counts.requirementChecks + counts.userInterests),
-    label: "Alertas",
+    label: "Usuarios inscritos Convocatorias ",
     icon: Bell,
     change: "+2",         // 🔹 ← Valor estático
     changeType: "alert",

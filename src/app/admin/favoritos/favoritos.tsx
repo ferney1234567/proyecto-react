@@ -192,14 +192,7 @@ export default function Favoritos({ modoOscuro }: { modoOscuro: boolean }) {
                   </span>
                 </div>
               </div>
-              <button
-                onClick={() => handleDeleteFavorito(fav.id)}
-                className={`p-3 rounded-xl ${
-                  modoOscuro ? "bg-red-900/30 text-red-400" : "bg-red-50 text-red-600"
-                } hover:scale-110 transition`}
-              >
-                <Trash2 size={20} />
-              </button>
+             
             </div>
           ))
         )}
