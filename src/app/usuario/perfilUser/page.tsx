@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import Swal from "sweetalert2";
 
-import DatosEmpresaModal from "./DatosEmpresaModal"; 
+import DatosEmpresaModal from "./DatosEmpresaModal";
 // ðŸ‘‡ Tema
 import { useTheme } from '../../ThemeContext';
 import { getThemeStyles } from '../../themeStyles';
@@ -782,17 +782,25 @@ export default function PerfilEmpresa() {
 
 
   return (
-  <div
+   <div
   className={`min-h-screen w-full transition-colors duration-500 ${
     modoOscuro
       ? "bg-[#0b1220] text-gray-200"
       : "bg-white text-gray-800"
   }`}
+  style={{ backgroundColor: modoOscuro ? "#0b1220" : "#ffffff" }}
 >
 
-      <div className={`max-w-7xl mx-auto my-6 rounded-3xl shadow-xl ${styles.divider} ${styles.card}`}>
+  <div className={`max-w-7xl mx-auto mb-0 rounded-t-3xl shadow-none overflow-hidden ${styles.divider} ${styles.card}`}>
+
         {/* HEADER */}
-        <header className={`${modoOscuro ? 'bg-gradient-to-b from-[#0b1220] to-[#0a0f1a]' : 'bg-gradient-to-b from-[#00324D] to-[#001a27]'} text-white p-6 text-center pb-12 rounded-t-3xl`}>
+        <header
+      className={`${
+        modoOscuro
+          ? "bg-gradient-to-b from-[#0b1220] to-[#080d18]"
+          : "bg-gradient-to-b from-[#00324D] to-[#001a27]"
+      } text-white p-6 text-center pb-12 rounded-t-3xl`}
+    >
           <div className="flex justify-start mb-4">
             <button onClick={() => router.push('/menu')} className="bg-white/10 rounded-full hover:bg-white/20 p-3">
               <FaArrowLeft size={18} />
@@ -1277,62 +1285,62 @@ export default function PerfilEmpresa() {
             </div>
           </div>
 
-  
-{/* Botones de acción con tamaño dinámico */}
-<div className="mt-12 flex justify-center gap-6">
-  <a
-    href="/requisitos"
-    className={`px-8 py-3 rounded-lg font-semibold transition-all ${styles.primaryButton} hover:scale-105 transform`}
-    style={{ fontSize: `${fontSize}px` }}
-  >
-    Ver Requisitos
-  </a>
 
-  {/* 🆕 Nuevo botón Datos de Empresa */}
-  <button
-    onClick={() => setMostrarModal(true)} // ✅ abrir modal
-    className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all hover:scale-105 transform shadow-md"
-    style={{ fontSize: `${fontSize}px` }}
-  >
-    Datos de Empresa
-  </button>
+          {/* Botones de acción con tamaño dinámico */}
+          <div className="mt-12 flex justify-center gap-6">
+            <a
+              href="/requisitos"
+              className={`px-8 py-3 rounded-lg font-semibold transition-all ${styles.primaryButton} hover:scale-105 transform`}
+              style={{ fontSize: `${fontSize}px` }}
+            >
+              Ver Requisitos
+            </a>
 
-  <button
-    onClick={handleLogout}
-    className="bg-red-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-red-700 transition-all hover:scale-105 transform"
-    style={{ fontSize: `${fontSize}px` }}
-  >
-    Cerrar Sesión
-  </button>
+            {/* 🆕 Nuevo botón Datos de Empresa */}
+            <button
+              onClick={() => setMostrarModal(true)} // ✅ abrir modal
+              className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all hover:scale-105 transform shadow-md"
+              style={{ fontSize: `${fontSize}px` }}
+            >
+              Datos de Empresa
+            </button>
 
-  {/* ✅ Modal */}
- {mostrarModal && (
-  <DatosEmpresaModal
-    cerrarModal={() => setMostrarModal(false)}
-    onEmpresaActualizada={(nuevaEmpresa) => {
-      setEmpresa(nuevaEmpresa);
-      setProfileData((prev) => ({
-        ...prev,
-        nombre: nuevaEmpresa.name ?? prev.nombre,
-        email: nuevaEmpresa.email ?? prev.email,
-        nit: nuevaEmpresa.taxId ?? prev.nit,
-        razonSocial: nuevaEmpresa.legalName ?? prev.razonSocial,
-        direccion: nuevaEmpresa.address ?? prev.direccion,
-        telefono: nuevaEmpresa.phone ?? prev.telefono,
-        paginaWeb: nuevaEmpresa.website ?? prev.paginaWeb,
-        numEmpleados: nuevaEmpresa.employeeCount
-          ? String(nuevaEmpresa.employeeCount)
-          : prev.numEmpleados,
-        sector: nuevaEmpresa.economicSector ?? prev.sector,
-        descripcion: nuevaEmpresa.description ?? prev.descripcion,
-        ciudad: nuevaEmpresa.city?.name ?? prev.ciudad,
-          departamento: nuevaEmpresa.departmentName ?? prev.departamento,
-      }));
-    }}
-  />
-)}
+            <button
+              onClick={handleLogout}
+              className="bg-red-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-red-700 transition-all hover:scale-105 transform"
+              style={{ fontSize: `${fontSize}px` }}
+            >
+              Cerrar Sesión
+            </button>
 
-</div>
+            {/* ✅ Modal */}
+            {mostrarModal && (
+              <DatosEmpresaModal
+                cerrarModal={() => setMostrarModal(false)}
+                onEmpresaActualizada={(nuevaEmpresa) => {
+                  setEmpresa(nuevaEmpresa);
+                  setProfileData((prev) => ({
+                    ...prev,
+                    nombre: nuevaEmpresa.name ?? prev.nombre,
+                    email: nuevaEmpresa.email ?? prev.email,
+                    nit: nuevaEmpresa.taxId ?? prev.nit,
+                    razonSocial: nuevaEmpresa.legalName ?? prev.razonSocial,
+                    direccion: nuevaEmpresa.address ?? prev.direccion,
+                    telefono: nuevaEmpresa.phone ?? prev.telefono,
+                    paginaWeb: nuevaEmpresa.website ?? prev.paginaWeb,
+                    numEmpleados: nuevaEmpresa.employeeCount
+                      ? String(nuevaEmpresa.employeeCount)
+                      : prev.numEmpleados,
+                    sector: nuevaEmpresa.economicSector ?? prev.sector,
+                    descripcion: nuevaEmpresa.description ?? prev.descripcion,
+                    ciudad: nuevaEmpresa.city?.name ?? prev.ciudad,
+                    departamento: nuevaEmpresa.departmentName ?? prev.departamento,
+                  }));
+                }}
+              />
+            )}
+
+          </div>
 
         </main>
       </div>

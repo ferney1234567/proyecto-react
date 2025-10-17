@@ -12,14 +12,11 @@ import {
   UserPlus,
   Sun,
   Moon,
-  ZoomIn,
-  ZoomOut,
-  RefreshCcw,
 } from "lucide-react";
 import { useTheme } from "../../ThemeContext";
 import { getThemeStyles } from "../../themeStyles";
 import { useFontSize } from "../../../../FontSizeContext";
-import { createUser, getUsers } from "../../api/usuarios/route"; // ✅ Importamos getUsers
+import { createUser, getUsers } from "../../api/usuarios/route";
 import { MdAccessibility } from "react-icons/md";
 
 export default function FormularioRegistro() {
@@ -27,31 +24,27 @@ export default function FormularioRegistro() {
   const { modoOscuro, toggleModoOscuro } = useTheme();
   const estilos = getThemeStyles(modoOscuro);
 
-  // 🔠 Tamaño de texto global (contexto)
-  const { fontSize, aumentarTexto, disminuirTexto, resetTexto } = useFontSize();
-  const [mostrarZoom, setMostrarZoom] = useState(false);
-  const toggleZoomMenu = () => setMostrarZoom(!mostrarZoom);
+  // 🔠 Tamaño de texto global
+  const { fontSize } = useFontSize();
 
   const router = useRouter();
 
-  // 📋 Formulario
+  // 📋 Estado del formulario
   const [nombre, setNombre] = useState("");
   const [correo, setCorreo] = useState("");
   const [contrasena, setContrasena] = useState("");
   const [mostrarContrasena, setMostrarContrasena] = useState(false);
   const [cargando, setCargando] = useState(false);
 
-  // 🚀 Envío de datos con validación de correo
+  // 🚀 Envío del formulario
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setCargando(true);
 
     try {
-      // ✅ 1. Consultar todos los usuarios registrados
       const usersResponse = await getUsers();
       const users = usersResponse?.data || [];
 
-      // ✅ 2. Buscar si el correo ya existe (sin distinción de mayúsculas/minúsculas)
       const correoExistente = users.find(
         (u: any) => u.email.toLowerCase() === correo.toLowerCase()
       );
@@ -66,10 +59,9 @@ export default function FormularioRegistro() {
           color: modoOscuro ? "#fff" : "#333",
         });
         setCargando(false);
-        return; // 🚫 Detiene el proceso
+        return;
       }
 
-      // ✅ 3. Crear usuario si no existe
       const nuevoUsuario = {
         name: nombre,
         email: correo,
@@ -88,7 +80,6 @@ export default function FormularioRegistro() {
         color: modoOscuro ? "#fff" : "#333",
       }).then(() => router.push("/"));
 
-      // ✅ 4. Limpiar formulario
       setNombre("");
       setCorreo("");
       setContrasena("");
@@ -118,9 +109,8 @@ export default function FormularioRegistro() {
       }`}
       style={{ fontSize: `${fontSize}px` }}
     >
-      {/* ☀️🌙 + 🔠 Botones flotantes */}
+      {/* 🌗 Botón modo oscuro */}
       <div className="fixed top-6 right-6 z-50 flex flex-col space-y-3 items-end">
-        {/* Modo oscuro */}
         <button
           onClick={toggleModoOscuro}
           className={`p-3 rounded-full transition-all duration-500 hover:scale-110 shadow-lg ${
@@ -132,11 +122,9 @@ export default function FormularioRegistro() {
         >
           {modoOscuro ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
         </button>
-
-        {/* Botón Zoom */}
       </div>
 
-      {/* 📋 Card Registro */}
+      {/* 🧩 Card Registro */}
       <div
         className={`relative z-10 w-full max-w-md rounded-2xl p-8 shadow-2xl backdrop-blur-md border transition-colors duration-500 ${
           modoOscuro
@@ -144,9 +132,13 @@ export default function FormularioRegistro() {
             : "bg-white border-gray-200 text-gray-900"
         }`}
       >
-        {/* Logo + Título */}
+        {/* 🖼️ Logo dinámico (mismo tamaño) */}
         <div className="flex flex-col items-center mb-8">
-          <img src="/img/convo2.png" alt="Logo" className="w-45 h-auto mb-6" />
+          <img
+            src={modoOscuro ? "/img/logonoche.png" : "/img/convo2.png"}
+            alt="Logo ConvocApp"
+            className="w-48 h-30 object-contain mb-6 drop-shadow-lg"
+          />
           <h1
             className={`text-3xl font-bold bg-clip-text text-transparent ${estilos.titulo}`}
           >
@@ -154,7 +146,7 @@ export default function FormularioRegistro() {
           </h1>
         </div>
 
-        {/* Formulario */}
+        {/* 📋 Formulario */}
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Nombre */}
           <div className="relative group">

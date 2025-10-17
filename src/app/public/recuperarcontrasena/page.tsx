@@ -184,11 +184,11 @@ export default function RecuperarContrasenaPage() {
         >
           {/* Logo más compacto */}
           <div className="flex flex-col items-center mb-6">
-            <img
-              src="/img/convo2.png"
-              alt="Logo Convocatorias"
-              className="w-45 h-auto mb-3 drop-shadow-lg"
-            />
+           <img
+            src={modoOscuro ? "/img/logonoche.png" : "/img/convo2.png"}
+            alt="Logo ConvocApp"
+            className="w-40 h-30 object-contain mb-2 drop-shadow-lg"
+          />
             <h1
               className={`text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r ${modoOscuro
                   ? 'from-green-400 to-cyan-400'
@@ -277,11 +277,11 @@ export default function RecuperarContrasenaPage() {
           <div className={`rounded-2xl shadow-2xl p-8 w-full max-w-md ${modoOscuro ? "bg-gray-800 text-white" : "bg-white text-gray-800"
             }`}>
             <div className="flex flex-col items-center mb-6">
-              <img
-                src="/img/convo2.png"
-                alt="Logo Convocatorias"
-                className="w-32 h-auto mb-3 drop-shadow-lg"
-              />
+                <img
+            src={modoOscuro ? "/img/logonoche.png" : "/img/convo2.png"}
+            alt="Logo ConvocApp"
+            className="w-40 h-30 object-contain mb-2 drop-shadow-lg"
+          />
               <h2 className="text-xl font-bold text-center mb-2">
                 Verificar Código
               </h2>
@@ -341,11 +341,11 @@ export default function RecuperarContrasenaPage() {
           <div className={`rounded-2xl shadow-2xl p-8 w-full max-w-md ${modoOscuro ? "bg-gray-800 text-white" : "bg-white text-gray-800"
             }`}>
             <div className="flex flex-col items-center mb-6">
-              <img
-                src="/img/convo2.png"
-                alt="Logo Convocatorias"
-                className="w-32 h-auto mb-3 drop-shadow-lg"
-              />
+                <img
+            src={modoOscuro ? "/img/logonoche.png" : "/img/convo2.png"}
+            alt="Logo ConvocApp"
+            className="w-40 h-30 object-contain mb-2 drop-shadow-lg"
+          />
               <h2 className="text-xl font-bold text-center mb-4">
                 Nueva Contraseña
               </h2>

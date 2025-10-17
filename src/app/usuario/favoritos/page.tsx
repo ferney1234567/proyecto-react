@@ -405,8 +405,13 @@ export default function FavoritosPage() {
             {/* Izquierda: logo + búsqueda */}
             <div className="flex flex-col gap-6 w-full">
               <div className="flex justify-start -mt-2">
-                <img src="/img/sena.png" alt="Logo Izquierdo" className="h-16 w-auto object-contain" />
+                <img
+                  src="/img/Recurso1@4x.png"
+                  alt="Logo Izquierdo"
+                  className="h-10 w-auto object-contain"
+                />
               </div>
+
 
               {/* Buscador */}
               <div className="relative w-full max-w-xl">
@@ -423,11 +428,29 @@ export default function FavoritosPage() {
 
             {/* Derecha: nav + avatar + modo oscuro */}
             <div className="flex flex-col items-end space-y-3 min-w-[240px]">
-              <div className="flex justify-end">
-                <img src="/img/logo.png" alt="Logo Derecho" className="h-14 w-auto object-contain" />
+
+              <div className="flex justify-center items-center ">
+                {modoOscuro ? (
+                  <img
+                    src="/img/logonoche.png"
+                    alt="Logo Derecho"
+                    className="h-20 w-auto object-contain mt-2"
+                  />
+                ) : (
+                  <img
+                    src="/img/logo.png"
+                    alt="Logo Derecho"
+                    className="h-16 w-auto object-contain mt-2"
+                  />
+                )}
+                <img
+                  src="/img/Recurso2@4x.png"
+                  alt="Logo Derecho"
+                  className="h-20 w-auto object-contain"
+                />
               </div>
 
-              <nav className="flex items-center space-x-6 border-t pt-3">
+              <nav className="flex items-center space-x-6  pt-3">
                 <Link href="/menu" className={`flex items-center space-x-1 ${styles.nav}`}>
                   <FaTags className="text-sm" />
                   <span>Descubrir</span>
@@ -675,210 +698,222 @@ export default function FavoritosPage() {
 
 
 
-     {/* ========================
+        {/* ========================
     CONTENIDO: TARJETAS
 ======================== */}
-{vista === "tarjeta" && (
-  <div
-    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-8"
-    style={{ fontSize: `${fontSize}px` }}
-  >
-    {convocatoriasPagina.map((c, idx) => {
-      const key = `${c.favId ?? c.id ?? "noid"}-${idx}`;
-      const isExpanded = expandedKey === key;
-
-      return (
-        <div
-          key={key}
-          className={`relative rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all hover:-translate-y-2 flex flex-col ${styles.card}`}
-        >
-          {/* ❌ Botón eliminar favorito */}
-          <button
-            onClick={() => handleEliminarFavorito(c.favId)}
-            className="absolute top-2 right-2 bg-white rounded-full p-2 shadow-md hover:scale-110 transition-transform z-10"
-            title="Eliminar de favoritos"
+        {vista === "tarjeta" && (
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-8"
+            style={{ fontSize: `${fontSize}px` }}
           >
-            <FaTrash className="text-red-600" style={{ fontSize: "1.1em" }} />
-          </button>
+            {convocatoriasPagina.map((c, idx) => {
+              const key = `${c.favId ?? c.id ?? "noid"}-${idx}`;
+              const isExpanded = expandedKey === key;
 
-          {/* 🖼 Imagen completamente ajustada */}
-          <div className="relative w-full h-[220px] overflow-hidden">
-            <img
-              onClick={() => {
-                setItemSeleccionado(c);
-                setModalAbierto(true);
-              }}
-              src={c.imageUrl || "/img/default.jpg"}
-              alt={c.title}
-              className="absolute inset-0 w-full h-full object-cover cursor-pointer transition-transform duration-500 hover:scale-110"
-            />
+              return (
+                <div
+                  key={key}
+                  className={`relative rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all hover:-translate-y-2 flex flex-col ${styles.card}`}
+                >
+                  {/* ❌ Botón eliminar favorito */}
+                  <button
+                    onClick={() => handleEliminarFavorito(c.favId)}
+                    className="absolute top-2 right-2 bg-white rounded-full p-2 shadow-md hover:scale-110 transition-transform z-10"
+                    title="Eliminar de favoritos"
+                  >
+                    <FaTrash className="text-red-600" style={{ fontSize: "1.1em" }} />
+                  </button>
+
+                  {/* 🖼 Imagen completamente ajustada */}
+                  <div className="relative w-full h-[220px] overflow-hidden">
+                    <img
+                      onClick={() => {
+                        setItemSeleccionado(c);
+                        setModalAbierto(true);
+                      }}
+                      src={c.imageUrl || "/img/default.jpg"}
+                      alt={c.title}
+                      className="absolute inset-0 w-full h-full object-cover cursor-pointer transition-transform duration-500 hover:scale-110"
+                    />
+                  </div>
+
+                  {/* 📄 Contenido */}
+                  <div className="p-5 flex flex-col justify-between flex-grow">
+                    {/* 🔹 Título */}
+                    <div className="flex items-start gap-2 min-h-[3rem]">
+                      <FaMobileAlt
+                        className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                        style={{
+                          fontSize: "1.2em",
+                          marginTop: "0.2em",
+                          flexShrink: 0, // 🚫 evita que se encoja
+                          minWidth: "1.3em", // ✅ ancho fijo del icono
+                        }}
+                      />
+                      <h4
+                        className={`font-bold leading-snug flex-grow ${modoOscuro ? "text-white" : "text-[#00324D]"}`}
+                        style={{
+                          fontSize: "1.05em",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2, // 🔹 máximo 2 líneas
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          lineHeight: "1.3",
+                          maxHeight: "2.6em",
+                          wordBreak: "break-word",
+                        }}
+                        title={c.title}
+                      >
+                        {c.title || "—"}
+                      </h4>
+                    </div>
+
+                    {/* 🔹 Descripción (clicable para expandir) */}
+                    <div
+                      className={`mt-2 flex items-start gap-3 ${styles.textMuted}`}
+                      style={{ fontSize: "0.95em" }}
+                    >
+                      <FaGraduationCap
+                        className={`mt-0.5 flex-shrink-0 ${modoOscuro ? "text-white" : "text-[#00324D]"}`}
+                        style={{ fontSize: "1em" }}
+                      />
+                      <span
+                        onClick={() => setExpandedKey(isExpanded ? null : key)}
+                        className={`cursor-pointer select-none transition-all ${isExpanded ? "line-clamp-none" : "line-clamp-3"
+                          }`}
+                        style={{
+                          display: "-webkit-box",
+                          WebkitBoxOrient: "vertical",
+                          WebkitLineClamp: isExpanded ? "unset" : "3",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          lineHeight: "1.4",
+                        }}
+                      >
+                        {c.description || "Sin descripción disponible."}
+                        {!isExpanded && c.description?.length > 140 && " ..."}
+                      </span>
+                    </div>
+
+                    {/* 🔹 Fechas alineadas */}
+                    <div
+                      className={`flex items-center justify-between mt-3 ${styles.textMuted} ${modoOscuro ? "bg-white/5" : "bg-gray-50"
+                        } p-2 rounded`}
+                      style={{ fontSize: "0.9em" }}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <FaCalendarAlt
+                          className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                          style={{ fontSize: "1em" }}
+                        />
+                        <span>
+                          {c.openDate
+                            ? new Date(c.openDate).toLocaleDateString("es-ES", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })
+                            : "—"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <FaCalendarTimes
+                          className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                          style={{ fontSize: "1em" }}
+                        />
+                        <span>
+                          {c.closeDate
+                            ? new Date(c.closeDate).toLocaleDateString("es-ES", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })
+                            : "—"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 🔹 Botones inferiores */}
+                    <div
+                      className={`pt-4 mt-4 flex items-center gap-2 border-t ${styles.divider}`}
+                      style={{ fontSize: "0.9em" }}
+                    >
+                      <button
+                        onClick={() => {
+                          setItemSeleccionado(c);
+                          setModalAbierto(true);
+                        }}
+                        className={`flex-1 flex items-center justify-center gap-1 px-4 py-2 rounded-md font-semibold ${styles.primaryButton}`}
+                      >
+                        <FaRegFileAlt /> Detalles
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          if (c.callLink) {
+                            window.open(c.callLink, "_blank");
+                          } else if (c.pageUrl) {
+                            window.open(c.pageUrl, "_blank");
+                          } else {
+                            Swal.fire({
+                              icon: "warning",
+                              title: "⚠️ Enlace no disponible",
+                              text: "Esta convocatoria no tiene un enlace de inscripción activo.",
+                              confirmButtonColor: "#39A900",
+                              background: modoOscuro ? "#1a0526" : "#fff",
+                              color: modoOscuro ? "#fff" : "#333",
+                            });
+                          }
+                        }}
+                        className={`flex-1 flex items-center justify-center gap-1 px-4 py-2 rounded-md font-semibold ${styles.successButton}`}
+                      >
+                        <FaCheckCircle /> Inscribirse
+                      </button>
+
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-
-          {/* 📄 Contenido */}
-          <div className="p-5 flex flex-col justify-between flex-grow">
-            {/* 🔹 Título */}
-            <div className="flex items-start gap-2 min-h-[3rem]">
-              <FaMobileAlt
-                className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                style={{
-                  fontSize: "1.2em",
-                  marginTop: "0.2em",
-                  flexShrink: 0, // 🚫 evita que se encoja
-                  minWidth: "1.3em", // ✅ ancho fijo del icono
-                }}
-              />
-              <h4
-                className={`font-bold leading-snug flex-grow ${modoOscuro ? "text-white" : "text-[#00324D]"}`}
-                style={{
-                  fontSize: "1.05em",
-                  display: "-webkit-box",
-                  WebkitLineClamp: 2, // 🔹 máximo 2 líneas
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  lineHeight: "1.3",
-                  maxHeight: "2.6em",
-                  wordBreak: "break-word",
-                }}
-                title={c.title}
-              >
-                {c.title || "—"}
-              </h4>
-            </div>
-
-            {/* 🔹 Descripción (clicable para expandir) */}
-            <div
-              className={`mt-2 flex items-start gap-3 ${styles.textMuted}`}
-              style={{ fontSize: "0.95em" }}
-            >
-              <FaGraduationCap
-                className={`mt-0.5 flex-shrink-0 ${modoOscuro ? "text-white" : "text-[#00324D]"}`}
-                style={{ fontSize: "1em" }}
-              />
-              <span
-                onClick={() => setExpandedKey(isExpanded ? null : key)}
-                className={`cursor-pointer select-none transition-all ${
-                  isExpanded ? "line-clamp-none" : "line-clamp-3"
-                }`}
-                style={{
-                  display: "-webkit-box",
-                  WebkitBoxOrient: "vertical",
-                  WebkitLineClamp: isExpanded ? "unset" : "3",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  lineHeight: "1.4",
-                }}
-              >
-                {c.description || "Sin descripción disponible."}
-                {!isExpanded && c.description?.length > 140 && " ..."}
-              </span>
-            </div>
-
-            {/* 🔹 Fechas alineadas */}
-            <div
-              className={`flex items-center justify-between mt-3 ${styles.textMuted} ${
-                modoOscuro ? "bg-white/5" : "bg-gray-50"
-              } p-2 rounded`}
-              style={{ fontSize: "0.9em" }}
-            >
-              <div className="flex items-center gap-1.5">
-                <FaCalendarAlt
-                  className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                  style={{ fontSize: "1em" }}
-                />
-                <span>
-                  {c.openDate
-                    ? new Date(c.openDate).toLocaleDateString("es-ES", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })
-                    : "—"}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <FaCalendarTimes
-                  className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                  style={{ fontSize: "1em" }}
-                />
-                <span>
-                  {c.closeDate
-                    ? new Date(c.closeDate).toLocaleDateString("es-ES", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })
-                    : "—"}
-                </span>
-              </div>
-            </div>
-
-            {/* 🔹 Botones inferiores */}
-            <div
-              className={`pt-4 mt-4 flex items-center gap-2 border-t ${styles.divider}`}
-              style={{ fontSize: "0.9em" }}
-            >
-              <button
-                onClick={() => {
-                  setItemSeleccionado(c);
-                  setModalAbierto(true);
-                }}
-                className={`flex-1 flex items-center justify-center gap-1 px-4 py-2 rounded-md font-semibold ${styles.primaryButton}`}
-              >
-                <FaRegFileAlt /> Detalles
-              </button>
-
-              <a
-                href={c.callLink || "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`flex-1 flex items-center justify-center gap-1 px-4 py-2 rounded-md font-semibold ${styles.successButton}`}
-              >
-                <FaCheckCircle /> Inscribirse
-              </a>
-            </div>
-          </div>
-        </div>
-      );
-    })}
-  </div>
-)}
+        )}
 
 
 
-   {/* ========================
+        {/* ========================
     CONTENIDO: LISTA
 ======================== */}
-{vista === "lista" && (
-  <div className="w-full" style={{ fontSize: `${fontSize}px` }}>
-    <div className="flex flex-col gap-6">
-      {convocatoriasPagina.map((c, idx) => {
-        const uniqueKey = `${c.favId ?? c.id ?? 'noid'}-list-${idx}`;
+        {vista === "lista" && (
+          <div className="w-full" style={{ fontSize: `${fontSize}px` }}>
+            <div className="flex flex-col gap-6">
+              {convocatoriasPagina.map((c, idx) => {
+                const uniqueKey = `${c.favId ?? c.id ?? 'noid'}-list-${idx}`;
 
-        return (
-          <div
-            key={uniqueKey}
-            className={`relative flex flex-col md:flex-row rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all hover:-translate-y-2 ${styles.card}`}
-          >
-            {/* ❌ Botón eliminar */}
-            <button
-              onClick={() => handleEliminarFavorito(c.favId)}
-              className="absolute top-2 right-2 bg-white rounded-full p-2 shadow-md hover:scale-110 transition-transform z-10"
-              title="Eliminar de favoritos"
-            >
-              <FaTrash className="text-red-600" style={{ fontSize: "1.1em" }} />
-            </button>
+                return (
+                  <div
+                    key={uniqueKey}
+                    className={`relative flex flex-col md:flex-row rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all hover:-translate-y-2 ${styles.card}`}
+                  >
+                    {/* ❌ Botón eliminar */}
+                    <button
+                      onClick={() => handleEliminarFavorito(c.favId)}
+                      className="absolute top-2 right-2 bg-white rounded-full p-2 shadow-md hover:scale-110 transition-transform z-10"
+                      title="Eliminar de favoritos"
+                    >
+                      <FaTrash className="text-red-600" style={{ fontSize: "1.1em" }} />
+                    </button>
 
-            {/* 🖼 Imagen */}
-            <div className="w-full md:w-[400px] flex-shrink-0 overflow-hidden relative flex self-stretch">
-              <img
-                onClick={() => {
-                  setItemSeleccionado(c);
-                  setModalAbierto(true);
-                }}
-                src={c.imageUrl || "/img/default.jpg"}
-                alt={c.title}
-                className="
+                    {/* 🖼 Imagen */}
+                    <div className="w-full md:w-[400px] flex-shrink-0 overflow-hidden relative flex self-stretch">
+                      <img
+                        onClick={() => {
+                          setItemSeleccionado(c);
+                          setModalAbierto(true);
+                        }}
+                        src={c.imageUrl || "/img/default.jpg"}
+                        alt={c.title}
+                        className="
                   w-full 
                   h-full 
                   object-cover 
@@ -889,114 +924,128 @@ export default function FavoritosPage() {
                   flex-1
                   self-stretch
                 "
-              />
-            </div>
+                      />
+                    </div>
 
-            {/* 📄 Contenido */}
-            <div className="flex flex-col flex-grow p-6 justify-between">
-              <div>
-                {/* 🔹 Título */}
-                <div className="flex items-start gap-3 mb-3">
-                  <FaMobileAlt
-                    className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                    style={{
-                      fontSize: "1.2em",
-                      marginTop: "0.15em",
-                      flexShrink: 0,      // 🚫 evita que se encoja
-                      minWidth: "1.3em",  // ✅ ancho fijo visual
-                    }}
-                  />
-                  <h4
-                    className={`font-bold leading-snug flex-grow ${modoOscuro ? "text-white" : "text-[#00324D]"}`}
-                    style={{
-                      fontSize: "1.1em",
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2, // 🔹 máximo 2 líneas
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      lineHeight: "1.3",
-                      maxHeight: "2.6em",
-                      wordBreak: "break-word",
-                    }}
-                    title={c.title}
-                  >
-                    {c.title || "—"}
-                  </h4>
-                </div>
+                    {/* 📄 Contenido */}
+                    <div className="flex flex-col flex-grow p-6 justify-between">
+                      <div>
+                        {/* 🔹 Título */}
+                        <div className="flex items-start gap-3 mb-3">
+                          <FaMobileAlt
+                            className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                            style={{
+                              fontSize: "1.2em",
+                              marginTop: "0.15em",
+                              flexShrink: 0,      // 🚫 evita que se encoja
+                              minWidth: "1.3em",  // ✅ ancho fijo visual
+                            }}
+                          />
+                          <h4
+                            className={`font-bold leading-snug flex-grow ${modoOscuro ? "text-white" : "text-[#00324D]"}`}
+                            style={{
+                              fontSize: "1.1em",
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2, // 🔹 máximo 2 líneas
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              lineHeight: "1.3",
+                              maxHeight: "2.6em",
+                              wordBreak: "break-word",
+                            }}
+                            title={c.title}
+                          >
+                            {c.title || "—"}
+                          </h4>
+                        </div>
 
-                <div className={`my-4 border-t ${styles.divider}`} />
+                        <div className={`my-4 border-t ${styles.divider}`} />
 
-                {/* 🔹 Descripción */}
-                <div className="space-y-4">
-                  <div
-                    className={`flex items-start gap-3 ${styles.textMuted}`}
-                    style={{ fontSize: "0.95em" }}
-                  >
-                    <FaGraduationCap
-                      className={`flex-shrink-0 mt-0.5 ${modoOscuro ? "text-white" : "text-[#00324D]"}`}
-                      style={{ fontSize: "1.1em" }}
-                    />
-                    <div>
-                      {c.description && c.description.length > 200
-                        ? `${c.description.slice(0, 200)}...`
-                        : c.description || "—"}
+                        {/* 🔹 Descripción */}
+                        <div className="space-y-4">
+                          <div
+                            className={`flex items-start gap-3 ${styles.textMuted}`}
+                            style={{ fontSize: "0.95em" }}
+                          >
+                            <FaGraduationCap
+                              className={`flex-shrink-0 mt-0.5 ${modoOscuro ? "text-white" : "text-[#00324D]"}`}
+                              style={{ fontSize: "1.1em" }}
+                            />
+                            <div>
+                              {c.description && c.description.length > 200
+                                ? `${c.description.slice(0, 200)}...`
+                                : c.description || "—"}
+                            </div>
+                          </div>
+
+                          {/* 🔹 Fechas */}
+                          <div
+                            className={`flex flex-wrap gap-x-6 gap-y-2 ${styles.textMuted}`}
+                            style={{ fontSize: "0.9em" }}
+                          >
+                            <span className="flex items-center gap-2">
+                              <FaCalendarAlt
+                                className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                                style={{ fontSize: "1em" }}
+                              />
+                              <strong>Apertura:</strong> {fmt(c.openDate)}
+                            </span>
+                            <span className="flex items-center gap-2">
+                              <FaCalendarTimes
+                                className={modoOscuro ? "text-white" : "text-[#00324D]"}
+                                style={{ fontSize: "1em" }}
+                              />
+                              <strong>Cierre:</strong> {fmt(c.closeDate)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 🔹 Botones */}
+                      <div
+                        className={`flex flex-wrap items-center gap-3 pt-4 mt-6 border-t ${styles.divider}`}
+                        style={{ fontSize: "0.95em" }}
+                      >
+                        <button
+                          onClick={() => {
+                            setItemSeleccionado(c);
+                            setModalAbierto(true);
+                          }}
+                          className={`flex items-center gap-2 px-5 py-2 rounded-md font-semibold ${styles.primaryButton}`}
+                        >
+                          <FaRegFileAlt style={{ fontSize: "1em" }} /> Detalles
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (c.callLink) {
+                              window.open(c.callLink, "_blank");
+                            } else if (c.pageUrl) {
+                              window.open(c.pageUrl, "_blank");
+                            } else {
+                              Swal.fire({
+                                icon: "warning",
+                                title: "⚠️ Enlace no disponible",
+                                text: "Esta convocatoria no tiene un enlace de inscripción activo.",
+                                confirmButtonColor: "#39A900",
+                                background: modoOscuro ? "#1a0526" : "#fff",
+                                color: modoOscuro ? "#fff" : "#333",
+                              });
+                            }
+                          }}
+                          className={`flex items-center gap-2 px-5 py-2 rounded-md font-semibold ${styles.successButton}`}
+                        >
+                          <FaCheckCircle style={{ fontSize: "1em" }} /> Inscribirse
+                        </button>
+
+                      </div>
                     </div>
                   </div>
-
-                  {/* 🔹 Fechas */}
-                  <div
-                    className={`flex flex-wrap gap-x-6 gap-y-2 ${styles.textMuted}`}
-                    style={{ fontSize: "0.9em" }}
-                  >
-                    <span className="flex items-center gap-2">
-                      <FaCalendarAlt
-                        className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                        style={{ fontSize: "1em" }}
-                      />
-                      <strong>Apertura:</strong> {fmt(c.openDate)}
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <FaCalendarTimes
-                        className={modoOscuro ? "text-white" : "text-[#00324D]"}
-                        style={{ fontSize: "1em" }}
-                      />
-                      <strong>Cierre:</strong> {fmt(c.closeDate)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* 🔹 Botones */}
-              <div
-                className={`flex flex-wrap items-center gap-3 pt-4 mt-6 border-t ${styles.divider}`}
-                style={{ fontSize: "0.95em" }}
-              >
-                <button
-                  onClick={() => {
-                    setItemSeleccionado(c);
-                    setModalAbierto(true);
-                  }}
-                  className={`flex items-center gap-2 px-5 py-2 rounded-md font-semibold ${styles.primaryButton}`}
-                >
-                  <FaRegFileAlt style={{ fontSize: "1em" }} /> Detalles
-                </button>
-                <a
-                  href={c.callLink || "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`flex items-center gap-2 px-5 py-2 rounded-md font-semibold ${styles.successButton}`}
-                >
-                  <FaCheckCircle style={{ fontSize: "1em" }} /> Inscribirse
-                </a>
-              </div>
+                );
+              })}
             </div>
           </div>
-        );
-      })}
-    </div>
-  </div>
-)}
+        )}
 
 
 

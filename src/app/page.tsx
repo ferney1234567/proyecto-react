@@ -143,10 +143,10 @@ export default function LoginPage() {
       >
         {/* Logo + título */}
         <div className="flex flex-col items-center mb-8">
-          <img
-            src="/img/convo2.png"
-            alt="Logo Convocatorias"
-            className="w-45 h-auto mb-6 drop-shadow-lg"
+        <img
+            src={modoOscuro ? "/img/logonoche.png" : "/img/logo.png"}
+            alt="Logo ConvocApp"
+            className="w-44 h-30 object-contain mb-6 drop-shadow-lg"
           />
           <h1
             className={`text-3xl font-bold bg-clip-text text-transparent ${estilos.titulo}`}

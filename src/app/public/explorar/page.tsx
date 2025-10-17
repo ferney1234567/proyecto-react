@@ -127,84 +127,84 @@ export default function ExplorarPage() {
 
 
   const [fechaSeleccionada, setFechaSeleccionada] = useState("");
- const convocatoriasFiltradas = useMemo(() => {
-  let filtradas = convocatorias;
+  const convocatoriasFiltradas = useMemo(() => {
+    let filtradas = convocatorias;
 
-  // 🔹 Filtro por categoría
-  if (categoriaSeleccionada) {
-    filtradas = filtradas.filter((c) => c.lineId === categoriaSeleccionada);
-  }
+    // 🔹 Filtro por categoría
+    if (categoriaSeleccionada) {
+      filtradas = filtradas.filter((c) => c.lineId === categoriaSeleccionada);
+    }
 
-  // 🔹 Filtro por interés
-  if (interesSeleccionado) {
-    filtradas = filtradas.filter((c) => c.interestId === interesSeleccionado);
-  }
+    // 🔹 Filtro por interés
+    if (interesSeleccionado) {
+      filtradas = filtradas.filter((c) => c.interestId === interesSeleccionado);
+    }
 
-  // 🔹 Filtro por público objetivo
-  if (publicoObjetivoSeleccionado) {
-    filtradas = filtradas.filter((c) => c.targetAudienceId === publicoObjetivoSeleccionado);
-  }
+    // 🔹 Filtro por público objetivo
+    if (publicoObjetivoSeleccionado) {
+      filtradas = filtradas.filter((c) => c.targetAudienceId === publicoObjetivoSeleccionado);
+    }
 
-  // ✅ 🔹 Filtro por búsqueda global (de URL) o local
-  const termino = (busquedaLocal || search).toLowerCase().trim();
-  if (termino) {
-    filtradas = filtradas.filter(
-      (c) =>
-        c.title.toLowerCase().includes(termino) ||
-        c.description.toLowerCase().includes(termino)
-    );
-  }
+    // ✅ 🔹 Filtro por búsqueda global (de URL) o local
+    const termino = (busquedaLocal || search).toLowerCase().trim();
+    if (termino) {
+      filtradas = filtradas.filter(
+        (c) =>
+          c.title.toLowerCase().includes(termino) ||
+          c.description.toLowerCase().includes(termino)
+      );
+    }
 
-  // 🔹 Filtro por rango de fechas
-  if (fechaInicio || fechaFin) {
-    filtradas = filtradas.filter((c) => {
-      const open = new Date(c.openDate);
-      const start = fechaInicio ? new Date(fechaInicio) : null;
-      const end = fechaFin ? new Date(fechaFin) : null;
-      if (start && open < start) return false;
-      if (end && open > end) return false;
-      return true;
-    });
-  }
+    // 🔹 Filtro por rango de fechas
+    if (fechaInicio || fechaFin) {
+      filtradas = filtradas.filter((c) => {
+        const open = new Date(c.openDate);
+        const start = fechaInicio ? new Date(fechaInicio) : null;
+        const end = fechaFin ? new Date(fechaFin) : null;
+        if (start && open < start) return false;
+        if (end && open > end) return false;
+        return true;
+      });
+    }
 
-  // 🔹 Filtro por tipo de fecha
-  if (fechaSeleccionada) {
-    const hoy = new Date();
-    filtradas = filtradas.filter((c) => {
-      const apertura = new Date(c.openDate);
-      const cierre = new Date(c.closeDate);
-      if (fechaSeleccionada === "recientes") {
-        const hace15Dias = new Date(hoy);
-        hace15Dias.setDate(hoy.getDate() - 15);
-        return apertura >= hace15Dias && apertura <= hoy;
-      }
-      if (fechaSeleccionada === "vencer") {
-        const en7Dias = new Date(hoy);
-        en7Dias.setDate(hoy.getDate() + 7);
-        return cierre >= hoy && cierre <= en7Dias;
-      }
-      if (fechaSeleccionada === "proximas") {
-        return apertura > hoy;
-      }
-      if (fechaSeleccionada === "finalizadas") {
-        return cierre < hoy;
-      }
-      return true;
-    });
-  }
+    // 🔹 Filtro por tipo de fecha
+    if (fechaSeleccionada) {
+      const hoy = new Date();
+      filtradas = filtradas.filter((c) => {
+        const apertura = new Date(c.openDate);
+        const cierre = new Date(c.closeDate);
+        if (fechaSeleccionada === "recientes") {
+          const hace15Dias = new Date(hoy);
+          hace15Dias.setDate(hoy.getDate() - 15);
+          return apertura >= hace15Dias && apertura <= hoy;
+        }
+        if (fechaSeleccionada === "vencer") {
+          const en7Dias = new Date(hoy);
+          en7Dias.setDate(hoy.getDate() + 7);
+          return cierre >= hoy && cierre <= en7Dias;
+        }
+        if (fechaSeleccionada === "proximas") {
+          return apertura > hoy;
+        }
+        if (fechaSeleccionada === "finalizadas") {
+          return cierre < hoy;
+        }
+        return true;
+      });
+    }
 
-  return filtradas;
-}, [
-  convocatorias,
-  categoriaSeleccionada,
-  interesSeleccionado,
-  publicoObjetivoSeleccionado,
-  busquedaLocal, // 🔹 Muy importante agregarlo aquí
-  search,        // 🔹 Para que también funcione cuando se viene con ?search=
-  fechaInicio,
-  fechaFin,
-  fechaSeleccionada,
-]);
+    return filtradas;
+  }, [
+    convocatorias,
+    categoriaSeleccionada,
+    interesSeleccionado,
+    publicoObjetivoSeleccionado,
+    busquedaLocal, // 🔹 Muy importante agregarlo aquí
+    search,        // 🔹 Para que también funcione cuando se viene con ?search=
+    fechaInicio,
+    fechaFin,
+    fechaSeleccionada,
+  ]);
 
 
 
@@ -502,8 +502,13 @@ export default function ExplorarPage() {
             {/* Logo + buscador */}
             <div className="flex flex-col gap-6 w-full">
               <div className="flex justify-start -mt-2">
-                <img src="/img/sena.png" alt="Logo Izquierdo" className="h-16 w-auto object-contain" />
+                <img
+                  src="/img/Recurso1@4x.png"
+                  alt="Logo Izquierdo"
+                  className="h-10 w-auto object-contain"
+                />
               </div>
+
               <div className="relative w-full max-w-xl">
                 <input
                   type="text"
@@ -519,11 +524,29 @@ export default function ExplorarPage() {
 
             {/* Derecha: nav + modo oscuro */}
             <div className="flex flex-col items-end space-y-3">
-              <div className="flex justify-end">
-                <img src="/img/logo.png" alt="Logo Derecho" className="h-14 w-auto object-contain" />
+              {/* Logo derecho */}
+              <div className="flex justify-center items-center ">
+                {modoOscuro ? (
+                  <img
+                    src="/img/logonoche.png"
+                    alt="Logo Derecho"
+                    className="h-20 w-auto object-contain mt-2"
+                  />
+                ) : (
+                  <img
+                    src="/img/logo.png"
+                    alt="Logo Derecho"
+                    className="h-16 w-auto object-contain mt-2"
+                  />
+                )}
+                <img
+                  src="/img/Recurso2@4x.png"
+                  alt="Logo Derecho"
+                  className="h-20 w-auto object-contain"
+                />
               </div>
 
-              <nav className="flex items-center space-x-6 border-t pt-3">
+              <nav className="flex items-center space-x-6  pt-3">
                 <Link href="/menu" className={`flex items-center space-x-1 ${styles.nav}`}>
                   <FaTags className="text-sm" />
                   <span>Descubrir</span>
@@ -928,10 +951,27 @@ export default function ExplorarPage() {
                         </button>
 
                         <button
+                          onClick={() => {
+                            if (c.callLink) {
+                              window.open(c.callLink, "_blank");
+                            } else if (c.pageUrl) {
+                              window.open(c.pageUrl, "_blank");
+                            } else {
+                              Swal.fire({
+                                icon: "warning",
+                                title: "⚠️ Enlace no disponible",
+                                text: "Esta convocatoria no tiene un enlace de inscripción activo.",
+                                confirmButtonColor: "#39A900",
+                                background: modoOscuro ? "#1a0526" : "#fff",
+                                color: modoOscuro ? "#fff" : "#333",
+                              });
+                            }
+                          }}
                           className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold ${styles.successButton}`}
                         >
                           <FaCheckCircle /> Inscribirse
                         </button>
+
 
                         {/* 🔹 Favorito con animaciones */}
                         <button
@@ -1161,10 +1201,27 @@ export default function ExplorarPage() {
                             <FaRegFileAlt /> Detalles
                           </button>
                           <button
+                            onClick={() => {
+                              if (c.callLink) {
+                                window.open(c.callLink, "_blank");
+                              } else if (c.pageUrl) {
+                                window.open(c.pageUrl, "_blank");
+                              } else {
+                                Swal.fire({
+                                  icon: "warning",
+                                  title: "⚠️ Enlace no disponible",
+                                  text: "Esta convocatoria no tiene un enlace de inscripción activo.",
+                                  confirmButtonColor: "#39A900",
+                                  background: modoOscuro ? "#1a0526" : "#fff",
+                                  color: modoOscuro ? "#fff" : "#333",
+                                });
+                              }
+                            }}
                             className={`flex items-center gap-2 px-4 py-1.5 rounded-md font-semibold ${styles.successButton}`}
                           >
                             <FaCheckCircle /> Inscribirse
                           </button>
+
                           <button
                             onClick={() => handleFavorito(c)}
                             className="group ml-auto relative p-2 rounded-md hover:bg-white/5 transition-colors"
@@ -1422,10 +1479,27 @@ export default function ExplorarPage() {
                               <FaRegFileAlt /> Detalles
                             </button>
                             <button
+                              onClick={() => {
+                                if (c.callLink) {
+                                  window.open(c.callLink, "_blank");
+                                } else if (c.pageUrl) {
+                                  window.open(c.pageUrl, "_blank");
+                                } else {
+                                  Swal.fire({
+                                    icon: "warning",
+                                    title: "⚠️ Enlace no disponible",
+                                    text: "Esta convocatoria no tiene un enlace de inscripción activo.",
+                                    confirmButtonColor: "#39A900",
+                                    background: modoOscuro ? "#1a0526" : "#fff",
+                                    color: modoOscuro ? "#fff" : "#333",
+                                  });
+                                }
+                              }}
                               className={`flex items-center gap-2 px-3 py-2 rounded-lg font-semibold ${styles.successButton}`}
                             >
                               <FaCheckCircle /> Inscribirse
                             </button>
+
                             <button
                               onClick={() => handleFavorito(c)}
                               className="group ml-auto relative p-2 rounded-md hover:bg-white/5 transition-colors"
@@ -1629,10 +1703,27 @@ export default function ExplorarPage() {
                         </button>
 
                         <button
+                          onClick={() => {
+                            if (c.callLink) {
+                              window.open(c.callLink, "_blank");
+                            } else if (c.pageUrl) {
+                              window.open(c.pageUrl, "_blank");
+                            } else {
+                              Swal.fire({
+                                icon: "warning",
+                                title: "⚠️ Enlace no disponible",
+                                text: "Esta convocatoria no tiene un enlace de inscripción activo.",
+                                confirmButtonColor: "#39A900",
+                                background: modoOscuro ? "#1a0526" : "#fff",
+                                color: modoOscuro ? "#fff" : "#333",
+                              });
+                            }
+                          }}
                           className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md ${styles.successButton}`}
                         >
                           <FaCheckCircle /> Inscribirse
                         </button>
+
 
                         {/* 🌟 Favorito con animación */}
                         <button

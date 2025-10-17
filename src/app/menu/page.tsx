@@ -103,7 +103,7 @@ const normalizeFav = (f: any): Favorito | null => {
 
 export default function HomePage() {
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
   const [mostrarZoom, setMostrarZoom] = useState(false);
@@ -162,72 +162,72 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-  const usuarioGuardado = localStorage.getItem("usuario");
-  if (usuarioGuardado) {
-    try {
-      setUsuario(JSON.parse(usuarioGuardado));
-    } catch {
-      setUsuario(null);
-    }
-  }
-}, []);
-
-useEffect(() => {
-  const verificarEmpresaUsuario = async () => {
     const usuarioGuardado = localStorage.getItem("usuario");
-    if (!usuarioGuardado) return;
-
-    const usuario = JSON.parse(usuarioGuardado);
-    if (!usuario?.email) return;
-
-    // ✅ Ejecutar solo si acaba de iniciar sesión
-    const ultimaSesion = localStorage.getItem("ultimaSesionEmail");
-    if (ultimaSesion === usuario.email && localStorage.getItem("empresaVerificada") === "true") {
-      return; // Evita repetir si ya se verificó esta sesión
+    if (usuarioGuardado) {
+      try {
+        setUsuario(JSON.parse(usuarioGuardado));
+      } catch {
+        setUsuario(null);
+      }
     }
+  }, []);
 
-    try {
-      const res = await fetch(`${API_URL}/companies`);
-      const data = await res.json();
+  useEffect(() => {
+    const verificarEmpresaUsuario = async () => {
+      const usuarioGuardado = localStorage.getItem("usuario");
+      if (!usuarioGuardado) return;
 
-      const tieneEmpresa = Array.isArray(data.data)
-        ? data.data.some((empresa: any) => empresa.email === usuario.email)
-        : false;
+      const usuario = JSON.parse(usuarioGuardado);
+      if (!usuario?.email) return;
 
-      if (!tieneEmpresa) {
-        await Swal.fire({
-          icon: "info",
-          title: `¡Bienvenido, ${usuario.name || "Usuario"}! 👋`,
-          html: `
+      // ✅ Ejecutar solo si acaba de iniciar sesión
+      const ultimaSesion = localStorage.getItem("ultimaSesionEmail");
+      if (ultimaSesion === usuario.email && localStorage.getItem("empresaVerificada") === "true") {
+        return; // Evita repetir si ya se verificó esta sesión
+      }
+
+      try {
+        const res = await fetch(`${API_URL}/companies`);
+        const data = await res.json();
+
+        const tieneEmpresa = Array.isArray(data.data)
+          ? data.data.some((empresa: any) => empresa.email === usuario.email)
+          : false;
+
+        if (!tieneEmpresa) {
+          await Swal.fire({
+            icon: "info",
+            title: `¡Bienvenido, ${usuario.name || "Usuario"}! 👋`,
+            html: `
             <p style="font-size:16px; margin-top:8px;">
               No estás vinculado a una empresa.<br/>
               <b>Por favor crea o asóciate a una empresa para continuar.</b>
             </p>
           `,
-          confirmButtonText: "Vincular Empresa",
-          cancelButtonText: "Más tarde",
-          showCancelButton: true,
-          confirmButtonColor: "#39A900",
-          cancelButtonColor: modoOscuro ? "#6366f1" : "#3b82f6",
-          background: modoOscuro ? "#1a0526" : "#fff",
-          color: modoOscuro ? "#fff" : "#333",
-        }).then((res) => {
-          if (res.isConfirmed) {
-            router.push("/usuario/perfilUser");
-          }
-        });
+            confirmButtonText: "Vincular Empresa",
+            cancelButtonText: "Más tarde",
+            showCancelButton: true,
+            confirmButtonColor: "#39A900",
+            cancelButtonColor: modoOscuro ? "#6366f1" : "#3b82f6",
+            background: modoOscuro ? "#1a0526" : "#fff",
+            color: modoOscuro ? "#fff" : "#333",
+          }).then((res) => {
+            if (res.isConfirmed) {
+              router.push("/usuario/perfilUser");
+            }
+          });
+        }
+
+        // ✅ Marcar verificación solo para este usuario actual
+        localStorage.setItem("empresaVerificada", "true");
+        localStorage.setItem("ultimaSesionEmail", usuario.email);
+      } catch (error) {
+        console.error("❌ Error verificando empresa del usuario:", error);
       }
+    };
 
-      // ✅ Marcar verificación solo para este usuario actual
-      localStorage.setItem("empresaVerificada", "true");
-      localStorage.setItem("ultimaSesionEmail", usuario.email);
-    } catch (error) {
-      console.error("❌ Error verificando empresa del usuario:", error);
-    }
-  };
-
-  verificarEmpresaUsuario();
-}, [API_URL, modoOscuro]);
+    verificarEmpresaUsuario();
+  }, [API_URL, modoOscuro]);
 
 
 
@@ -313,38 +313,38 @@ useEffect(() => {
     return cid != null && favoritos.some(f => Number(f.callId) === Number(cid));
   };
 
-const handleFavorito = async (convocatoria: Convocatoria) => {
-  const uid = getUserId(usuario);
-  const cid = getConvocatoriaCallId(convocatoria);
+  const handleFavorito = async (convocatoria: Convocatoria) => {
+    const uid = getUserId(usuario);
+    const cid = getConvocatoriaCallId(convocatoria);
 
-  if (!uid) {
-    Swal.fire({
-      title: "⚠️ Atención",
-      text: "Debes iniciar sesión para guardar favoritos",
-      icon: "warning",
-      background: modoOscuro ? "#1a0526" : "#fff",
-      color: modoOscuro ? "#fff" : "#333",
-      confirmButtonColor: modoOscuro ? "#39A900" : "#2d8500",
-    });
-    return;
-  }
-
-  if (!cid) {
-    Swal.fire("Error", "No se pudo identificar la convocatoria (callId).", "error");
-    return;
-  }
-
-  try {
-    const favoritoExistente = favoritos.find((f) => Number(f.callId) === Number(cid));
-
-    // === 🗑️ Eliminar favorito ===
-    if (favoritoExistente?.id) {
-      await deleteFavorito(favoritoExistente.id);
-      setFavoritos((prev) => prev.filter((f) => Number(f.callId) !== Number(cid)));
-
+    if (!uid) {
       Swal.fire({
-        title: "Eliminado de favoritos",
-        html: `
+        title: "⚠️ Atención",
+        text: "Debes iniciar sesión para guardar favoritos",
+        icon: "warning",
+        background: modoOscuro ? "#1a0526" : "#fff",
+        color: modoOscuro ? "#fff" : "#333",
+        confirmButtonColor: modoOscuro ? "#39A900" : "#2d8500",
+      });
+      return;
+    }
+
+    if (!cid) {
+      Swal.fire("Error", "No se pudo identificar la convocatoria (callId).", "error");
+      return;
+    }
+
+    try {
+      const favoritoExistente = favoritos.find((f) => Number(f.callId) === Number(cid));
+
+      // === 🗑️ Eliminar favorito ===
+      if (favoritoExistente?.id) {
+        await deleteFavorito(favoritoExistente.id);
+        setFavoritos((prev) => prev.filter((f) => Number(f.callId) !== Number(cid)));
+
+        Swal.fire({
+          title: "Eliminado de favoritos",
+          html: `
           <div style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
             <div style="
               font-size:60px;
@@ -371,32 +371,32 @@ const handleFavorito = async (convocatoria: Convocatoria) => {
             }
           </style>
         `,
-        background: modoOscuro ? "#1a0526" : "#fff",
-        color: modoOscuro ? "#fff" : "#333",
-        showConfirmButton: false,
-        width: 400,
-        padding: "1.6em",
-        didOpen: () => {
-          const okBtn = document.getElementById("ok-btn");
-          if (okBtn) okBtn.addEventListener("click", () => Swal.close());
-        },
-      });
-    }
+          background: modoOscuro ? "#1a0526" : "#fff",
+          color: modoOscuro ? "#fff" : "#333",
+          showConfirmButton: false,
+          width: 400,
+          padding: "1.6em",
+          didOpen: () => {
+            const okBtn = document.getElementById("ok-btn");
+            if (okBtn) okBtn.addEventListener("click", () => Swal.close());
+          },
+        });
+      }
 
-    // === ⭐ Agregar favorito ===
-    else {
-      const payload = { userId: uid, callId: cid };
-      const nuevoFav = await createFavorito(payload);
-      const creadoRaw = nuevoFav?.data ?? nuevoFav;
-      const creado =
-        normalizeFav(creadoRaw) ?? { userId: uid, callId: cid, id: creadoRaw?.id };
+      // === ⭐ Agregar favorito ===
+      else {
+        const payload = { userId: uid, callId: cid };
+        const nuevoFav = await createFavorito(payload);
+        const creadoRaw = nuevoFav?.data ?? nuevoFav;
+        const creado =
+          normalizeFav(creadoRaw) ?? { userId: uid, callId: cid, id: creadoRaw?.id };
 
-      setFavoritos((prev) => [...prev, creado]);
+        setFavoritos((prev) => [...prev, creado]);
 
-      // ✨ SweetAlert estilizado con estrella
-      Swal.fire({
-        title: "¡Agregado a Favoritos!",
-        html: `
+        // ✨ SweetAlert estilizado con estrella
+        Swal.fire({
+          title: "¡Agregado a Favoritos!",
+          html: `
           <div style="display:flex; justify-content:center; align-items:center; flex-direction:column;">
             <div style="
               font-size:50px;
@@ -423,22 +423,22 @@ const handleFavorito = async (convocatoria: Convocatoria) => {
             }
           </style>
         `,
-        background: modoOscuro ? "#1a0526" : "#fff",
-        color: modoOscuro ? "#fff" : "#333",
-        showConfirmButton: false,
-        width: 400,
-        padding: "1.6em",
-        didOpen: () => {
-          const okBtn = document.getElementById("ok-btn-add");
-          if (okBtn) okBtn.addEventListener("click", () => Swal.close());
-        },
-      });
+          background: modoOscuro ? "#1a0526" : "#fff",
+          color: modoOscuro ? "#fff" : "#333",
+          showConfirmButton: false,
+          width: 400,
+          padding: "1.6em",
+          didOpen: () => {
+            const okBtn = document.getElementById("ok-btn-add");
+            if (okBtn) okBtn.addEventListener("click", () => Swal.close());
+          },
+        });
+      }
+    } catch (err: any) {
+      console.error("❌ Error al actualizar favoritos:", err);
+      Swal.fire("Error", "No se pudo actualizar tus favoritos.", "error");
     }
-  } catch (err: any) {
-    console.error("❌ Error al actualizar favoritos:", err);
-    Swal.fire("Error", "No se pudo actualizar tus favoritos.", "error");
-  }
-};
+  };
 
 
 
@@ -452,7 +452,7 @@ const handleFavorito = async (convocatoria: Convocatoria) => {
     }
   };
 
-  
+
 
 
 
@@ -466,11 +466,12 @@ const handleFavorito = async (convocatoria: Convocatoria) => {
             <div className="flex flex-col gap-6 w-full">
               <div className="flex justify-start -mt-2">
                 <img
-                  src="/img/sena.png"
+                  src="/img/Recurso1@4x.png"
                   alt="Logo Izquierdo"
-                  className="h-16 w-auto object-contain"
+                  className="h-10 w-auto object-contain"
                 />
               </div>
+
               <div className="relative w-full max-w-xl">
                 <input
                   type="text"
@@ -498,16 +499,29 @@ const handleFavorito = async (convocatoria: Convocatoria) => {
             {/* Logo derecho + nav + botones */}
             <div className="flex flex-col items-end space-y-3">
               {/* Logo derecho */}
-              <div className="flex justify-end">
+              <div className="flex justify-center items-center ">
+                {modoOscuro ? (
+                  <img
+                    src="/img/logonoche.png"
+                    alt="Logo Derecho"
+                    className="h-20 w-auto object-contain mt-2"
+                  />
+                ) : (
+                  <img
+                    src="/img/logo.png"
+                    alt="Logo Derecho"
+                    className="h-16 w-auto object-contain mt-2"
+                  />
+                )}
                 <img
-                  src="/img/logo.png"
+                  src="/img/Recurso2@4x.png"
                   alt="Logo Derecho"
-                  className="h-14 w-auto object-contain"
+                  className="h-20 w-auto object-contain"
                 />
               </div>
 
               {/* Navegación */}
-              <nav className="flex items-center space-x-6 border-t pt-3">
+              <nav className="flex items-center space-x-6  pt-3">
                 <Link href="/menu" className={`flex items-center space-x-1 ${styles.navActive}`}>
                   <FaTags className="text-sm" />
                   <span>Descubrir</span>
@@ -843,39 +857,38 @@ const handleFavorito = async (convocatoria: Convocatoria) => {
 
                   <div className="space-y-3 mt-8 flex-grow">
                     {/* 🔹 Título */}
-                  {/* 🔹 Título (alineado con icono + máximo 2 líneas) */}
-<h3
-  className={`font-bold leading-tight flex items-start gap-2 ${
-    modoOscuro ? "text-white" : "text-[#00324D]"
-  }`}
-  style={{
-    fontSize: `${1.2 + (fontSize - 16) * 0.05}em`,
-    lineHeight: "1.3em",
-  }}
->
-  {/* Icono perfectamente alineado */}
-  <FaMobileAlt
-    className={`${modoOscuro ? "text-white" : "text-[#00324D]"} flex-shrink-0 mt-[2px]`}
-    style={{
-      fontSize: `${1 + (fontSize - 16) * 0.05}em`,
-    }}
-  />
+                    {/* 🔹 Título (alineado con icono + máximo 2 líneas) */}
+                    <h3
+                      className={`font-bold leading-tight flex items-start gap-2 ${modoOscuro ? "text-white" : "text-[#00324D]"
+                        }`}
+                      style={{
+                        fontSize: `${1.2 + (fontSize - 16) * 0.05}em`,
+                        lineHeight: "1.3em",
+                      }}
+                    >
+                      {/* Icono perfectamente alineado */}
+                      <FaMobileAlt
+                        className={`${modoOscuro ? "text-white" : "text-[#00324D]"} flex-shrink-0 mt-[2px]`}
+                        style={{
+                          fontSize: `${1 + (fontSize - 16) * 0.05}em`,
+                        }}
+                      />
 
-  {/* Título truncado con 2 líneas máximas */}
-  <span
-    className="block overflow-hidden text-ellipsis break-words"
-    style={{
-      display: "-webkit-box",
-      WebkitLineClamp: 2, // 🔹 Máximo 2 líneas
-      WebkitBoxOrient: "vertical",
-      textOverflow: "ellipsis",
-      lineHeight: "1.3em",
-      maxHeight: `${fontSize * 3.2}px`,
-    }}
-  >
-    {convocatoriasPagina[0].title}
-  </span>
-</h3>
+                      {/* Título truncado con 2 líneas máximas */}
+                      <span
+                        className="block overflow-hidden text-ellipsis break-words"
+                        style={{
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2, // 🔹 Máximo 2 líneas
+                          WebkitBoxOrient: "vertical",
+                          textOverflow: "ellipsis",
+                          lineHeight: "1.3em",
+                          maxHeight: `${fontSize * 3.2}px`,
+                        }}
+                      >
+                        {convocatoriasPagina[0].title}
+                      </span>
+                    </h3>
 
 
                     {/* 🔹 Descripción limitada a 4 párrafos */}
@@ -951,10 +964,12 @@ const handleFavorito = async (convocatoria: Convocatoria) => {
                     </button>
 
                     <button
+                      onClick={() => window.open(convocatoriasPagina[0].callLink, "_blank")}
                       className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold transition-all ${styles.successButton}`}
                     >
                       <FaCheckCircle /> Inscribirse
                     </button>
+
 
                     {/* ⭐ Favorito */}
                     <button
@@ -1186,67 +1201,81 @@ const handleFavorito = async (convocatoria: Convocatoria) => {
                         </button>
 
                         <button
+                          onClick={() => {
+                            if (convocatoria.callLink) {
+                              window.open(convocatoria.callLink, "_blank");
+                            } else {
+                              Swal.fire({
+                                icon: "warning",
+                                title: "⚠️ Enlace no disponible",
+                                text: "Esta convocatoria no tiene un enlace de inscripción activo.",
+                                confirmButtonColor: "#39A900",
+                                background: modoOscuro ? "#1a0526" : "#fff",
+                                color: modoOscuro ? "#fff" : "#333",
+                              });
+                            }
+                          }}
                           className={`flex-1 flex items-center justify-center gap-1 px-4 py-2 rounded-md font-semibold ${styles.successButton}`}
                         >
                           <FaCheckCircle /> Inscribirse
                         </button>
 
-                        {/* Favorito */}
-                       {/* ⭐ Botón de favorito con brillo y estrellitas */}
-<button
-  onClick={() => handleFavorito(convocatoria)}
-  className="group relative p-2 rounded-md hover:bg-white/5 transition-all duration-300"
-  title="Marcar como favorita"
->
-  {/* 🌟 Estrella principal */}
-  {isFavByConv(convocatoria) ? (
-    <FaStar
-      className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 drop-shadow-[0_0_6px_#FFD700]"
-      style={{ fontSize: "1.5em" }}
-    />
-  ) : (
-    <FaRegStar
-      className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${
-        modoOscuro ? "text-yellow-400" : "text-yellow-500"
-      } drop-shadow-[0_0_4px_#FFD700]`}
-      style={{
-        stroke: "#FFD700",
-        strokeWidth: "20",
-        fill: "transparent",
-        fontSize: "1.5em",
-      }}
-    />
-  )}
 
-  {/* ✨ Mini estrellitas decorativas */}
-  <span
-    className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
-    style={{
-      fontSize: "0.7em",
-      filter: "drop-shadow(0 0 6px #FFD700)",
-    }}
-  >
-    ✦
-  </span>
-  <span
-    className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
-    style={{
-      fontSize: "0.6em",
-      filter: "drop-shadow(0 0 8px #FFFACD)",
-    }}
-  >
-    ✧
-  </span>
-  <span
-    className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
-    style={{
-      fontSize: "0.8em",
-      filter: "drop-shadow(0 0 10px #FFD700)",
-    }}
-  >
-    ✨
-  </span>
-</button>
+                        {/* Favorito */}
+                        {/* ⭐ Botón de favorito con brillo y estrellitas */}
+                        <button
+                          onClick={() => handleFavorito(convocatoria)}
+                          className="group relative p-2 rounded-md hover:bg-white/5 transition-all duration-300"
+                          title="Marcar como favorita"
+                        >
+                          {/* 🌟 Estrella principal */}
+                          {isFavByConv(convocatoria) ? (
+                            <FaStar
+                              className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 drop-shadow-[0_0_6px_#FFD700]"
+                              style={{ fontSize: "1.5em" }}
+                            />
+                          ) : (
+                            <FaRegStar
+                              className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${modoOscuro ? "text-yellow-400" : "text-yellow-500"
+                                } drop-shadow-[0_0_4px_#FFD700]`}
+                              style={{
+                                stroke: "#FFD700",
+                                strokeWidth: "20",
+                                fill: "transparent",
+                                fontSize: "1.5em",
+                              }}
+                            />
+                          )}
+
+                          {/* ✨ Mini estrellitas decorativas */}
+                          <span
+                            className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
+                            style={{
+                              fontSize: "0.7em",
+                              filter: "drop-shadow(0 0 6px #FFD700)",
+                            }}
+                          >
+                            ✦
+                          </span>
+                          <span
+                            className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
+                            style={{
+                              fontSize: "0.6em",
+                              filter: "drop-shadow(0 0 8px #FFFACD)",
+                            }}
+                          >
+                            ✧
+                          </span>
+                          <span
+                            className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
+                            style={{
+                              fontSize: "0.8em",
+                              filter: "drop-shadow(0 0 10px #FFD700)",
+                            }}
+                          >
+                            ✨
+                          </span>
+                        </button>
 
                       </div>
                     </div>
@@ -1416,67 +1445,81 @@ const handleFavorito = async (convocatoria: Convocatoria) => {
                         </button>
 
                         <button
+                          onClick={() => {
+                            if (convocatoria.callLink) {
+                              window.open(convocatoria.callLink, "_blank");
+                            } else {
+                              Swal.fire({
+                                icon: "warning",
+                                title: "⚠️ Enlace no disponible",
+                                text: "Esta convocatoria no tiene un enlace de inscripción activo.",
+                                confirmButtonColor: "#39A900",
+                                background: modoOscuro ? "#1a0526" : "#fff",
+                                color: modoOscuro ? "#fff" : "#333",
+                              });
+                            }
+                          }}
                           className={`flex-1 flex items-center justify-center gap-1 px-4 py-2 rounded-md font-semibold ${styles.successButton}`}
                         >
                           <FaCheckCircle /> Inscribirse
                         </button>
 
+
                         {/* Favorito */}
                         {/* ⭐ Botón de favorito con brillo y estrellitas animadas */}
-<button
-  onClick={() => handleFavorito(convocatoria)}
-  className="group relative p-2 rounded-md hover:bg-white/5 transition-all duration-300"
-  title="Marcar como favorita"
->
-  {/* 🌟 Estrella principal */}
-  {isFavByConv(convocatoria) ? (
-    <FaStar
-      className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 drop-shadow-[0_0_6px_#FFD700]"
-      style={{ fontSize: "1.5em" }}
-    />
-  ) : (
-    <FaRegStar
-      className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${
-        modoOscuro ? "text-yellow-400" : "text-yellow-500"
-      } drop-shadow-[0_0_4px_#FFD700]`}
-      style={{
-        stroke: "#FFD700",
-        strokeWidth: "20",
-        fill: "transparent",
-        fontSize: "1.5em",
-      }}
-    />
-  )}
+                        <button
+                          onClick={() => handleFavorito(convocatoria)}
+                          className="group relative p-2 rounded-md hover:bg-white/5 transition-all duration-300"
+                          title="Marcar como favorita"
+                        >
+                          {/* 🌟 Estrella principal */}
+                          {isFavByConv(convocatoria) ? (
+                            <FaStar
+                              className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 drop-shadow-[0_0_6px_#FFD700]"
+                              style={{ fontSize: "1.5em" }}
+                            />
+                          ) : (
+                            <FaRegStar
+                              className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${modoOscuro ? "text-yellow-400" : "text-yellow-500"
+                                } drop-shadow-[0_0_4px_#FFD700]`}
+                              style={{
+                                stroke: "#FFD700",
+                                strokeWidth: "20",
+                                fill: "transparent",
+                                fontSize: "1.5em",
+                              }}
+                            />
+                          )}
 
-  {/* ✨ Miniestrellas brillantes */}
-  <span
-    className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
-    style={{
-      fontSize: "0.7em",
-      filter: "drop-shadow(0 0 6px #FFD700)",
-    }}
-  >
-    ✦
-  </span>
-  <span
-    className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
-    style={{
-      fontSize: "0.6em",
-      filter: "drop-shadow(0 0 8px #FFFACD)",
-    }}
-  >
-    ✧
-  </span>
-  <span
-    className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
-    style={{
-      fontSize: "0.8em",
-      filter: "drop-shadow(0 0 10px #FFD700)",
-    }}
-  >
-    ✨
-  </span>
-</button>
+                          {/* ✨ Miniestrellas brillantes */}
+                          <span
+                            className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
+                            style={{
+                              fontSize: "0.7em",
+                              filter: "drop-shadow(0 0 6px #FFD700)",
+                            }}
+                          >
+                            ✦
+                          </span>
+                          <span
+                            className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
+                            style={{
+                              fontSize: "0.6em",
+                              filter: "drop-shadow(0 0 8px #FFFACD)",
+                            }}
+                          >
+                            ✧
+                          </span>
+                          <span
+                            className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
+                            style={{
+                              fontSize: "0.8em",
+                              filter: "drop-shadow(0 0 10px #FFD700)",
+                            }}
+                          >
+                            ✨
+                          </span>
+                        </button>
 
                       </div>
                     </div>
@@ -1644,66 +1687,80 @@ const handleFavorito = async (convocatoria: Convocatoria) => {
                           </button>
 
                           <button
+                            onClick={() => {
+                              if (convocatoria.callLink) {
+                                window.open(convocatoria.callLink, "_blank");
+                              } else {
+                                Swal.fire({
+                                  icon: "warning",
+                                  title: "⚠️ Enlace no disponible",
+                                  text: "Esta convocatoria no tiene un enlace de inscripción activo.",
+                                  confirmButtonColor: "#39A900",
+                                  background: modoOscuro ? "#1a0526" : "#fff",
+                                  color: modoOscuro ? "#fff" : "#333",
+                                });
+                              }
+                            }}
                             className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md ${styles.successButton}`}
                           >
                             <FaCheckCircle /> Inscribirse
                           </button>
 
-                          {/* ⭐ Botón de favorito con brillo y miniestrellas animadas */}
-<button
-  onClick={() => handleFavorito(convocatoria)}
-  className="group relative p-2 rounded-md hover:bg-white/5 transition-all duration-300"
-  title="Marcar como favorita"
->
-  {/* 🌟 Estrella principal */}
-  {isFavByConv(convocatoria) ? (
-    <FaStar
-      className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 drop-shadow-[0_0_6px_#FFD700]"
-      style={{ fontSize: "1.4em" }}
-    />
-  ) : (
-    <FaRegStar
-      className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${
-        modoOscuro ? "text-yellow-400" : "text-yellow-500"
-      } drop-shadow-[0_0_4px_#FFD700]`}
-      style={{
-        stroke: "#FFD700",
-        strokeWidth: "20",
-        fill: "transparent",
-        fontSize: "1.4em",
-      }}
-    />
-  )}
 
-  {/* ✨ Miniestrellas decorativas */}
-  <span
-    className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
-    style={{
-      fontSize: "0.65em",
-      filter: "drop-shadow(0 0 6px #FFD700)",
-    }}
-  >
-    ✦
-  </span>
-  <span
-    className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
-    style={{
-      fontSize: "0.55em",
-      filter: "drop-shadow(0 0 8px #FFFACD)",
-    }}
-  >
-    ✧
-  </span>
-  <span
-    className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
-    style={{
-      fontSize: "0.7em",
-      filter: "drop-shadow(0 0 10px #FFD700)",
-    }}
-  >
-    ✨
-  </span>
-</button>
+                          {/* ⭐ Botón de favorito con brillo y miniestrellas animadas */}
+                          <button
+                            onClick={() => handleFavorito(convocatoria)}
+                            className="group relative p-2 rounded-md hover:bg-white/5 transition-all duration-300"
+                            title="Marcar como favorita"
+                          >
+                            {/* 🌟 Estrella principal */}
+                            {isFavByConv(convocatoria) ? (
+                              <FaStar
+                                className="text-yellow-400 transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 drop-shadow-[0_0_6px_#FFD700]"
+                                style={{ fontSize: "1.4em" }}
+                              />
+                            ) : (
+                              <FaRegStar
+                                className={`transition-transform duration-500 group-hover:rotate-180 group-hover:scale-125 ${modoOscuro ? "text-yellow-400" : "text-yellow-500"
+                                  } drop-shadow-[0_0_4px_#FFD700]`}
+                                style={{
+                                  stroke: "#FFD700",
+                                  strokeWidth: "20",
+                                  fill: "transparent",
+                                  fontSize: "1.4em",
+                                }}
+                              />
+                            )}
+
+                            {/* ✨ Miniestrellas decorativas */}
+                            <span
+                              className="absolute -top-1 -right-1 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping"
+                              style={{
+                                fontSize: "0.65em",
+                                filter: "drop-shadow(0 0 6px #FFD700)",
+                              }}
+                            >
+                              ✦
+                            </span>
+                            <span
+                              className="absolute top-0 left-0 text-yellow-300 opacity-0 group-hover:opacity-100 animate-bounce"
+                              style={{
+                                fontSize: "0.55em",
+                                filter: "drop-shadow(0 0 8px #FFFACD)",
+                              }}
+                            >
+                              ✧
+                            </span>
+                            <span
+                              className="absolute -bottom-1 right-0 text-yellow-500 opacity-0 group-hover:opacity-100 animate-pulse"
+                              style={{
+                                fontSize: "0.7em",
+                                filter: "drop-shadow(0 0 10px #FFD700)",
+                              }}
+                            >
+                              ✨
+                            </span>
+                          </button>
 
                         </div>
                       </div>

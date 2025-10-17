@@ -58,7 +58,7 @@ export function getThemeStyles(modoOscuro: boolean): ThemeTokens {
 
   // ☀️ Modo claro → blanco en toda la pantalla
   return {
-    fondo: "bg-white text-gray-800", // 👈 blanco en modo claro
+    fondo: "bg-white tzext-gray-800", // 👈 blanco en modo claro
     bg: "bg-[#E8E5E5FF] text-gray-800",
     card: "bg-white border border-gray-200 shadow-sm",
     text: "text-[#0f172a]",

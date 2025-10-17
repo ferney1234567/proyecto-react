@@ -115,25 +115,41 @@ export default function Carousel() {
           </p>
 
           {/* Botones */}
-          <div className="flex flex-wrap gap-4 pt-2">
-            <a
-              href={current.callLink || "#"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-7 py-3 bg-gradient-to-r from-emerald-400 to-cyan-400 text-black font-bold rounded-full flex items-center gap-2 text-sm hover:shadow-lg hover:shadow-cyan-400/20 transition-all duration-300"
-            >
-              <FiCheckCircle /> Inscríbete Ahora
-            </a>
-            <button
-              onClick={() => {
-                setConvocatoriaSeleccionada(current);
-                setModalAbierto(true);
-              }}
-              className="border-2 border-white/50 text-white px-7 py-3 text-sm font-bold rounded-full hover:bg-white hover:text-black transition-colors duration-300 flex items-center gap-2"
-            >
-              <FiEye /> Ver Detalles
-            </button>
-          </div>
+          {/* Botones */}
+<div className="flex flex-wrap gap-4 pt-2">
+  <button
+    onClick={() => {
+      if (current.callLink) {
+        window.open(current.callLink, "_blank");
+      } else if (current.pageUrl) {
+        window.open(current.pageUrl, "_blank");
+      } else {
+        Swal.fire({
+          icon: "warning",
+          title: "⚠️ Enlace no disponible",
+          text: "Esta convocatoria no tiene un enlace de inscripción activo.",
+          confirmButtonColor: "#39A900",
+          background: "#0b1220",
+          color: "#fff",
+        });
+      }
+    }}
+    className="px-7 py-3 bg-gradient-to-r from-emerald-400 to-cyan-400 text-black font-bold rounded-full flex items-center gap-2 text-sm hover:shadow-lg hover:shadow-cyan-400/20 transition-all duration-300"
+  >
+    <FiCheckCircle /> Inscríbete Ahora
+  </button>
+
+  <button
+    onClick={() => {
+      setConvocatoriaSeleccionada(current);
+      setModalAbierto(true);
+    }}
+    className="border-2 border-white/50 text-white px-7 py-3 text-sm font-bold rounded-full hover:bg-white hover:text-black transition-colors duration-300 flex items-center gap-2"
+  >
+    <FiEye /> Ver Detalles
+  </button>
+</div>
+
         </div>
       </div>
 
