@@ -9,6 +9,7 @@ import {
 } from "react-icons/fa";
 import { useTheme } from "../../app/ThemeContext";
 import { getThemeStyles } from "../../app/themeStyles";
+import Swal from "sweetalert2";
 
 export interface Convocatoria {
   id?: number;
@@ -90,6 +91,54 @@ export default function ModalConvocatoria({
 
   if (!modalAbierto || !convocatoria) return null;
 
+ 
+ // 🔥 Registrar clickCount
+const registrarClick = async (callId: any) => {
+  try {
+    const id = Number(callId);
+
+    // 🚨 Validación correcta
+    if (!id || Number.isNaN(id) || id === 0) {
+      console.warn("❌ registrarClick: ID inválido:", callId);
+      return;
+    }
+
+    console.log("📌 Intentando registrar click para ID:", id);
+
+    // 👉 Registrar en backend (SIN validar duplicados en frontend)
+    const res = await fetch(`${API_URL}/calls/${id}/click`, {
+      method: "POST",
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("❌ Error backend click:", errorText);
+      throw new Error(errorText);
+    }
+
+    const data = await res.json();
+    console.log("✔️ Click registrado exitosamente:", data);
+
+    // 🔄 Actualizar el estado local para reflejar el nuevo contador
+    setConvocatorias(prev =>
+      prev.map(conv => {
+        const convId = conv.id ?? conv.callId;
+        if (Number(convId) === Number(id)) {
+          return { ...conv, clickCount: (conv.clickCount || 0) + 1 };
+        }
+        return conv;
+      })
+    );
+
+    return data;
+
+  } catch (err) {
+    console.error("❌ Error registrando click:", err);
+    throw err;
+  }
+};
+
+  
   return (
     <div
       onClick={cerrarModal}
@@ -248,19 +297,57 @@ export default function ModalConvocatoria({
 
         {/* BOTONES */}
         <div className="flex justify-end gap-4 px-8 pb-6">
-          <a
-            href={convocatoria.callLink}
-            target="_blank"
-            className="flex items-center gap-2 px-6 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold shadow transition"
-          >
-            <FaCheckCircle /> Inscribirse
-          </a>
-          <button
-            onClick={cerrarModal}
-            className="flex items-center gap-2 px-6 py-2 rounded-lg bg-gray-500 hover:bg-gray-600 text-white font-semibold shadow transition"
-          >
-            <FaTimes /> Cerrar
-          </button>
+          <div className="flex justify-end gap-4 px-8 pb-6">
+
+  {/* 👉 Botón Inscribirse */}
+  <button
+    onClick={() => {
+      const callId =
+        convocatoria?.id ??
+        convocatoria?.callId ??
+        0;
+
+      // ⛔ Evitar doble click
+      if (callId && !usuarioYaRegistroClick(callId)) {
+        registrarClick(callId);
+        marcarComoVisto(callId);
+      }
+
+      // 👉 Abrir enlace
+      if (convocatoria?.callLink) {
+        window.open(convocatoria.callLink, "_blank");
+      } else if (convocatoria?.pageUrl) {
+        window.open(convocatoria.pageUrl, "_blank");
+      } else {
+        Swal.fire({
+          icon: "warning",
+          title: "⚠️ Enlace no disponible",
+          text: "Esta convocatoria no tiene un enlace de inscripción activo.",
+          confirmButtonColor: "#39A900",
+          background: modoOscuro ? "#1a0526" : "#fff",
+          color: modoOscuro ? "#fff" : "#333",
+        });
+      }
+    }}
+    className="flex items-center justify-center gap-2 px-6 py-2 rounded-lg font-semibold shadow 
+               bg-green-600 hover:bg-green-700 text-white transition-all"
+    style={{ minWidth: "150px" }}
+  >
+    <FaCheckCircle /> Inscribirse
+  </button>
+
+  {/* 👉 Botón Cerrar */}
+  <button
+    onClick={cerrarModal}
+    className="flex items-center justify-center gap-2 px-6 py-2 rounded-lg font-semibold shadow 
+               bg-gray-500 hover:bg-gray-600 text-white transition-all"
+    style={{ minWidth: "150px" }}
+  >
+    <FaTimes /> Cerrar
+  </button>
+
+</div>
+
         </div>
       </div>
     </div>

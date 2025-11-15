@@ -59,6 +59,7 @@ interface Categoria {
   description?: string;
 }
 
+
 /* ============================
    Componente principal
 ============================ */
@@ -68,7 +69,10 @@ export default function FavoritosPage() {
   const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
   const API_URL_FAVORITOS = `${BASE_URL}/favorites`;
   const API_URL_LINEAS = `${BASE_URL}/lines`;
+  
+  const API_URL = BASE_URL;
   /* ----------------------------
+  
 
      Estado base
   ---------------------------- */
@@ -120,6 +124,16 @@ export default function FavoritosPage() {
     if (!u) return null;
     return u.id ?? u.uId ?? u.uid ?? u.userId ?? null;
   };
+
+  const getCallIdSeguro = (c: any) => {
+  return (
+    Number(c.callId) ||
+    Number(c.id) ||
+    Number(c.favId) || 
+    null
+  );
+};
+
 
   useEffect(() => {
     (async () => {
@@ -384,6 +398,58 @@ export default function FavoritosPage() {
       });
     }
   };
+  
+
+
+ // 🔥 Registrar clickCount
+const registrarClick = async (callId: any) => {
+  try {
+    const id = Number(callId);
+
+    // 🚨 Validación correcta
+    if (!id || Number.isNaN(id) || id === 0) {
+      console.warn("❌ registrarClick: ID inválido:", callId);
+      return;
+    }
+
+    console.log("📌 Intentando registrar click para ID:", id);
+
+    // 👉 Registrar en backend (SIN validar duplicados en frontend)
+    const res = await fetch(`${API_URL}/calls/${id}/click`, {
+      method: "POST",
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("❌ Error backend click:", errorText);
+      throw new Error(errorText);
+    }
+
+    const data = await res.json();
+    console.log("✔️ Click registrado exitosamente:", data);
+
+    // 🔄 Actualizar el estado local para reflejar el nuevo contador
+    setConvocatorias(prev =>
+      prev.map(conv => {
+        const convId = conv.id ?? conv.callId;
+        if (Number(convId) === Number(id)) {
+          return { ...conv, clickCount: (conv.clickCount || 0) + 1 };
+        }
+        return conv;
+      })
+    );
+
+    return data;
+
+  } catch (err) {
+    console.error("❌ Error registrando click:", err);
+    throw err;
+  }
+};
+
+
+
+
 
 
 
@@ -848,9 +914,18 @@ export default function FavoritosPage() {
                       >
                         <FaRegFileAlt /> Detalles
                       </button>
-
                       <button
                         onClick={() => {
+                         const callId = getCallIdSeguro(c);
+
+
+                          // ⛔ Evitar doble registro por usuario
+                          if (callId && !usuarioYaRegistroClick(callId)) {
+                            registrarClick(callId);
+                            marcarComoVisto(callId);
+                          }
+
+                          // 👇 Abrir enlaces
                           if (c.callLink) {
                             window.open(c.callLink, "_blank");
                           } else if (c.pageUrl) {
@@ -870,6 +945,8 @@ export default function FavoritosPage() {
                       >
                         <FaCheckCircle /> Inscribirse
                       </button>
+
+
 
                     </div>
                   </div>
@@ -1018,6 +1095,14 @@ export default function FavoritosPage() {
                         </button>
                         <button
                           onClick={() => {
+                           const callId = getCallIdSeguro(c);
+
+
+                            if (callId && !usuarioYaRegistroClick(callId)) {
+                              registrarClick(callId);
+                              marcarComoVisto(callId);
+                            }
+
                             if (c.callLink) {
                               window.open(c.callLink, "_blank");
                             } else if (c.pageUrl) {
@@ -1035,8 +1120,10 @@ export default function FavoritosPage() {
                           }}
                           className={`flex items-center gap-2 px-5 py-2 rounded-md font-semibold ${styles.successButton}`}
                         >
-                          <FaCheckCircle style={{ fontSize: "1em" }} /> Inscribirse
+                          <FaCheckCircle /> Inscribirse
                         </button>
+
+
 
                       </div>
                     </div>
