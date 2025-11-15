@@ -490,54 +490,6 @@ export default function ExplorarPage() {
     }
   };
 
- 
- // 🔥 Registrar clickCount
-const registrarClick = async (callId: any) => {
-  try {
-    const id = Number(callId);
-
-    // 🚨 Validación correcta
-    if (!id || Number.isNaN(id) || id === 0) {
-      console.warn("❌ registrarClick: ID inválido:", callId);
-      return;
-    }
-
-    console.log("📌 Intentando registrar click para ID:", id);
-
-    // 👉 Registrar en backend (SIN validar duplicados en frontend)
-    const res = await fetch(`${API_URL}/calls/${id}/click`, {
-      method: "POST",
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("❌ Error backend click:", errorText);
-      throw new Error(errorText);
-    }
-
-    const data = await res.json();
-    console.log("✔️ Click registrado exitosamente:", data);
-
-    // 🔄 Actualizar el estado local para reflejar el nuevo contador
-    setConvocatorias(prev =>
-      prev.map(conv => {
-        const convId = conv.id ?? conv.callId;
-        if (Number(convId) === Number(id)) {
-          return { ...conv, clickCount: (conv.clickCount || 0) + 1 };
-        }
-        return conv;
-      })
-    );
-
-    return data;
-
-  } catch (err) {
-    console.error("❌ Error registrando click:", err);
-    throw err;
-  }
-};
-
-
 
 
 
@@ -1000,11 +952,6 @@ const registrarClick = async (callId: any) => {
 
                         <button
                           onClick={() => {
-                            // 👈 REGISTRAR CLICK EN LA BD
-                          registrarClick(getConvocatoriaCallId(c));
-
-
-                            // 👇 Abrir enlace según disponibilidad
                             if (c.callLink) {
                               window.open(c.callLink, "_blank");
                             } else if (c.pageUrl) {
@@ -1024,7 +971,6 @@ const registrarClick = async (callId: any) => {
                         >
                           <FaCheckCircle /> Inscribirse
                         </button>
-
 
 
                         {/* 🔹 Favorito con animaciones */}
@@ -1256,11 +1202,6 @@ const registrarClick = async (callId: any) => {
                           </button>
                           <button
                             onClick={() => {
-                              // 👈 REGISTRAR CLICK EN LA BD
-                            registrarClick(getConvocatoriaCallId(c));
-
-
-                              // 👇 ABRIR ENLACE PRINCIPAL O SECUNDARIO
                               if (c.callLink) {
                                 window.open(c.callLink, "_blank");
                               } else if (c.pageUrl) {
@@ -1280,7 +1221,6 @@ const registrarClick = async (callId: any) => {
                           >
                             <FaCheckCircle /> Inscribirse
                           </button>
-
 
                           <button
                             onClick={() => handleFavorito(c)}
@@ -1540,11 +1480,6 @@ const registrarClick = async (callId: any) => {
                             </button>
                             <button
                               onClick={() => {
-                                // 👈 REGISTRAR CLICK EN LA BD
-                              registrarClick(getConvocatoriaCallId(c));
-
-
-                                // 👇 ABRIR ENLACE PRINCIPAL O SECUNDARIO
                                 if (c.callLink) {
                                   window.open(c.callLink, "_blank");
                                 } else if (c.pageUrl) {
@@ -1564,7 +1499,6 @@ const registrarClick = async (callId: any) => {
                             >
                               <FaCheckCircle /> Inscribirse
                             </button>
-
 
                             <button
                               onClick={() => handleFavorito(c)}
@@ -1770,11 +1704,6 @@ const registrarClick = async (callId: any) => {
 
                         <button
                           onClick={() => {
-                            // 👈 REGISTRAR CLICK EN LA BD
-                          registrarClick(getConvocatoriaCallId(c));
-
-
-                            // 👇 ABRIR EL ENLACE CORRESPONDIENTE
                             if (c.callLink) {
                               window.open(c.callLink, "_blank");
                             } else if (c.pageUrl) {
@@ -1790,11 +1719,10 @@ const registrarClick = async (callId: any) => {
                               });
                             }
                           }}
-                          className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md font-semibold ${styles.successButton}`}
+                          className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md ${styles.successButton}`}
                         >
                           <FaCheckCircle /> Inscribirse
                         </button>
-
 
 
                         {/* 🌟 Favorito con animación */}

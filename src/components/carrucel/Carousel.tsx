@@ -76,38 +76,6 @@ export default function Carousel() {
 
   const current = convocatorias[index];
 
-  // 👉 Verificar si el usuario ya registró un click
-const usuarioYaRegistroClick = (callId: number) => {
-  const vistos = JSON.parse(localStorage.getItem("conv_clicks") || "[]");
-  return vistos.includes(callId);
-};
-
-// 👉 Guardar que el usuario ya hizo click
-const marcarComoVisto = (callId: number) => {
-  const vistos = JSON.parse(localStorage.getItem("conv_clicks") || "[]");
-  if (!vistos.includes(callId)) {
-    vistos.push(callId);
-    localStorage.setItem("conv_clicks", JSON.stringify(vistos));
-  }
-};
-
-
-const registrarClick = async (callId?: number) => {
-  try {
-    if (!callId) return; // ⛔ No enviamos undefined
-    const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-    await fetch(`${API_URL}/calls/${callId}/click`, {
-      method: "POST",
-    });
-  } catch (error) {
-    console.error("Error registrando click:", error);
-  }
-};
-
-
-
-
   return (
     <div className="relative h-[380px] overflow-hidden rounded-2xl shadow-2xl transition-all duration-700">
       {/* Imagen de fondo */}
@@ -150,33 +118,26 @@ const registrarClick = async (callId?: number) => {
           {/* Botones */}
 <div className="flex flex-wrap gap-4 pt-2">
   <button
-  onClick={async () => {
-
-    // 👈 Registrar el click en la BD
-   registrarClick(current.id ?? current.callId);
-
-
-    // 👇 Abrir enlace
-    if (current.callLink) {
-      window.open(current.callLink, "_blank");
-    } else if (current.pageUrl) {
-      window.open(current.pageUrl, "_blank");
-    } else {
-      Swal.fire({
-        icon: "warning",
-        title: "⚠️ Enlace no disponible",
-        text: "Esta convocatoria no tiene un enlace de inscripción activo.",
-        confirmButtonColor: "#39A900",
-        background: "#0b1220",
-        color: "#fff",
-      });
-    }
-  }}
-  className="px-7 py-3 bg-gradient-to-r from-emerald-400 to-cyan-400 text-black font-bold rounded-full flex items-center gap-2 text-sm hover:shadow-lg hover:shadow-cyan-400/20 transition-all duration-300"
->
-  <FiCheckCircle /> Inscríbete Ahora
-</button>
-
+    onClick={() => {
+      if (current.callLink) {
+        window.open(current.callLink, "_blank");
+      } else if (current.pageUrl) {
+        window.open(current.pageUrl, "_blank");
+      } else {
+        Swal.fire({
+          icon: "warning",
+          title: "⚠️ Enlace no disponible",
+          text: "Esta convocatoria no tiene un enlace de inscripción activo.",
+          confirmButtonColor: "#39A900",
+          background: "#0b1220",
+          color: "#fff",
+        });
+      }
+    }}
+    className="px-7 py-3 bg-gradient-to-r from-emerald-400 to-cyan-400 text-black font-bold rounded-full flex items-center gap-2 text-sm hover:shadow-lg hover:shadow-cyan-400/20 transition-all duration-300"
+  >
+    <FiCheckCircle /> Inscríbete Ahora
+  </button>
 
   <button
     onClick={() => {

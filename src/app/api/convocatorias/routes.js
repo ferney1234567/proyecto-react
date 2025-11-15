@@ -1,19 +1,17 @@
 // src/api/convocatorias/routes.js
 
-// ============================================================
-// 🔧 URL base cargada desde .env
-// ============================================================
+// ✅ Cargar URL base desde la variable de entorno (.env)
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-// ============================================================
-// 🧠 Helper para fetch con token (JWT)
-// ============================================================
+// ======================================================
+// 🧠 Helper global para peticiones con JWT automáticamente
+// ======================================================
 const fetchConToken = async (url, options = {}) => {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   const headers = {
     "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
+    ...(token && { Authorization: `Bearer ${token}` }), // 🔒 Adjunta el JWT si existe
     ...options.headers,
   };
 
@@ -21,9 +19,9 @@ const fetchConToken = async (url, options = {}) => {
   return res;
 };
 
-// ============================================================
+// ============================
 // 📌 Convocatorias
-// ============================================================
+// ============================
 
 // Obtener todas las convocatorias
 export const getConvocatorias = async () => {
@@ -44,14 +42,14 @@ export const getConvocatorias = async () => {
 };
 
 // Crear convocatoria (requiere token)
-export const createConvocatoria = async (convocatoria) => {
+export const createConvocatoria = async (conv) => {
   try {
     const res = await fetchConToken(`${API_URL}/calls`, {
       method: "POST",
-      body: JSON.stringify(convocatoria),
+      body: JSON.stringify(conv),
     });
 
-    const data = await res.json().catch(() => ({}));
+    const data = await res.json();
 
     if (!res.ok || data.status === "Error") {
       throw new Error(data.message || "Error al crear convocatoria");
@@ -65,20 +63,15 @@ export const createConvocatoria = async (convocatoria) => {
 };
 
 // Actualizar convocatoria (requiere token)
-export const updateConvocatoria = async (id, convocatoria) => {
+export const updateConvocatoria = async (id, conv) => {
   try {
     const res = await fetchConToken(`${API_URL}/calls/${id}`, {
       method: "PUT",
-      body: JSON.stringify(convocatoria),
+      body: JSON.stringify(conv),
     });
 
-    const data = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      throw new Error(data.message || "Error al actualizar convocatoria");
-    }
-
-    return data;
+    if (!res.ok) throw new Error("Error al actualizar convocatoria");
+    return res.json();
   } catch (err) {
     console.error("❌ Error en updateConvocatoria:", err);
     throw err;
@@ -88,50 +81,19 @@ export const updateConvocatoria = async (id, convocatoria) => {
 // Eliminar convocatoria (requiere token)
 export const deleteConvocatoria = async (id) => {
   try {
-    const res = await fetchConToken(`${API_URL}/calls/${id}`, {
-      method: "DELETE",
-    });
-
-    const data = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      throw new Error(data.message || "Error al eliminar convocatoria");
-    }
-
-    return data;
+    const res = await fetchConToken(`${API_URL}/calls/${id}`, { method: "DELETE" });
+    if (!res.ok) throw new Error("Error al eliminar convocatoria");
+    return res.json();
   } catch (err) {
     console.error("❌ Error en deleteConvocatoria:", err);
     throw err;
   }
 };
 
-// ============================================================
-// 📌 Registrar click (SUMAR CONTADOR) — NUEVO
-// ============================================================
-export const registrarClick = async (callId) => {
-  try {
-    const res = await fetchConToken(`${API_URL}/calls/${callId}/click`, {
-      method: "POST",
-    });
-
-    const data = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      throw new Error(data.message || "Error registrando click");
-    }
-
-    return data;
-  } catch (err) {
-    console.error("❌ Error en registrarClick:", err);
-    throw err;
-  }
-};
-
-// ============================================================
+// ============================
 // 📌 Catálogos auxiliares
-// ============================================================
+// ============================
 
-// Instituciones
 export const getEntidades = async () => {
   try {
     const res = await fetchConToken(`${API_URL}/institutions`, { cache: "no-store" });
@@ -143,7 +105,6 @@ export const getEntidades = async () => {
   }
 };
 
-// Líneas
 export const getLineas = async () => {
   try {
     const res = await fetchConToken(`${API_URL}/lines`, { cache: "no-store" });
@@ -155,7 +116,6 @@ export const getLineas = async () => {
   }
 };
 
-// Públicos objetivo
 export const getPublicos = async () => {
   try {
     const res = await fetchConToken(`${API_URL}/targets`, { cache: "no-store" });
@@ -167,7 +127,6 @@ export const getPublicos = async () => {
   }
 };
 
-// Intereses
 export const getIntereses = async () => {
   try {
     const res = await fetchConToken(`${API_URL}/interests`, { cache: "no-store" });
@@ -179,7 +138,6 @@ export const getIntereses = async () => {
   }
 };
 
-// Usuarios
 export const getUsuarios = async () => {
   try {
     const res = await fetchConToken(`${API_URL}/users`, { cache: "no-store" });
