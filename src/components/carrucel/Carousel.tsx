@@ -9,6 +9,8 @@ import ModalConvocatoria from "../detalleConvo/detalleConvo";
 import { getConvocatorias } from "@/app/api/convocatorias/routes";
 import Swal from "sweetalert2";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 interface Convocatoria {
   id?: number;
   callId?: number;
@@ -38,13 +40,64 @@ export default function Carousel() {
   const [convocatoriaSeleccionada, setConvocatoriaSeleccionada] =
     useState<Convocatoria | null>(null);
 
-  // ✅ Cargar convocatorias
+  // 🔥 Función UNIFICADA para obtener callId
+  const getConvocatoriaCallId = (c: Convocatoria | null) => {
+    if (!c) return null;
+    return Number(c.callId ?? c.id ?? null);
+  };
+
+  // 🔥 Registrar click
+  const registrarClickConvocatoria = async (callId: number | null) => {
+    if (!callId) return;
+
+    const usuarioGuardado = localStorage.getItem("usuario");
+    if (!usuarioGuardado) return;
+
+    let userId = null;
+    try {
+      const usuario = JSON.parse(usuarioGuardado);
+      userId =
+        Number(usuario?.id) ||
+        Number(usuario?.userId) ||
+        Number(usuario?.uid) ||
+        Number(usuario?.uId);
+    } catch {
+      return;
+    }
+
+    if (!userId) return;
+
+    const vistos = JSON.parse(localStorage.getItem("conv_clicks") || "[]");
+    if (vistos.includes(callId)) return;
+
+    try {
+      await fetch(`${API_URL}/calls/${callId}/click`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+
+      vistos.push(callId);
+      localStorage.setItem("conv_clicks", JSON.stringify(vistos));
+
+    } catch (err) {
+      console.error("Error registrando click:", err);
+    }
+  };
+
+  // 🔥 Cargar convocatorias (solo top 10 más relevantes)
   useEffect(() => {
     (async () => {
       try {
         const data = await getConvocatorias();
-        const listaConImagenes = asignarImagenesPorDefecto(data?.data || []);
-        setConvocatorias(listaConImagenes);
+        const lista = asignarImagenesPorDefecto(data?.data || []);
+
+        const top10 = lista
+          .sort((a, b) => b.clickCount - a.clickCount)
+          .slice(0, 10);
+
+        setConvocatorias(top10);
+
       } catch (err) {
         console.error("❌ Error al cargar convocatorias:", err);
         Swal.fire("Error", "No se pudieron cargar las convocatorias.", "error");
@@ -52,25 +105,28 @@ export default function Carousel() {
     })();
   }, []);
 
-  // ✅ Rotación automática
+  // 🔄 Rotación automática
   useEffect(() => {
     if (convocatorias.length === 0) return;
+
     const timer = setInterval(() => {
       setIndex((prev) => (prev + 1) % convocatorias.length);
     }, 7000);
+
     return () => clearInterval(timer);
   }, [convocatorias]);
 
   if (convocatorias.length === 0) {
     return (
       <div className="w-full h-[300px] flex items-center justify-center text-gray-500">
-        Cargando convocatorias...
+        Cargando convocatorias destacadas...
       </div>
     );
   }
 
   const prevSlide = () =>
     setIndex((prev) => (prev - 1 + convocatorias.length) % convocatorias.length);
+
   const nextSlide = () =>
     setIndex((prev) => (prev + 1) % convocatorias.length);
 
@@ -78,7 +134,8 @@ export default function Carousel() {
 
   return (
     <div className="relative h-[380px] overflow-hidden rounded-2xl shadow-2xl transition-all duration-700">
-      {/* Imagen de fondo */}
+
+      {/* Imagen fondo */}
       <div className="absolute inset-0">
         <img
           src={current.imageUrl || "/img/default.jpg"}
@@ -91,6 +148,7 @@ export default function Carousel() {
       {/* Contenido */}
       <div className="relative grid grid-cols-1 md:grid-cols-2 z-10 text-white h-full">
         <div className="p-8 md:p-12 flex flex-col justify-center space-y-4 h-full backdrop-blur-md">
+
           {/* Encabezado */}
           <div className="flex items-center gap-4">
             <FiAward className="text-4xl text-white" />
@@ -99,57 +157,55 @@ export default function Carousel() {
             </span>
           </div>
 
-          {/* Título y descripción */}
-          <h2
-            className="text-4xl font-extrabold tracking-tight leading-tight line-clamp-2 max-w-2xl"
-            title={current.title}
-          >
+          {/* Título */}
+          <h2 className="text-4xl font-extrabold tracking-tight leading-tight line-clamp-2 max-w-2xl">
             {current.title}
           </h2>
 
-          <p
-            className="text-base opacity-90 leading-relaxed line-clamp-3 max-w-2xl"
-            title={current.description}
-          >
+          <p className="text-base opacity-90 leading-relaxed line-clamp-3 max-w-2xl">
             {current.description}
           </p>
 
           {/* Botones */}
-          {/* Botones */}
-<div className="flex flex-wrap gap-4 pt-2">
-  <button
-    onClick={() => {
-      if (current.callLink) {
-        window.open(current.callLink, "_blank");
-      } else if (current.pageUrl) {
-        window.open(current.pageUrl, "_blank");
-      } else {
-        Swal.fire({
-          icon: "warning",
-          title: "⚠️ Enlace no disponible",
-          text: "Esta convocatoria no tiene un enlace de inscripción activo.",
-          confirmButtonColor: "#39A900",
-          background: "#0b1220",
-          color: "#fff",
-        });
-      }
-    }}
-    className="px-7 py-3 bg-gradient-to-r from-emerald-400 to-cyan-400 text-black font-bold rounded-full flex items-center gap-2 text-sm hover:shadow-lg hover:shadow-cyan-400/20 transition-all duration-300"
-  >
-    <FiCheckCircle /> Inscríbete Ahora
-  </button>
+          <div className="flex flex-wrap gap-4 pt-2">
 
-  <button
-    onClick={() => {
-      setConvocatoriaSeleccionada(current);
-      setModalAbierto(true);
-    }}
-    className="border-2 border-white/50 text-white px-7 py-3 text-sm font-bold rounded-full hover:bg-white hover:text-black transition-colors duration-300 flex items-center gap-2"
-  >
-    <FiEye /> Ver Detalles
-  </button>
-</div>
+            {/* 🔥 INSCRIBIRSE CON CLICK COUNT */}
+            <button
+              onClick={() => {
+                const cid = getConvocatoriaCallId(current);
+                if (cid) registrarClickConvocatoria(cid);
 
+                if (current.callLink) {
+                  window.open(current.callLink, "_blank");
+                } else if (current.pageUrl) {
+                  window.open(current.pageUrl, "_blank");
+                } else {
+                  Swal.fire({
+                    icon: "warning",
+                    title: "⚠️ Enlace no disponible",
+                    text: "Esta convocatoria no tiene un enlace de inscripción activo.",
+                    confirmButtonColor: "#39A900",
+                    background: "#0b1220",
+                    color: "#fff",
+                  });
+                }
+              }}
+              className="px-7 py-3 bg-gradient-to-r from-emerald-400 to-cyan-400 text-black font-bold rounded-full flex items-center gap-2 text-sm hover:shadow-lg hover:shadow-cyan-400/20 transition-all duration-300"
+            >
+              <FiCheckCircle /> Inscríbete Ahora
+            </button>
+
+            {/* Ver detalles */}
+            <button
+              onClick={() => {
+                setConvocatoriaSeleccionada(current);
+                setModalAbierto(true);
+              }}
+              className="border-2 border-white/50 text-white px-7 py-3 text-sm font-bold rounded-full hover:bg-white hover:text-black transition-colors duration-300 flex items-center gap-2"
+            >
+              <FiEye /> Ver Detalles
+            </button>
+          </div>
         </div>
       </div>
 
@@ -177,7 +233,6 @@ export default function Carousel() {
               i === index ? "bg-white scale-125" : "bg-white/40"
             }`}
             onClick={() => setIndex(i)}
-            aria-label={`Ir al slide ${i + 1}`}
           ></button>
         ))}
       </div>

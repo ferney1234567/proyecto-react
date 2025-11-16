@@ -9,6 +9,7 @@ import {
 } from "react-icons/fa";
 import { useTheme } from "../../app/ThemeContext";
 import { getThemeStyles } from "../../app/themeStyles";
+import Swal from "sweetalert2";
 
 export interface Convocatoria {
   id?: number;
@@ -57,6 +58,13 @@ export default function ModalConvocatoria({
   const [publicos, setPublicos] = useState<Catalogo[]>([]);
   const [intereses, setIntereses] = useState<Catalogo[]>([]);
 
+// 🧩 Obtener callId seguro
+const getConvocatoriaCallId = (c: any) => {
+  const raw = c?.callId ?? c?.id;
+  return raw != null ? Number(raw) : null;
+};
+
+
   const getNombre = (arr: Catalogo[] | undefined, id: number | undefined) => {
     if (!arr || arr.length === 0 || !id) return "—";
     return arr.find(item => item.id === id)?.name || "—";
@@ -89,6 +97,53 @@ export default function ModalConvocatoria({
   }, []);
 
   if (!modalAbierto || !convocatoria) return null;
+
+const registrarClickConvocatoria = async (callId: number | null) => {
+  if (!callId) return;
+
+  const usuarioGuardado = localStorage.getItem("usuario");
+  if (!usuarioGuardado) return;
+
+  let userId = null;
+  try {
+    const usuario = JSON.parse(usuarioGuardado);
+    userId =
+      Number(usuario?.id) ||
+      Number(usuario?.userId) ||
+      Number(usuario?.uid) ||
+      Number(usuario?.uId);
+  } catch {
+    return;
+  }
+
+  if (!userId) return;
+
+  // Evita doble registro inmediato
+  const vistos = JSON.parse(localStorage.getItem("conv_clicks") || "[]");
+  if (vistos.includes(callId)) return;
+
+  try {
+    const res = await fetch(`${API_URL}/calls/${callId}/click`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+
+    const data = await res.json();
+
+    // Guardar para evitar duplicados en el momento
+    vistos.push(callId);
+    localStorage.setItem("conv_clicks", JSON.stringify(vistos));
+
+    // (Opcional) Aquí podrías mostrar el contador actualizado:
+    // console.log("Nuevo clickCount:", data.clickCount);
+
+  } catch (error) {
+    console.error("❌ Error registrando clic", error);
+  }
+};
+
+
 
   return (
     <div
@@ -248,13 +303,32 @@ export default function ModalConvocatoria({
 
         {/* BOTONES */}
         <div className="flex justify-end gap-4 px-8 pb-6">
-          <a
-            href={convocatoria.callLink}
-            target="_blank"
-            className="flex items-center gap-2 px-6 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold shadow transition"
-          >
-            <FaCheckCircle /> Inscribirse
-          </a>
+          <button
+  onClick={() => {
+    const cid = getConvocatoriaCallId(convocatoria);
+
+    if (cid) registrarClickConvocatoria(cid);
+
+    if (convocatoria.callLink) {
+      window.open(convocatoria.callLink, "_blank");
+    } else if (convocatoria.pageUrl) {
+      window.open(convocatoria.pageUrl, "_blank");
+    } else {
+      Swal.fire({
+        icon: "warning",
+        title: "⚠️ Enlace no disponible",
+        text: "Esta convocatoria no tiene un enlace de inscripción activo.",
+        confirmButtonColor: "#39A900",
+        background: modoOscuro ? "#1a0526" : "#fff",
+        color: modoOscuro ? "#fff" : "#333",
+      });
+    }
+  }}
+  className="flex items-center gap-2 px-6 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold shadow transition"
+>
+  <FaCheckCircle /> Inscribirse
+</button>
+
           <button
             onClick={cerrarModal}
             className="flex items-center gap-2 px-6 py-2 rounded-lg bg-gray-500 hover:bg-gray-600 text-white font-semibold shadow transition"

@@ -451,9 +451,58 @@ export default function HomePage() {
       });
     }
   };
+ const registrarClickConvocatoria = async (callId: number | null) => {
+  if (!callId) return;
 
+  const usuarioGuardado = localStorage.getItem("usuario");
+  if (!usuarioGuardado) return;
 
+  let userId = null;
+  try {
+    const usuario = JSON.parse(usuarioGuardado);
+    userId =
+      Number(usuario?.id) ||
+      Number(usuario?.userId) ||
+      Number(usuario?.uid) ||
+      Number(usuario?.uId);
+  } catch {
+    return;
+  }
 
+  try {
+    const response = await fetch(`${API_URL}/calls/${callId}/click`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Error registrando click");
+    }
+
+    const data = await response.json();
+
+    // 🔥 Actualizar contador en estado global
+    setConvocatorias((prev) =>
+      prev.map((c) => {
+        const cid = c.callId || c.id;
+        if (Number(cid) === Number(callId)) {
+          return { ...c, clickCount: data.clickCount };
+        }
+        return c;
+      })
+    );
+
+    // 🔥 Solo evitar doble clic inmediato, no bloquear el día
+    const vistos = JSON.parse(localStorage.getItem("conv_clicks") || "[]");
+    if (!vistos.includes(callId)) {
+      vistos.push(callId);
+      localStorage.setItem("conv_clicks", JSON.stringify(vistos));
+    }
+  } catch (error) {
+    console.error("Error:", error);
+  }
+};
 
 
 
@@ -964,11 +1013,21 @@ export default function HomePage() {
                     </button>
 
                     <button
-                      onClick={() => window.open(convocatoriasPagina[0].callLink, "_blank")}
+                      onClick={() => {
+                        const cid = convocatoriasPagina[0]?.callId ?? convocatoriasPagina[0]?.id;
+
+                        if (cid != null) {
+                          registrarClickConvocatoria(Number(cid));
+                        }
+
+
+                        window.open(convocatoriasPagina[0].callLink, "_blank");
+                      }}
                       className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold transition-all ${styles.successButton}`}
                     >
                       <FaCheckCircle /> Inscribirse
                     </button>
+
 
 
                     {/* ⭐ Favorito */}
@@ -1202,6 +1261,12 @@ export default function HomePage() {
 
                         <button
                           onClick={() => {
+                            const cid = getConvocatoriaCallId(convocatoria);
+
+                            if (cid) {
+                              registrarClickConvocatoria(cid); // 👈 Sólo si es válido
+                            }
+
                             if (convocatoria.callLink) {
                               window.open(convocatoria.callLink, "_blank");
                             } else {
@@ -1219,6 +1284,7 @@ export default function HomePage() {
                         >
                           <FaCheckCircle /> Inscribirse
                         </button>
+
 
 
                         {/* Favorito */}
@@ -1446,6 +1512,13 @@ export default function HomePage() {
 
                         <button
                           onClick={() => {
+                            const cid = getConvocatoriaCallId(convocatoria);
+
+                            // 👈 Solo registra si existe un ID válido
+                            if (cid) {
+                              registrarClickConvocatoria(cid);
+                            }
+
                             if (convocatoria.callLink) {
                               window.open(convocatoria.callLink, "_blank");
                             } else {
@@ -1463,6 +1536,8 @@ export default function HomePage() {
                         >
                           <FaCheckCircle /> Inscribirse
                         </button>
+
+
 
 
                         {/* Favorito */}
@@ -1688,6 +1763,13 @@ export default function HomePage() {
 
                           <button
                             onClick={() => {
+                              const cid = getConvocatoriaCallId(convocatoria);
+
+                              // 👈 Registrar click solo si el ID es válido
+                              if (cid) {
+                                registrarClickConvocatoria(cid);
+                              }
+
                               if (convocatoria.callLink) {
                                 window.open(convocatoria.callLink, "_blank");
                               } else {
@@ -1705,6 +1787,8 @@ export default function HomePage() {
                           >
                             <FaCheckCircle /> Inscribirse
                           </button>
+
+
 
 
                           {/* ⭐ Botón de favorito con brillo y miniestrellas animadas */}

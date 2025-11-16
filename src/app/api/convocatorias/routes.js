@@ -147,4 +147,30 @@ export const getUsuarios = async () => {
     console.error("❌ Error en getUsuarios:", err);
     throw err;
   }
+
+  
+};
+
+// =======================================
+// 📌 Registrar un click en una convocatoria
+// =======================================
+export const registrarClickConvocatoriaAPI = async (callId, userId) => {
+  try {
+    const res = await fetchConToken(`${API_URL}/calls/${callId}/click`, {
+      method: "POST",
+      body: JSON.stringify({ userId }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error("⚠️ Error registrando click:", data);
+      throw new Error("Error al registrar click");
+    }
+
+    return data;
+  } catch (err) {
+    console.error("❌ Error en registrarClickConvocatoriaAPI:", err);
+    throw err;
+  }
 };

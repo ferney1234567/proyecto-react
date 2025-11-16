@@ -490,6 +490,62 @@ export default function ExplorarPage() {
     }
   };
 
+  const registrarClickConvocatoria = async (callId: number | null) => {
+  if (!callId) return;
+
+  const usuarioGuardado = localStorage.getItem("usuario");
+  if (!usuarioGuardado) return;
+
+  let userId = null;
+  try {
+    const usuario = JSON.parse(usuarioGuardado);
+    userId =
+      Number(usuario?.id) ||
+      Number(usuario?.userId) ||
+      Number(usuario?.uid) ||
+      Number(usuario?.uId);
+  } catch {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/calls/${callId}/click`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Error registrando click");
+    }
+
+    const data = await response.json();
+
+    // 🔥 Actualizar contador en estado global
+    setConvocatorias((prev) =>
+      prev.map((c) => {
+        const cid = c.callId || c.id;
+        if (Number(cid) === Number(callId)) {
+          return { ...c, clickCount: data.clickCount };
+        }
+        return c;
+      })
+    );
+
+    // 🔥 Solo evitar doble clic inmediato, no bloquear el día
+    const vistos = JSON.parse(localStorage.getItem("conv_clicks") || "[]");
+    if (!vistos.includes(callId)) {
+      vistos.push(callId);
+      localStorage.setItem("conv_clicks", JSON.stringify(vistos));
+    }
+  } catch (error) {
+    console.error("Error:", error);
+  }
+};
+
+
+
+
 
 
 
@@ -952,6 +1008,12 @@ export default function ExplorarPage() {
 
                         <button
                           onClick={() => {
+                            const cid = getConvocatoriaCallId(c);
+
+                            // 👇 SUMA AL CONTADOR EN EL BACKEND
+                            registrarClickConvocatoria(cid);
+
+                            // 👇 Abrir el enlace de inscripción
                             if (c.callLink) {
                               window.open(c.callLink, "_blank");
                             } else if (c.pageUrl) {
@@ -961,9 +1023,6 @@ export default function ExplorarPage() {
                                 icon: "warning",
                                 title: "⚠️ Enlace no disponible",
                                 text: "Esta convocatoria no tiene un enlace de inscripción activo.",
-                                confirmButtonColor: "#39A900",
-                                background: modoOscuro ? "#1a0526" : "#fff",
-                                color: modoOscuro ? "#fff" : "#333",
                               });
                             }
                           }}
@@ -971,6 +1030,7 @@ export default function ExplorarPage() {
                         >
                           <FaCheckCircle /> Inscribirse
                         </button>
+
 
 
                         {/* 🔹 Favorito con animaciones */}
@@ -1202,6 +1262,10 @@ export default function ExplorarPage() {
                           </button>
                           <button
                             onClick={() => {
+                              const cid = getConvocatoriaCallId(c);
+                              registrarClickConvocatoria(cid); // 👈 SUMA EL CONTADOR
+
+                              // abrir enlaces
                               if (c.callLink) {
                                 window.open(c.callLink, "_blank");
                               } else if (c.pageUrl) {
@@ -1221,6 +1285,7 @@ export default function ExplorarPage() {
                           >
                             <FaCheckCircle /> Inscribirse
                           </button>
+
 
                           <button
                             onClick={() => handleFavorito(c)}
@@ -1480,6 +1545,9 @@ export default function ExplorarPage() {
                             </button>
                             <button
                               onClick={() => {
+                                const cid = getConvocatoriaCallId(c);
+                                registrarClickConvocatoria(cid);  // 👈 SUMA EL CONTADOR AQUÍ
+
                                 if (c.callLink) {
                                   window.open(c.callLink, "_blank");
                                 } else if (c.pageUrl) {
@@ -1499,6 +1567,7 @@ export default function ExplorarPage() {
                             >
                               <FaCheckCircle /> Inscribirse
                             </button>
+
 
                             <button
                               onClick={() => handleFavorito(c)}
@@ -1702,27 +1771,32 @@ export default function ExplorarPage() {
                           <FaRegFileAlt /> Detalles
                         </button>
 
-                        <button
-                          onClick={() => {
-                            if (c.callLink) {
-                              window.open(c.callLink, "_blank");
-                            } else if (c.pageUrl) {
-                              window.open(c.pageUrl, "_blank");
-                            } else {
-                              Swal.fire({
-                                icon: "warning",
-                                title: "⚠️ Enlace no disponible",
-                                text: "Esta convocatoria no tiene un enlace de inscripción activo.",
-                                confirmButtonColor: "#39A900",
-                                background: modoOscuro ? "#1a0526" : "#fff",
-                                color: modoOscuro ? "#fff" : "#333",
-                              });
-                            }
-                          }}
-                          className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md ${styles.successButton}`}
-                        >
-                          <FaCheckCircle /> Inscribirse
-                        </button>
+                      <button
+  onClick={() => {
+    const cid = getConvocatoriaCallId(c);
+    
+    // 👇 ESTA ES LA LÍNEA QUE FALTABA
+    registrarClickConvocatoria(cid);
+
+    if (c.callLink) {
+      window.open(c.callLink, "_blank");
+    } else if (c.pageUrl) {
+      window.open(c.pageUrl, "_blank");
+    } else {
+      Swal.fire({
+        icon: "warning",
+        title: "⚠️ Enlace no disponible",
+        text: "Esta convocatoria no tiene un enlace de inscripción activo.",
+        confirmButtonColor: "#39A900",
+        background: modoOscuro ? "#1a0526" : "#fff",
+        color: modoOscuro ? "#fff" : "#333",
+      });
+    }
+  }}
+  className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md ${styles.successButton}`}
+>
+  <FaCheckCircle /> Inscribirse
+</button>
 
 
                         {/* 🌟 Favorito con animación */}
