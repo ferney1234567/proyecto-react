@@ -454,55 +454,58 @@ export default function HomePage() {
       });
     }
   };
+ const registrarClickConvocatoria = async (callId: number | null) => {
+  if (!callId) return;
 
+  const usuarioGuardado = localStorage.getItem("usuario");
+  if (!usuarioGuardado) return;
 
- // 🔥 Registrar clickCount
-const registrarClick = async (callId: any) => {
+  let userId = null;
   try {
-    const id = Number(callId);
+    const usuario = JSON.parse(usuarioGuardado);
+    userId =
+      Number(usuario?.id) ||
+      Number(usuario?.userId) ||
+      Number(usuario?.uid) ||
+      Number(usuario?.uId);
+  } catch {
+    return;
+  }
 
-    // 🚨 Validación correcta
-    if (!id || Number.isNaN(id) || id === 0) {
-      console.warn("❌ registrarClick: ID inválido:", callId);
-      return;
-    }
-
-    console.log("📌 Intentando registrar click para ID:", id);
-
-    // 👉 Registrar en backend (SIN validar duplicados en frontend)
-    const res = await fetch(`${API_URL}/calls/${id}/click`, {
+  try {
+    const response = await fetch(`${API_URL}/calls/${callId}/click`, {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
     });
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("❌ Error backend click:", errorText);
-      throw new Error(errorText);
+    if (!response.ok) {
+      throw new Error("Error registrando click");
     }
 
-    const data = await res.json();
-    console.log("✔️ Click registrado exitosamente:", data);
+    const data = await response.json();
 
-    // 🔄 Actualizar el estado local para reflejar el nuevo contador
-    setConvocatorias(prev =>
-      prev.map(conv => {
-        const convId = conv.id ?? conv.callId;
-        if (Number(convId) === Number(id)) {
-          return { ...conv, clickCount: (conv.clickCount || 0) + 1 };
+    // 🔥 Actualizar contador en estado global
+    setConvocatorias((prev) =>
+      prev.map((c) => {
+        const cid = c.callId || c.id;
+        if (Number(cid) === Number(callId)) {
+          return { ...c, clickCount: data.clickCount };
         }
-        return conv;
+        return c;
       })
     );
 
-    return data;
-
-  } catch (err) {
-    console.error("❌ Error registrando click:", err);
-    throw err;
+    // 🔥 Solo evitar doble clic inmediato, no bloquear el día
+    const vistos = JSON.parse(localStorage.getItem("conv_clicks") || "[]");
+    if (!vistos.includes(callId)) {
+      vistos.push(callId);
+      localStorage.setItem("conv_clicks", JSON.stringify(vistos));
+    }
+  } catch (error) {
+    console.error("Error:", error);
   }
 };
-
-
 
 
 
@@ -1014,8 +1017,14 @@ const registrarClick = async (callId: any) => {
 
                     <button
                       onClick={() => {
-                        registrarClick(convocatoriasPagina[0].id!); // 👈 SUMA CLICK
-                        window.open(convocatoriasPagina[0].callLink, "_blank"); // 👈 ABRE ENLACE
+                        const cid = convocatoriasPagina[0]?.callId ?? convocatoriasPagina[0]?.id;
+
+                        if (cid != null) {
+                          registrarClickConvocatoria(Number(cid));
+                        }
+
+
+                        window.open(convocatoriasPagina[0].callLink, "_blank");
                       }}
                       className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold transition-all ${styles.successButton}`}
                     >
@@ -1255,10 +1264,11 @@ const registrarClick = async (callId: any) => {
 
                         <button
                           onClick={() => {
-                            const id = convocatoria.id ?? convocatoria.callId;
+                            const cid = getConvocatoriaCallId(convocatoria);
 
-                            // 👇 REGISTRAR CLICK EN BD
-                            registrarClick(id);
+                            if (cid) {
+                              registrarClickConvocatoria(cid); // 👈 Sólo si es válido
+                            }
 
                             if (convocatoria.callLink) {
                               window.open(convocatoria.callLink, "_blank"); // Abrir inscripción
@@ -1505,10 +1515,12 @@ const registrarClick = async (callId: any) => {
 
                         <button
                           onClick={() => {
-                            const id = convocatoria.id ?? convocatoria.callId;
+                            const cid = getConvocatoriaCallId(convocatoria);
 
-                            // 👇 Registrar el click en BD
-                            registrarClick(id);
+                            // 👈 Solo registra si existe un ID válido
+                            if (cid) {
+                              registrarClickConvocatoria(cid);
+                            }
 
                             if (convocatoria.callLink) {
                               window.open(convocatoria.callLink, "_blank"); // Abrir enlace
@@ -1527,6 +1539,7 @@ const registrarClick = async (callId: any) => {
                         >
                           <FaCheckCircle /> Inscribirse
                         </button>
+
 
 
 
@@ -1753,10 +1766,12 @@ const registrarClick = async (callId: any) => {
 
                           <button
                             onClick={() => {
-                              const id = convocatoria.id ?? convocatoria.callId;
+                              const cid = getConvocatoriaCallId(convocatoria);
 
-                              // 👇 Registrar el click en BD
-                              registrarClick(id);
+                              // 👈 Registrar click solo si el ID es válido
+                              if (cid) {
+                                registrarClickConvocatoria(cid);
+                              }
 
                               if (convocatoria.callLink) {
                                 window.open(convocatoria.callLink, "_blank"); // Abrir enlace
@@ -1775,6 +1790,7 @@ const registrarClick = async (callId: any) => {
                           >
                             <FaCheckCircle /> Inscribirse
                           </button>
+
 
 
 

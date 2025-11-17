@@ -83,17 +83,29 @@ export default function Header({
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400 group-focus-within:text-[#39A900] transition-colors" />
               </div>
-              <input
-                type="text"
-                placeholder="Buscar módulos..."
-                className={`pl-10 pr-4 py-2 rounded-lg border outline-none transition-all w-64 ${
-                  modoOscuro
-                    ? "bg-white/10 border-white/20 text-white focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900]"
-                    : "bg-white text-gray-800 focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900]"
-                }`}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+             <input
+  type="text"
+  placeholder="Buscar módulos..."
+  className={`
+    pl-10 pr-4 py-2 rounded-lg outline-none transition-all w-64
+    bg-[var(--input)] 
+    text-[var(--foreground)]
+    placeholder:text-gray-400
+
+    /* BORDE GRIS SUAVE */
+    border border-[oklch(0.92_0_0)]
+
+    /* FOCUS */
+    focus:ring-2 focus:ring-[#39A900] focus:border-[#39A900]
+
+    ${modoOscuro 
+      ? "border-[oklch(0.7_0_0)] bg-[oklch(0.20_0_0)] text-white" 
+      : "border-[oklch(0.92_0_0)] bg-white text-gray-800"}
+  `}
+  value={searchTerm}
+  onChange={(e) => setSearchTerm(e.target.value)}
+/>
+
             </div>
 
             {/* Perfil */}

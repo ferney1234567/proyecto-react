@@ -32,6 +32,7 @@ import { getUserInterestsByUserId } from "../../api/usuarioInteres/route";
    Tipos de datos
 ============================ */
 interface Convocatoria {
+  callId: number;
   favId: number;
   id: number;
   title: string;
@@ -102,6 +103,8 @@ export default function FavoritosPage() {
 
   const toggleZoomMenu = () => setMostrarZoom(!mostrarZoom);
 
+
+
   // Datos
   /* ----------------------------
      Paginación
@@ -114,6 +117,13 @@ export default function FavoritosPage() {
   ---------------------------- */
   const { modoOscuro, toggleModoOscuro } = useTheme();
   const styles = getThemeStyles(modoOscuro);
+
+// 🔹 Unifica cómo se obtiene el callId desde cualquier tipo de dato
+const getConvocatoriaCallId = (c: any) => {
+  const raw = c?.callId ?? c?.id;
+  return raw != null ? Number(raw) : null;
+};
+
 
   /* ============================
      Efectos: cargar datos
@@ -448,6 +458,59 @@ const registrarClick = async (callId: any) => {
 };
 
 
+
+
+
+ const registrarClickConvocatoria = async (callId: number | null) => {
+  if (!callId) return;
+
+  const usuarioGuardado = localStorage.getItem("usuario");
+  if (!usuarioGuardado) return;
+
+  let userId = null;
+  try {
+    const usuario = JSON.parse(usuarioGuardado);
+    userId =
+      Number(usuario?.id) ||
+      Number(usuario?.userId) ||
+      Number(usuario?.uid) ||
+      Number(usuario?.uId);
+  } catch {
+    return;
+  }
+
+  if (!userId) return;
+
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/calls/${callId}/click`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+
+    const data = await response.json();
+
+    // 🔥 ACTUALIZA EL ESTADO DEL CONTADOR EN FAVORITOS
+    setConvocatorias((prev) =>
+      prev.map((c) => {
+        const cid = c.callId || c.id;
+        if (Number(cid) === Number(callId)) {
+          return { ...c, clickCount: data.clickCount };
+        }
+        return c;
+      })
+    );
+
+    // 🔥 SOLO evita doble click inmediato
+    let vistos = JSON.parse(localStorage.getItem("conv_clicks") || "[]");
+    if (!vistos.includes(callId)) {
+      vistos.push(callId);
+      localStorage.setItem("conv_clicks", JSON.stringify(vistos));
+    }
+  } catch (error) {
+    console.error("❌ Error registrando clic", error);
+  }
+};
 
 
 
@@ -914,37 +977,33 @@ const registrarClick = async (callId: any) => {
                       >
                         <FaRegFileAlt /> Detalles
                       </button>
-                      <button
-                        onClick={() => {
-                         const callId = getCallIdSeguro(c);
 
+                     <button
+  onClick={() => {
+    const cid = getConvocatoriaCallId(c);
 
-                          // ⛔ Evitar doble registro por usuario
-                          if (callId && !usuarioYaRegistroClick(callId)) {
-                            registrarClick(callId);
-                            marcarComoVisto(callId);
-                          }
+    if (cid) registrarClickConvocatoria(cid);
 
-                          // 👇 Abrir enlaces
-                          if (c.callLink) {
-                            window.open(c.callLink, "_blank");
-                          } else if (c.pageUrl) {
-                            window.open(c.pageUrl, "_blank");
-                          } else {
-                            Swal.fire({
-                              icon: "warning",
-                              title: "⚠️ Enlace no disponible",
-                              text: "Esta convocatoria no tiene un enlace de inscripción activo.",
-                              confirmButtonColor: "#39A900",
-                              background: modoOscuro ? "#1a0526" : "#fff",
-                              color: modoOscuro ? "#fff" : "#333",
-                            });
-                          }
-                        }}
-                        className={`flex-1 flex items-center justify-center gap-1 px-4 py-2 rounded-md font-semibold ${styles.successButton}`}
-                      >
-                        <FaCheckCircle /> Inscribirse
-                      </button>
+    if (c.callLink) {
+      window.open(c.callLink, "_blank");
+    } else if (c.pageUrl) {
+      window.open(c.pageUrl, "_blank");
+    } else {
+      Swal.fire({
+        icon: "warning",
+        title: "⚠️ Enlace no disponible",
+        text: "Esta convocatoria no tiene un enlace de inscripción activo.",
+        confirmButtonColor: "#39A900",
+        background: modoOscuro ? "#1a0526" : "#fff",
+        color: modoOscuro ? "#fff" : "#333",
+      });
+    }
+  }}
+  className={`flex-1 flex items-center justify-center gap-1 px-4 py-2 rounded-md font-semibold ${styles.successButton}`}
+>
+  <FaCheckCircle /> Inscribirse
+</button>
+
 
 
 
@@ -1094,34 +1153,31 @@ const registrarClick = async (callId: any) => {
                           <FaRegFileAlt style={{ fontSize: "1em" }} /> Detalles
                         </button>
                         <button
-                          onClick={() => {
-                           const callId = getCallIdSeguro(c);
+  onClick={() => {
+    const cid = getConvocatoriaCallId(c);
 
+    if (cid) registrarClickConvocatoria(cid);
 
-                            if (callId && !usuarioYaRegistroClick(callId)) {
-                              registrarClick(callId);
-                              marcarComoVisto(callId);
-                            }
+    if (c.callLink) {
+      window.open(c.callLink, "_blank");
+    } else if (c.pageUrl) {
+      window.open(c.pageUrl, "_blank");
+    } else {
+      Swal.fire({
+        icon: "warning",
+        title: "⚠️ Enlace no disponible",
+        text: "Esta convocatoria no tiene un enlace de inscripción activo.",
+        confirmButtonColor: "#39A900",
+        background: modoOscuro ? "#1a0526" : "#fff",
+        color: modoOscuro ? "#fff" : "#333",
+      });
+    }
+  }}
+  className={`flex items-center gap-2 px-5 py-2 rounded-md font-semibold ${styles.successButton}`}
+>
+  <FaCheckCircle style={{ fontSize: "1em" }} /> Inscribirse
+</button>
 
-                            if (c.callLink) {
-                              window.open(c.callLink, "_blank");
-                            } else if (c.pageUrl) {
-                              window.open(c.pageUrl, "_blank");
-                            } else {
-                              Swal.fire({
-                                icon: "warning",
-                                title: "⚠️ Enlace no disponible",
-                                text: "Esta convocatoria no tiene un enlace de inscripción activo.",
-                                confirmButtonColor: "#39A900",
-                                background: modoOscuro ? "#1a0526" : "#fff",
-                                color: modoOscuro ? "#fff" : "#333",
-                              });
-                            }
-                          }}
-                          className={`flex items-center gap-2 px-5 py-2 rounded-md font-semibold ${styles.successButton}`}
-                        >
-                          <FaCheckCircle /> Inscribirse
-                        </button>
 
 
 

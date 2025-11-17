@@ -22,6 +22,12 @@ import Interes from "../intereses/Intereses";
 import Chequeo from "../checkeo/checkeo";
 import Favorito from "../favoritos/favoritos";
 import RequisitosCategoria from "../requisitosCategoria/requisitosCategoria";
+import ModalConvocatoriasStats from "../../../components/estadisticas/ModalConvocatoriasStats";
+import ModalFavoritosStats from "../../../components/estadisticas/ModalFavoritosStats";
+import ModalUsuariosStats from "../../../components/estadisticas/ModalUsuariosStats";
+import ModalInscritosStats from "../../../components/estadisticas/ModalInscritosStats";
+
+
 
 import UsuarioInteres from "../usuarioInteres/usuarioInteres";
 import InteresAdicionalConvocatoria from "../interesAdicionalConvocatorias/interesAdicionalConvocatorias";
@@ -110,8 +116,13 @@ const ComponentesCards = () => {
   const toggleProfileModal = () => setShowProfileModal(!showProfileModal);
   const toggleLogoutModal = () => setShowLogoutModal(!showLogoutModal);
 
+  const [showConvocatoriasModal, setShowConvocatoriasModal] = useState(false);
+  const [showFavoritosModal, setShowFavoritosModal] = useState(false);
+  const [showUsuariosModal, setShowUsuariosModal] = useState(false);
+  const [showInscritosModal, setShowInscritosModal] = useState(false);
 
-  
+
+
   // Contadores
   const [counts, setCounts] = useState<any>({
     lineas: 0,
@@ -136,7 +147,7 @@ const ComponentesCards = () => {
     favoritos: 0, // si lo expones por otra ruta, cámbialo aquí
   });
 
- 
+
 
 
  const fetchAll = async () => {
@@ -166,35 +177,48 @@ const ComponentesCards = () => {
       getCallAdditionalInterests(),
     ]);
 
+    // 🔥 CALCULAR TOTAL DE INSCRITOS USANDO CLICKCOUNT
+    const totalInscritos =
+      Array.isArray(convocatorias?.data)
+        ? convocatorias.data.reduce(
+            (sum, conv) => sum + (conv.clickCount || 0), 0
+          )
+        : 0;
+
     setCounts({
-  lineas: normalizeCount(lineas),
-  convocatorias: normalizeCount(convocatorias),
-  empresas: normalizeCount(empresas),
-  usuarios: normalizeCount(usuarios),
-  ciudades: normalizeCount(ciudades),
-  departamentos: normalizeCount(departamentos),
-  intereses: normalizeCount(intereses),
-  requisitos: normalizeCount(requisitos),
-  categorias: normalizeCount(categorias),
-  roles: normalizeCount(roles),
-  requirementGroups: normalizeCount(requirementGroups),
-  requirementChecks: normalizeCount(requirementChecks),
-  userInterests: normalizeCount(userInterests),
-  callAdditionalInterests: normalizeCount(callAdditionalInterests),
-  favoritos: normalizeCount(favoritos),
-  publicoObjetivo: normalizeCount(publicoObjetivo),
-  entidadInstitucion: normalizeCount(entidadInstitucion),
-  chequeos: normalizeCount(requirementChecks),
-});
+      lineas: normalizeCount(lineas),
+      convocatorias: normalizeCount(convocatorias),
+      empresas: normalizeCount(empresas),
+      usuarios: normalizeCount(usuarios),
+      ciudades: normalizeCount(ciudades),
+      departamentos: normalizeCount(departamentos),
+      intereses: normalizeCount(intereses),
+      requisitos: normalizeCount(requisitos),
+      categorias: normalizeCount(categorias),
+      roles: normalizeCount(roles),
+      requirementGroups: normalizeCount(requirementGroups),
+      requirementChecks: normalizeCount(requirementChecks),
+      userInterests: normalizeCount(userInterests),
+      callAdditionalInterests: normalizeCount(callAdditionalInterests),
+      favoritos: normalizeCount(favoritos),
+      publicoObjetivo: normalizeCount(publicoObjetivo),
+      entidadInstitucion: normalizeCount(entidadInstitucion),
+      chequeos: normalizeCount(requirementChecks),
+
+      // 👇 AÑADIR INSCRITOS AL ESTADO
+      inscritos: totalInscritos,
+    });
+
   } catch (e) {
     console.error("Error cargando conteos", e);
   }
 };
 
-// ✅ Llamada inicial
-useEffect(() => {
-  fetchAll();
-}, []);
+
+  // ✅ Llamada inicial
+  useEffect(() => {
+    fetchAll();
+  }, []);
 
 
 
@@ -224,7 +248,7 @@ useEffect(() => {
     requisitos: counts.requisitos,
     entidad: counts.entidadInstitucion, // si luego expones API, reemplaza
     rol: counts.roles,
-   favoritos: counts.favoritos,
+    favoritos: counts.favoritos,
     tipo: counts.requirementGroups,
     convocatorias: counts.convocatorias,
     empresa: counts.empresas,
@@ -353,7 +377,7 @@ useEffect(() => {
       descripcion: "Categoría o línea específica en la que se enmarca la convocatoria.",
       component: (m: boolean) => <RequisitosCategoria modoOscuro={m} />,
     },
-   
+
     {
       id: "usuarioInteres",
       icon: FaUserTag,
@@ -375,11 +399,11 @@ useEffect(() => {
   }));
 
   const handleCardClick = (id: string) => setActiveComponent(id);
-  
+
   const handleCloseModal = () => {
-  setActiveComponent(null);
-  fetchAll(); // 🔄 recarga los conteos
-};
+    setActiveComponent(null);
+    fetchAll(); // 🔄 recarga los conteos
+  };
 
 
 
@@ -438,74 +462,83 @@ useEffect(() => {
           {/* Statistics (placeholder visual - puedes conectar a KPIs si quieres) */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             {[
- {
-    value: formatNumber(counts.favoritos),
-    label: "Total Convocatorias Marcadas Favoritos",
-    icon: Star,
-    change: "+12%",
-    changeType: "increase",
-    color: "from-blue-500 to-cyan-500",
-  },
-  {
-    value: formatNumber(counts.convocatorias),
-    label: "Total Convocatorias",
-    icon: Users,
-    change: "+5%",        // 🔹 ← Valor estático
-    changeType: "increase",
-    color: "from-purple-500 to-pink-500",
-  },
-  {
-    value: formatNumber(counts.usuarios),
-    label: "Usuarios",
-    icon: Star,
-    change: "+8%",        // 🔹 ← Valor estático
-    changeType: "increase",
-    color: "from-emerald-500 to-teal-500",
-  },
-  {
-    value: formatNumber(counts.requirementChecks + counts.userInterests),
-    label: "Usuarios inscritos Convocatorias ",
-    icon: Bell,
-    change: "+2",         // 🔹 ← Valor estático
-    changeType: "alert",
-    color: "from-orange-500 to-red-500",
-  },
-]
-.map((stat, idx) => {
-              const Icon = stat.icon;
-              return (
-                <div
-                  key={idx}
-                  className={`${cardBg} p-6 rounded-3xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-105 group relative overflow-hidden`}
-                >
+              {
+                value: formatNumber(counts.favoritos),
+                label: "Total Convocatorias Marcadas Favoritos",
+                icon: Star,
+                change: "+12%",
+                changeType: "increase",
+                color: "from-blue-500 to-cyan-500",
+                onClick: () => setShowFavoritosModal(true), // 🔥 NUEVO
+              },
+
+              {
+                value: formatNumber(counts.convocatorias),
+                label: "Total Convocatorias",
+                icon: Users,
+                change: "+5%",
+                changeType: "increase",
+                color: "from-purple-500 to-pink-500",
+                onClick: () => setShowConvocatoriasModal(true),  // 👈 AÑADIMOS ESTO
+              },
+
+              {
+                value: formatNumber(counts.usuarios),
+                label: "Usuarios",
+                icon: Star,
+                change: "+8%",
+                changeType: "increase",
+                color: "from-emerald-500 to-teal-500",
+                onClick: () => setShowUsuariosModal(true),  // 🔥 NUEVO
+              },
+
+              {
+              value: formatNumber(counts.inscritos),
+                label: "Usuarios inscritos Convocatorias",
+                icon: Bell,
+                change: "+2",
+                changeType: "alert",
+                color: "from-orange-500 to-red-500",
+                onClick: () => setShowInscritosModal(true),  // 🔥 NUEVO
+              },
+
+            ]
+              .map((stat, idx) => {
+                const Icon = stat.icon;
+                return (
                   <div
-                    className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${stat.color} rounded-full -translate-y-8 translate-x-8 opacity-10 group-hover:opacity-20 transition-opacity duration-500`}
-                  ></div>
+                    key={idx}
+                    onClick={stat.onClick}
+                    className={`${cardBg} p-6 rounded-3xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-105 group relative overflow-hidden`}
+                  >
+                    <div
+                      className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${stat.color} rounded-full -translate-y-8 translate-x-8 opacity-10 group-hover:opacity-20 transition-opacity duration-500`}
+                    ></div>
 
-                  <div className="relative z-10">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <p className="text-sm opacity-70 mb-1">{stat.label}</p>
-                        <h3 className={`text-3xl font-bold ${modoOscuro ? "text-white" : "text-gray-900"}`}>
-                          {stat.value}
-                        </h3>
+                    <div className="relative z-10">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <p className="text-sm opacity-70 mb-1">{stat.label}</p>
+                          <h3 className={`text-3xl font-bold ${modoOscuro ? "text-white" : "text-gray-900"}`}>
+                            {stat.value}
+                          </h3>
+                        </div>
+                        <div className={`p-4 bg-gradient-to-r ${stat.color} rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110`}>
+                          <Icon className="text-white w-6 h-6" />
+                        </div>
                       </div>
-                      <div className={`p-4 bg-gradient-to-r ${stat.color} rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110`}>
-                        <Icon className="text-white w-6 h-6" />
-                      </div>
-                    </div>
 
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-200/30 dark:border-white/10">
-                      <div className={`flex items-center text-sm ${stat.changeType === "alert" ? "text-red-500" : "text-emerald-500"}`}>
-                        <TrendingUp className="w-4 h-4 mr-1" />
-                        <span className="font-medium">{stat.change}</span>
+                      <div className="flex items-center justify-between pt-4 border-t border-gray-200/30 dark:border-white/10">
+                        <div className={`flex items-center text-sm ${stat.changeType === "alert" ? "text-red-500" : "text-emerald-500"}`}>
+                          <TrendingUp className="w-4 h-4 mr-1" />
+                          <span className="font-medium">{stat.change}</span>
+                        </div>
+                        <span className="text-xs opacity-50">vs último período</span>
                       </div>
-                      <span className="text-xs opacity-50">vs último período</span>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
 
           {/* Modules Section */}
@@ -596,6 +629,34 @@ useEffect(() => {
 
         <Footer sectionBg={sectionBg} />
       </div>
+      <ModalConvocatoriasStats
+        isOpen={showConvocatoriasModal}
+        onClose={() => setShowConvocatoriasModal(false)}
+        total={counts.convocatorias}
+        modoOscuro={modoOscuro}
+      />
+      <ModalFavoritosStats
+        isOpen={showFavoritosModal}
+        onClose={() => setShowFavoritosModal(false)}
+        total={counts.favoritos}
+        modoOscuro={modoOscuro}
+      />
+      <ModalUsuariosStats
+        isOpen={showUsuariosModal}
+        onClose={() => setShowUsuariosModal(false)}
+        total={counts.usuarios}
+        modoOscuro={modoOscuro}
+      />
+     <ModalInscritosStats
+  isOpen={showInscritosModal}
+  onClose={() => setShowInscritosModal(false)}
+  total={counts.inscritos}
+  modoOscuro={modoOscuro}
+/>
+
+
+
+
     </div>
   );
 };
