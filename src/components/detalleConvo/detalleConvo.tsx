@@ -118,10 +118,6 @@ const registrarClickConvocatoria = async (callId: number | null) => {
 
   if (!userId) return;
 
-  // Evita doble registro inmediato
-  const vistos = JSON.parse(localStorage.getItem("conv_clicks") || "[]");
-  if (vistos.includes(callId)) return;
-
   try {
     const res = await fetch(`${API_URL}/calls/${callId}/click`, {
       method: "POST",
@@ -130,18 +126,13 @@ const registrarClickConvocatoria = async (callId: number | null) => {
     });
 
     const data = await res.json();
-
-    // Guardar para evitar duplicados en el momento
-    vistos.push(callId);
-    localStorage.setItem("conv_clicks", JSON.stringify(vistos));
-
-    // (Opcional) Aquí podrías mostrar el contador actualizado:
-    // console.log("Nuevo clickCount:", data.clickCount);
+    console.log("Nuevo contador:", data.clickCount); // 👍 ahora sube SIEMPRE
 
   } catch (error) {
     console.error("❌ Error registrando clic", error);
   }
 };
+
 
 
 

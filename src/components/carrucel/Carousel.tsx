@@ -40,20 +40,21 @@ export default function Carousel() {
   const [convocatoriaSeleccionada, setConvocatoriaSeleccionada] =
     useState<Convocatoria | null>(null);
 
-  // 🔥 Función UNIFICADA para obtener callId
+  // Obtener ID real
   const getConvocatoriaCallId = (c: Convocatoria | null) => {
     if (!c) return null;
     return Number(c.callId ?? c.id ?? null);
   };
 
-  // 🔥 Registrar click
-  const registrarClickConvocatoria = async (callId: number | null) => {
+  // Registrar click + evitar duplicados
+  const registrarClickConvocatoria = async (callId: number | null, idx: number) => {
     if (!callId) return;
 
     const usuarioGuardado = localStorage.getItem("usuario");
     if (!usuarioGuardado) return;
 
     let userId = null;
+
     try {
       const usuario = JSON.parse(usuarioGuardado);
       userId =
@@ -61,12 +62,11 @@ export default function Carousel() {
         Number(usuario?.userId) ||
         Number(usuario?.uid) ||
         Number(usuario?.uId);
-    } catch {
-      return;
-    }
+    } catch { return; }
 
     if (!userId) return;
 
+    // Evitar doble conteo
     const vistos = JSON.parse(localStorage.getItem("conv_clicks") || "[]");
     if (vistos.includes(callId)) return;
 
@@ -77,15 +77,23 @@ export default function Carousel() {
         body: JSON.stringify({ userId }),
       });
 
+      // marcar como visto
       vistos.push(callId);
       localStorage.setItem("conv_clicks", JSON.stringify(vistos));
+
+      // 🔥 Actualizar el estado del carrusel para que el contador suba en pantalla
+      setConvocatorias((prev) => {
+        const nuevo = [...prev];
+        nuevo[idx].clickCount = (nuevo[idx].clickCount ?? 0) + 1;
+        return nuevo;
+      });
 
     } catch (err) {
       console.error("Error registrando click:", err);
     }
   };
 
-  // 🔥 Cargar convocatorias (solo top 10 más relevantes)
+  // Cargar convocatorias TOP 10
   useEffect(() => {
     (async () => {
       try {
@@ -105,7 +113,7 @@ export default function Carousel() {
     })();
   }, []);
 
-  // 🔄 Rotación automática
+  // Rotación automática
   useEffect(() => {
     if (convocatorias.length === 0) return;
 
@@ -149,7 +157,6 @@ export default function Carousel() {
       <div className="relative grid grid-cols-1 md:grid-cols-2 z-10 text-white h-full">
         <div className="p-8 md:p-12 flex flex-col justify-center space-y-4 h-full backdrop-blur-md">
 
-          {/* Encabezado */}
           <div className="flex items-center gap-4">
             <FiAward className="text-4xl text-white" />
             <span className="text-xs font-semibold px-4 py-1.5 rounded-full bg-white/20">
@@ -157,7 +164,6 @@ export default function Carousel() {
             </span>
           </div>
 
-          {/* Título */}
           <h2 className="text-4xl font-extrabold tracking-tight leading-tight line-clamp-2 max-w-2xl">
             {current.title}
           </h2>
@@ -166,14 +172,14 @@ export default function Carousel() {
             {current.description}
           </p>
 
-          {/* Botones */}
           <div className="flex flex-wrap gap-4 pt-2">
 
-            {/* 🔥 INSCRIBIRSE CON CLICK COUNT */}
+            {/* 🔥 INSCRIBIRSE */}
             <button
               onClick={() => {
                 const cid = getConvocatoriaCallId(current);
-                if (cid) registrarClickConvocatoria(cid);
+
+                if (cid) registrarClickConvocatoria(cid, index);
 
                 if (current.callLink) {
                   window.open(current.callLink, "_blank");
@@ -185,8 +191,6 @@ export default function Carousel() {
                     title: "⚠️ Enlace no disponible",
                     text: "Esta convocatoria no tiene un enlace de inscripción activo.",
                     confirmButtonColor: "#39A900",
-                    background: "#0b1220",
-                    color: "#fff",
                   });
                 }
               }}
@@ -195,7 +199,7 @@ export default function Carousel() {
               <FiCheckCircle /> Inscríbete Ahora
             </button>
 
-            {/* Ver detalles */}
+            {/* VER DETALLES */}
             <button
               onClick={() => {
                 setConvocatoriaSeleccionada(current);
@@ -212,14 +216,14 @@ export default function Carousel() {
       {/* Controles */}
       <button
         onClick={prevSlide}
-        className="absolute top-1/2 -translate-y-1/2 left-0 p-3 bg-white/20 hover:bg-white/40 rounded-full text-white z-20 transition-colors duration-300 backdrop-blur-sm"
+        className="absolute top-1/2 -translate-y-1/2 left-0 p-3 bg-white/20 hover:bg-white/40 rounded-full text-white z-20 backdrop-blur-sm transition"
       >
         <FiChevronLeft size={20} />
       </button>
 
       <button
         onClick={nextSlide}
-        className="absolute top-1/2 -translate-y-1/2 right-4 p-3 bg-white/20 hover:bg-white/40 rounded-full text-white z-20 transition-colors duration-300 backdrop-blur-sm"
+        className="absolute top-1/2 -translate-y-1/2 right-4 p-3 bg-white/20 hover:bg-white/40 rounded-full text-white z-20 backdrop-blur-sm transition"
       >
         <FiChevronRight size={20} />
       </button>
@@ -229,15 +233,14 @@ export default function Carousel() {
         {convocatorias.map((_, i) => (
           <button
             key={i}
-            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+            onClick={() => setIndex(i)}
+            className={`w-2.5 h-2.5 rounded-full transition-all ${
               i === index ? "bg-white scale-125" : "bg-white/40"
             }`}
-            onClick={() => setIndex(i)}
-          ></button>
+          />
         ))}
       </div>
 
-      {/* Modal */}
       <ModalConvocatoria
         modalAbierto={modalAbierto}
         cerrarModal={() => setModalAbierto(false)}

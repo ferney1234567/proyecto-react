@@ -150,57 +150,70 @@ const ComponentesCards = () => {
 
 
 
-  const fetchAll = async () => {
-    try {
-      const [
-        lineas, convocatorias, empresas, usuarios, ciudades,
-        departamentos, intereses, requisitos, categorias, roles,
-        requirementGroups, requirementChecks, userInterests, favoritos,
-        publicoObjetivo, entidadInstitucion, callAdditionalInterests
-      ] = await Promise.all([
-        getLineas(),
-        getConvocatorias(),
-        getEmpresas(),
-        getUsers(),
-        fetchCiudades(),
-        fetchDepartamentos(),
-        getIntereses(),
-        getRequisitos(),
-        getCategorias(),
-        getRoles(),
-        getRequirementGroups(),
-        getRequirementChecks(),
-        getUserInterests(),
-        getFavoritos(),
-        getPublicos(),
-        getEntidades(),
-        getCallAdditionalInterests(),
-      ]);
+ const fetchAll = async () => {
+  try {
+    const [
+      lineas, convocatorias, empresas, usuarios, ciudades,
+      departamentos, intereses, requisitos, categorias, roles,
+      requirementGroups, requirementChecks, userInterests, favoritos,
+      publicoObjetivo, entidadInstitucion, callAdditionalInterests
+    ] = await Promise.all([
+      getLineas(),
+      getConvocatorias(),
+      getEmpresas(),
+      getUsers(),
+      fetchCiudades(),
+      fetchDepartamentos(),
+      getIntereses(),
+      getRequisitos(),
+      getCategorias(),
+      getRoles(),
+      getRequirementGroups(),
+      getRequirementChecks(),
+      getUserInterests(),
+      getFavoritos(),
+      getPublicos(),
+      getEntidades(),
+      getCallAdditionalInterests(),
+    ]);
 
-      setCounts({
-        lineas: normalizeCount(lineas),
-        convocatorias: normalizeCount(convocatorias),
-        empresas: normalizeCount(empresas),
-        usuarios: normalizeCount(usuarios),
-        ciudades: normalizeCount(ciudades),
-        departamentos: normalizeCount(departamentos),
-        intereses: normalizeCount(intereses),
-        requisitos: normalizeCount(requisitos),
-        categorias: normalizeCount(categorias),
-        roles: normalizeCount(roles),
-        requirementGroups: normalizeCount(requirementGroups),
-        requirementChecks: normalizeCount(requirementChecks),
-        userInterests: normalizeCount(userInterests),
-        callAdditionalInterests: normalizeCount(callAdditionalInterests),
-        favoritos: normalizeCount(favoritos),
-        publicoObjetivo: normalizeCount(publicoObjetivo),
-        entidadInstitucion: normalizeCount(entidadInstitucion),
-        chequeos: normalizeCount(requirementChecks),
-      });
-    } catch (e) {
-      console.error("Error cargando conteos", e);
-    }
-  };
+    // 🔥 CALCULAR TOTAL DE INSCRITOS USANDO CLICKCOUNT
+    const totalInscritos =
+      Array.isArray(convocatorias?.data)
+        ? convocatorias.data.reduce(
+            (sum, conv) => sum + (conv.clickCount || 0), 0
+          )
+        : 0;
+
+    setCounts({
+      lineas: normalizeCount(lineas),
+      convocatorias: normalizeCount(convocatorias),
+      empresas: normalizeCount(empresas),
+      usuarios: normalizeCount(usuarios),
+      ciudades: normalizeCount(ciudades),
+      departamentos: normalizeCount(departamentos),
+      intereses: normalizeCount(intereses),
+      requisitos: normalizeCount(requisitos),
+      categorias: normalizeCount(categorias),
+      roles: normalizeCount(roles),
+      requirementGroups: normalizeCount(requirementGroups),
+      requirementChecks: normalizeCount(requirementChecks),
+      userInterests: normalizeCount(userInterests),
+      callAdditionalInterests: normalizeCount(callAdditionalInterests),
+      favoritos: normalizeCount(favoritos),
+      publicoObjetivo: normalizeCount(publicoObjetivo),
+      entidadInstitucion: normalizeCount(entidadInstitucion),
+      chequeos: normalizeCount(requirementChecks),
+
+      // 👇 AÑADIR INSCRITOS AL ESTADO
+      inscritos: totalInscritos,
+    });
+
+  } catch (e) {
+    console.error("Error cargando conteos", e);
+  }
+};
+
 
   // ✅ Llamada inicial
   useEffect(() => {
@@ -480,7 +493,7 @@ const ComponentesCards = () => {
               },
 
               {
-                value: formatNumber(counts.requirementChecks + counts.userInterests),
+              value: formatNumber(counts.inscritos),
                 label: "Usuarios inscritos Convocatorias",
                 icon: Bell,
                 change: "+2",
@@ -634,12 +647,13 @@ const ComponentesCards = () => {
         total={counts.usuarios}
         modoOscuro={modoOscuro}
       />
-      <ModalInscritosStats
-        isOpen={showInscritosModal}
-        onClose={() => setShowInscritosModal(false)}
-        total={counts.requirementChecks + counts.userInterests}
-        modoOscuro={modoOscuro}
-      />
+     <ModalInscritosStats
+  isOpen={showInscritosModal}
+  onClose={() => setShowInscritosModal(false)}
+  total={counts.inscritos}
+  modoOscuro={modoOscuro}
+/>
+
 
 
 
